@@ -1,0 +1,59 @@
+stages:
+  - build-artifacts
+  - build-containers
+
+image: maven:3.6-jdk-8-slim
+
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+  MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=.m2/repository -DbuildTimestamp=${CI_COMMIT_TIMESTAMP} -DbuildNumber=${CI_PIPELINE_ID} -DbuildCommit=${CI_COMMIT_SHA} -DbuildUser=${GITLAB_USER_LOGIN}"   
+  MAVEN_CLI_OPTS: "-s .m2/settings.xml --batch-mode --errors --fail-at-end --show-version"
+  K8S_WORKLOAD: api-v2-facturacionmagento
+  K8S_NAMESPACE: bricodepot
+  
+  DOCKER_IMAGE_CLIENT: clients/bricodepot/comerzzia/api/facturacionmagento
+  DOCKER_IMAGE_TIER1: comerzzia/api/v2/facturacionmagento
+  
+  DOCKER_IMAGE: $DEVELOP_REGISTRY_SERVER/$CLIENT/$DOCKER_IMAGE_TIER1
+  DOCKER_IMAGE_PRE: $REGISTRY_SERVER_CLIENT_PRE/$DOCKER_IMAGE_CLIENT
+  DOCKER_IMAGE_PRO: $REGISTRY_SERVER_CLIENT_PRO/$DOCKER_IMAGE_CLIENT
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+  - .m2/repository
+
+build_maven:
+  stage: build-artifacts
+  only:
+  - branches
+  - tags
+  script:
+  - mvn $MAVEN_CLI_OPTS package -DskipTests
+  artifacts:
+    paths:
+    - target/*.war
+    expire_in: 1 hour 
+
+docker_build:
+  stage: build-containers
+  dependencies:
+  - build_maven
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  before_script:
+  ### create kaniko credentials file
+  - cp "$KANIKO_SECRET" /kaniko/.docker/config.json
+  script: >
+    if [[ ! -z "$CI_COMMIT_TAG" ]]; then
+      echo Building image "${DOCKER_IMAGE}:$CI_COMMIT_TAG, ${DOCKER_IMAGE_PRE}:$CI_COMMIT_TAG, ${DOCKER_IMAGE_PRO}:$CI_COMMIT_TAG"
+      /kaniko/executor  --context "${CI_PROJECT_DIR}/" --dockerfile "${CI_PROJECT_DIR}/src/main/docker/Dockerfile" --destination "${DOCKER_IMAGE}:$CI_COMMIT_TAG" --destination "${DOCKER_IMAGE_PRE}:$CI_COMMIT_TAG" --destination "${DOCKER_IMAGE_PRO}:$CI_COMMIT_TAG"
+    else
+      echo Building image "${DOCKER_IMAGE}:$CI_COMMIT_BRANCH && ${DOCKER_IMAGE_PRE}:$CI_COMMIT_BRANCH"
+      /kaniko/executor  --context "${CI_PROJECT_DIR}/" --dockerfile "${CI_PROJECT_DIR}/src/main/docker/Dockerfile" --destination "${DOCKER_IMAGE}:$CI_COMMIT_BRANCH" --destination "${DOCKER_IMAGE_PRE}:$CI_COMMIT_BRANCH"
+    fi
+  rules:
+    - if: ($CI_COMMIT_BRANCH != null)
+    - if: ($CI_COMMIT_TAG != null)  
+

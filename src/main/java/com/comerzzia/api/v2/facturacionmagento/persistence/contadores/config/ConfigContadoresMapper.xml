@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.api.v2.facturacionmagento.persistence.contadores.config.ConfigContadoresMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.config.configcontadores.ConfigContadorBean" >
+    <id column="ID_CONTADOR" property="idContador" jdbcType="VARCHAR" />
+    <result column="DESCRIPCION" property="descripcion" jdbcType="VARCHAR" />
+    <result column="MASCARA_DIVISOR1" property="mascaraDivisor1" jdbcType="VARCHAR" />
+    <result column="MASCARA_DIVISOR2" property="mascaraDivisor2" jdbcType="VARCHAR" />
+    <result column="MASCARA_DIVISOR3" property="mascaraDivisor3" jdbcType="VARCHAR" />
+    <result column="LONGITUD_MAXIMA" property="longitudMaxima" jdbcType="DECIMAL" />
+    <result column="DIRECCION_RELLENO" property="direccionRelleno" jdbcType="CHAR" />
+    <result column="CARACTER_RELLENO" property="caracterRelleno" jdbcType="CHAR" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID_CONTADOR, DESCRIPCION, MASCARA_DIVISOR1, MASCARA_DIVISOR2, MASCARA_DIVISOR3, LONGITUD_MAXIMA, 
+    DIRECCION_RELLENO, CARACTER_RELLENO
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from CONFIG_CONTADORES_TBL
+    where ID_CONTADOR = #{idContador,jdbcType=VARCHAR}
+  </select>
+</mapper>
