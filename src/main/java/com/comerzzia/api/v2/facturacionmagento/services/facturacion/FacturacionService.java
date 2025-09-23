@@ -4,11 +4,14 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.xml.bind.JAXBContext;
@@ -61,13 +64,18 @@ import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.IdentificationCards;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.InvoiceData;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.LoyaltyDetails;
+import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.PaymentsData;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.PaymentData;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.Promotion;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.PromotionApplied;
+import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.Reason;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.Seller;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.TaxData;
+import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.TaxesData;
+import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.Ticket;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.TicketIssueData;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.TicketItem;
+import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.TicketItems;
 import com.comerzzia.bricodepot.backoffice.persistence.general.tiendas.atcud.AtcudMagento;
 import com.comerzzia.bricodepot.backoffice.services.general.tiendas.atcud.BricodepotServicioAtcud;
 import com.comerzzia.core.model.tiposdocumentos.TipoDocumentoBean;
@@ -120,9 +128,11 @@ import com.comerzzia.pos.services.core.contadores.ContadorServiceException;
 @Scope("prototype")
 public class FacturacionService {
 
-	protected static final Logger log = Logger.getLogger(FacturacionService.class);
+                protected static final Logger log = Logger.getLogger(FacturacionService.class);
 
-	private static final String PROPIEDAD_POS_FORMATO_IMPRESION = "POS.FORMATO_IMPRESION";
+                private static final String PROPIEDAD_POS_FORMATO_IMPRESION = "POS.FORMATO_IMPRESION";
+
+                private static final Set<String> DOCUMENTOS_DEVOLUCION = new HashSet<>(Arrays.asList("NC", "FR"));
 
 	@Autowired
 	protected TicketService ticketService;
@@ -195,11 +205,12 @@ public class FacturacionService {
 		log.debug("facturar()");
 		SqlSession sqlSession = null;
 		TicketBean ticketBean = null;
-		FacturacionResponse response = new FacturacionResponse();
-		try {
-			inicializarVariables(datosSesionBean, facturacionRequest);
-			sqlSession = datosSesion.getSqlSessionFactory().openSession();
-			gestionCaja();
+                FacturacionResponse response = new FacturacionResponse();
+                try {
+                        inicializarVariables(datosSesionBean, facturacionRequest);
+                        ajustarValoresDevolucion();
+                        sqlSession = datosSesion.getSqlSessionFactory().openSession();
+                        gestionCaja();
 			
 			ticketBean = rellenarTicket(sqlSession);
 
@@ -259,19 +270,130 @@ public class FacturacionService {
 		cajasService.salvarRecuento(sqlSession, cajaAbierta, ticket.getUidActividad());
 	}
 
-	private void inicializarVariables(DatosSesionBean datosSesionBean, FacturacionRequest facturacionRequest) throws FacturacionException {
-		log.debug("inicializarVariables()");
+        private void inicializarVariables(DatosSesionBean datosSesionBean, FacturacionRequest facturacionRequest) throws FacturacionException {
+                log.debug("inicializarVariables()");
 
-		request = facturacionRequest;
-		datosSesion = datosSesionBean;
-		tienda = obtenerTienda();
-		cliente = obtenerCliente();
-		tipoDocumento = obtenerTipoDocumento(datosSesionBean);
-		empresa = obtenerEmpresa(datosSesionBean);
+                request = facturacionRequest;
+                datosSesion = datosSesionBean;
+                tienda = obtenerTienda();
+                cliente = obtenerCliente();
+                tipoDocumento = obtenerTipoDocumento(datosSesionBean);
+                empresa = obtenerEmpresa(datosSesionBean);
 
-		/* Consultamos el usuario predeterminado para apertura de caja y para la cabecera del ticket */
-		usuario = usuariosService.obtenerUsuarioPredeterminado(datosSesion);
-	}
+                /* Consultamos el usuario predeterminado para apertura de caja y para la cabecera del ticket */
+                usuario = usuariosService.obtenerUsuarioPredeterminado(datosSesion);
+        }
+
+        private void ajustarValoresDevolucion() throws FacturacionException {
+                log.debug("ajustarValoresDevolucion()");
+
+                if (!esDocumentoDevolucion()) {
+                        return;
+                }
+
+                if (cliente == null || StringUtils.isBlank(cliente.getCodpais())) {
+                        return;
+                }
+
+                if (!"ES".equalsIgnoreCase(cliente.getCodpais())) {
+                        return;
+                }
+
+                try {
+                        Ticket ticketRequest = request.getTicket();
+                        if (ticketRequest != null) {
+                                ajustarTotalesDevolucion(ticketRequest);
+                                ajustarLineasDevolucion(ticketRequest);
+                        }
+                        ajustarPagosDevolucion();
+                }
+                catch (NumberFormatException e) {
+                        String msg = "Error ajustando los importes de la devolución: " + e.getMessage();
+                        log.error("ajustarValoresDevolucion() - " + msg, e);
+                        throw new FacturacionException(msg, e);
+                }
+        }
+
+        private boolean esDocumentoDevolucion() {
+                if (tipoDocumento == null || StringUtils.isBlank(tipoDocumento.getCodTipoDocumento())) {
+                        return false;
+                }
+
+                String codigoTipoDoc = StringUtils.upperCase(tipoDocumento.getCodTipoDocumento());
+                return DOCUMENTOS_DEVOLUCION.contains(codigoTipoDoc);
+        }
+
+        private void ajustarTotalesDevolucion(Ticket ticketRequest) {
+                TicketIssueData ticketIssueData = ticketRequest.getTicketIssueData();
+                if (ticketIssueData == null) {
+                        return;
+                }
+
+                ticketIssueData.setTotalBaseAmount(toNegative(ticketIssueData.getTotalBaseAmount()));
+                ticketIssueData.setTotalTaxAmount(toNegative(ticketIssueData.getTotalTaxAmount()));
+                ticketIssueData.setTotalGrossAmount(toNegative(ticketIssueData.getTotalGrossAmount()));
+
+                TaxesData taxesData = ticketIssueData.getTaxesData();
+                if (taxesData != null && taxesData.getTaxData() != null) {
+                        for (TaxData tax : taxesData.getTaxData()) {
+                                tax.setBaseAmount(toNegative(tax.getBaseAmount()));
+                                tax.setTaxAmount(toNegative(tax.getTaxAmount()));
+                                tax.setTotal(toNegative(tax.getTotal()));
+                        }
+                }
+        }
+
+        private void ajustarLineasDevolucion(Ticket ticketRequest) {
+                TicketItems ticketItems = ticketRequest.getTicketItems();
+                if (ticketItems == null || ticketItems.getTicketItem() == null) {
+                        return;
+                }
+
+                for (TicketItem ticketItem : ticketItems.getTicketItem()) {
+                        ticketItem.setPriceWithoutDTO(toNegative(ticketItem.getPriceWithoutDTO()));
+                        ticketItem.setTotalPriceWithoutDTO(toNegative(ticketItem.getTotalPriceWithoutDTO()));
+                        ticketItem.setPrice(toNegative(ticketItem.getPrice()));
+                        ticketItem.setTotalPrice(toNegative(ticketItem.getTotalPrice()));
+                        ticketItem.setAmount(toNegative(ticketItem.getAmount()));
+                        ticketItem.setTotalAmount(toNegative(ticketItem.getTotalAmount()));
+                        ticketItem.setDiscount(toNegative(ticketItem.getDiscount()));
+                        ticketItem.setUnitPrice(toNegative(ticketItem.getUnitPrice()));
+
+                        Reason reason = ticketItem.getReason();
+                        if (reason != null) {
+                                reason.setOriginalItemPrice(toNegative(reason.getOriginalItemPrice()));
+                                reason.setItemPriceApplied(toNegative(reason.getItemPriceApplied()));
+                        }
+                }
+        }
+
+        private void ajustarPagosDevolucion() {
+                PaymentsData paymentsData = request.getPaymentsData();
+                if (paymentsData == null || paymentsData.getPaymentData() == null) {
+                        return;
+                }
+
+                for (PaymentData payment : paymentsData.getPaymentData()) {
+                        payment.setPaymentAmount(toNegative(payment.getPaymentAmount()));
+                }
+        }
+
+        private BigDecimal toNegative(BigDecimal value) {
+                if (value == null) {
+                        return null;
+                }
+
+                return value.signum() > 0 ? value.negate() : value;
+        }
+
+        private String toNegative(String value) {
+                if (StringUtils.isBlank(value)) {
+                        return value;
+                }
+
+                BigDecimal numericValue = new BigDecimal(value);
+                return toNegative(numericValue).toPlainString();
+        }
 
 	private Tienda obtenerTienda() throws FacturacionException {
 		String storeId = request.getStore().getStoreId();
