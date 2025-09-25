@@ -59,7 +59,6 @@ import com.comerzzia.api.v2.facturacionmagento.services.usuarios.UsuariosService
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.FacturacionRequest;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.FacturacionResponse;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.DeliveryData;
-import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.DocumentOriginData;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.Event;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.IdentificationCard;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.IdentificationCards;
@@ -962,125 +961,44 @@ public class FacturacionService {
 		return cliente;
 	}
 
-        private DatosDocumentoOrigenTicket obtenerDatosTicketOrigen(Long idTratImpuestos) throws FacturacionException {
-                DatosDocumentoOrigenTicket datosTicketOrigen = null;
+	private DatosDocumentoOrigenTicket obtenerDatosTicketOrigen(Long idTratImpuestos) throws FacturacionException {
+		DatosDocumentoOrigenTicket datosTicketOrigen = null;
 
-                DocumentOriginData documentOriginData = request.getTicket().getTicketHeader().getDocumentOriginData();
-                String uidTicketOrigen = request.getTicket().getTicketHeader().getOriginalTicket();
+		try {
+			String uidTicketOrigen = request.getTicket().getTicketHeader().getOriginalTicket();
 
-                if (StringUtils.isNotBlank(uidTicketOrigen)) {
-                        try {
-                                log.debug("obtenerDatosTicketOrigen() - Consultando ticket con UID = " + uidTicketOrigen);
-                                TicketBean ticketOrigen = ticketService.consultarTicketUid(datosSesion, uidTicketOrigen);
+			if (StringUtils.isNotBlank(uidTicketOrigen)) {
+				log.debug("obtenerDatosTicketOrigen() - Consultando ticket con UID = " + uidTicketOrigen);
+				TicketBean ticketOrigen = ticketService.consultarTicketUid(datosSesion, uidTicketOrigen);
 
-                                datosTicketOrigen = new DatosDocumentoOrigenTicket();
-                                datosTicketOrigen.setCaja(ticketOrigen.getCodCaja());
-                                datosTicketOrigen.setCodTicket(ticketOrigen.getCodTicket());
-                                datosTicketOrigen.setCodTipoDoc(ticketOrigen.getCodTipoDocumento());
-                                datosTicketOrigen.setDesTipoDoc(ticketOrigen.getDesTipoDocumento());
-                                datosTicketOrigen.setIdTipoDoc(ticketOrigen.getIdTipoDocumento());
-                                datosTicketOrigen.setIdTratImpuestos(idTratImpuestos);
-                                datosTicketOrigen.setNumFactura(ticketOrigen.getIdTicket());
-                                datosTicketOrigen.setRecoveredOnline(true);
-                                datosTicketOrigen.setSerie(ticketOrigen.getSerieTicket());
-                                datosTicketOrigen.setUidTicket(ticketOrigen.getUidTicket());
-                                Date fechaOrigen = ticketOrigen.getFecha();
-                                datosTicketOrigen.setFecha(fechaOrigen);
+				datosTicketOrigen = new DatosDocumentoOrigenTicket();
+				datosTicketOrigen.setCaja(ticketOrigen.getCodCaja());
+				datosTicketOrigen.setCodTicket(ticketOrigen.getCodTicket());
+				datosTicketOrigen.setCodTipoDoc(ticketOrigen.getCodTipoDocumento());
+				datosTicketOrigen.setDesTipoDoc(ticketOrigen.getDesTipoDocumento());
+				datosTicketOrigen.setIdTipoDoc(ticketOrigen.getIdTipoDocumento());
+				datosTicketOrigen.setIdTratImpuestos(idTratImpuestos);
+				datosTicketOrigen.setNumFactura(ticketOrigen.getIdTicket());
+				datosTicketOrigen.setRecoveredOnline(true);
+				datosTicketOrigen.setSerie(ticketOrigen.getSerieTicket());
+				datosTicketOrigen.setUidTicket(ticketOrigen.getUidTicket());
+				Date fechaOrigen = ticketOrigen.getFecha();
+				datosTicketOrigen.setFecha(fechaOrigen);
 
-                                /* Añadimos a la request la fecha origen para que al generar el response más tarde tenga este dato */
-                                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                                String fechaFormateada = dateFormat.format(fechaOrigen);
-                                request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
-                        }
-                        catch (Exception e) {
-                                if (documentOriginData == null) {
-                                        String msg = "Error consultando ticket origen " + e.getMessage();
-                                        log.error("obtenerDatosTicketOrigen() - " + msg);
-                                        throw new FacturacionException(msg, e);
-                                }
+				/* Añadimos a la request la fecha origen para que al generar el response más tarde tenga este dato */
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+				String fechaFormateada = dateFormat.format(fechaOrigen);
+				request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
+			}
+		}
+		catch (Exception e) {
+			String msg = "Error consultando ticket origen " + e.getMessage();
+			log.error("obtenerDatosTicketOrigen() - " + msg);
+			throw new FacturacionException(msg, e);
+		}
 
-                                log.warn("obtenerDatosTicketOrigen() - No se pudo recuperar el ticket origen por UID. Se utilizarán los datos enviados en la petición.", e);
-                        }
-                }
-
-                if (datosTicketOrigen == null && documentOriginData != null) {
-                        datosTicketOrigen = crearDatosTicketOrigenDesdeRequest(documentOriginData, idTratImpuestos);
-                }
-
-                return datosTicketOrigen;
-        }
-
-        private DatosDocumentoOrigenTicket crearDatosTicketOrigenDesdeRequest(DocumentOriginData documentOriginData,
-                        Long idTratImpuestos) throws FacturacionException {
-
-                DatosDocumentoOrigenTicket datosTicketOrigen = new DatosDocumentoOrigenTicket();
-                datosTicketOrigen.setIdTratImpuestos(idTratImpuestos);
-
-                datosTicketOrigen.setSerie(documentOriginData.getSerie());
-                datosTicketOrigen.setCaja(documentOriginData.getCaja());
-                datosTicketOrigen.setCodTicket(documentOriginData.getCodTicket());
-                datosTicketOrigen.setCodTipoDoc(documentOriginData.getCodTipoDocumento());
-                datosTicketOrigen.setDesTipoDoc(documentOriginData.getDesTipoDocumento());
-                datosTicketOrigen.setUidTicket(documentOriginData.getUidTicket());
-
-                if (documentOriginData.getRecoveredOnline() != null) {
-                        datosTicketOrigen.setRecoveredOnline(documentOriginData.getRecoveredOnline());
-                }
-
-                try {
-                        if (StringUtils.isNotBlank(documentOriginData.getNumeroFactura())) {
-                                datosTicketOrigen.setNumFactura(Long.parseLong(documentOriginData.getNumeroFactura()));
-                        }
-
-                        if (StringUtils.isNotBlank(documentOriginData.getIdTipoDocumento())) {
-                                datosTicketOrigen.setIdTipoDoc(Long.parseLong(documentOriginData.getIdTipoDocumento()));
-                        }
-                }
-                catch (NumberFormatException e) {
-                        String msg = "Los datos numéricos del documento origen no tienen el formato correcto";
-                        log.error("crearDatosTicketOrigenDesdeRequest() - " + msg);
-                        throw new FacturacionException(msg, e);
-                }
-
-                Date fechaOrigen = parseFechaDocumentoOrigen(documentOriginData.getFecha());
-                if (fechaOrigen != null) {
-                        datosTicketOrigen.setFecha(fechaOrigen);
-                        actualizarFechaOrigenEnRequest(fechaOrigen);
-                }
-
-                return datosTicketOrigen;
-        }
-
-        private Date parseFechaDocumentoOrigen(String fecha) throws FacturacionException {
-                if (StringUtils.isBlank(fecha)) {
-                        return null;
-                }
-
-                String[] patrones = { "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX",
-                                "yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss" };
-
-                for (String patron : patrones) {
-                        try {
-                                SimpleDateFormat dateFormat = new SimpleDateFormat(patron);
-                                dateFormat.setLenient(false);
-                                return dateFormat.parse(fecha);
-                        }
-                        catch (ParseException e) {
-                                /* Continuamos probando con el siguiente patrón */
-                        }
-                }
-
-                String msg = "La fecha del documento origen no tiene un formato válido";
-                log.error("parseFechaDocumentoOrigen() - " + msg + ": " + fecha);
-                throw new FacturacionException(msg);
-        }
-
-        private void actualizarFechaOrigenEnRequest(Date fechaOrigen) {
-                if (request.getTicket() != null && request.getTicket().getTicketIssueData() != null) {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                        request.getTicket().getTicketIssueData().setOrigenIssueDate(dateFormat.format(fechaOrigen));
-                }
-        }
+		return datosTicketOrigen;
+	}
 
 	private void rellenarLineas(TicketVentaAbono ticketVentaAbono) throws FacturacionException {
 		log.debug("rellenarLineas() - Rellenamos las lineas");
