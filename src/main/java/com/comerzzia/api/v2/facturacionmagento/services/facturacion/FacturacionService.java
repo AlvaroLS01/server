@@ -59,7 +59,6 @@ import com.comerzzia.api.v2.facturacionmagento.services.usuarios.UsuariosService
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.FacturacionRequest;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.FacturacionResponse;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.DeliveryData;
-import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.DocumentOriginData;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.Event;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.IdentificationCard;
 import com.comerzzia.api.v2.facturacionmagento.web.rest.facturacion.dtos.models.IdentificationCards;
@@ -129,12 +128,12 @@ import com.comerzzia.pos.services.core.contadores.ContadorServiceException;
 @Scope("prototype")
 public class FacturacionService {
 
-                protected static final Logger log = Logger.getLogger(FacturacionService.class);
+	protected static final Logger log = Logger.getLogger(FacturacionService.class);
 
-                private static final String PROPIEDAD_POS_FORMATO_IMPRESION = "POS.FORMATO_IMPRESION";
-
-                private static final Set<String> DOCUMENTOS_DEVOLUCION = new HashSet<>(Arrays.asList("NC", "FR"));
-
+	private static final String PROPIEDAD_POS_FORMATO_IMPRESION = "POS.FORMATO_IMPRESION";
+	
+	 private static final Set<String> DOCUMENTOS_DEVOLUCION = new HashSet<>(Arrays.asList("NC", "FR"));
+	
 	@Autowired
 	protected TicketService ticketService;
 	@Autowired
@@ -206,12 +205,12 @@ public class FacturacionService {
 		log.debug("facturar()");
 		SqlSession sqlSession = null;
 		TicketBean ticketBean = null;
-                FacturacionResponse response = new FacturacionResponse();
-                try {
-                        inicializarVariables(datosSesionBean, facturacionRequest);
-                        ajustarValoresDevolucion();
-                        sqlSession = datosSesion.getSqlSessionFactory().openSession();
-                        gestionCaja();
+		FacturacionResponse response = new FacturacionResponse();
+		try {
+			inicializarVariables(datosSesionBean, facturacionRequest);
+			ajustarValoresDevolucion();
+			sqlSession = datosSesion.getSqlSessionFactory().openSession();
+			gestionCaja();
 			
 			ticketBean = rellenarTicket(sqlSession);
 
@@ -258,6 +257,133 @@ public class FacturacionService {
 		return response;
 	}
 
+	 private void ajustarValoresDevolucion() throws FacturacionException {
+         log.debug("ajustarValoresDevolucion()");
+
+         if (!esDocumentoDevolucion()) {
+                 return;
+         }
+
+         if (cliente == null || StringUtils.isBlank(cliente.getCodpais())) {
+                 return;
+         }
+
+         if (!"ES".equalsIgnoreCase(cliente.getCodpais())) {
+                 return;
+         }
+
+         try {
+                 Ticket ticketRequest = request.getTicket();
+                 if (ticketRequest != null) {
+                         ajustarTotalesDevolucion(ticketRequest);
+                         ajustarLineasDevolucion(ticketRequest);
+                 }
+                 ajustarPagosDevolucion();
+         }
+         catch (NumberFormatException e) {
+                 String msg = "Error ajustando los importes de la devolución: " + e.getMessage();
+                 log.error("ajustarValoresDevolucion() - " + msg, e);
+                 throw new FacturacionException(msg, e);
+         }
+ }
+
+ private boolean esDocumentoDevolucion() {
+         if (tipoDocumento == null || StringUtils.isBlank(tipoDocumento.getCodTipoDocumento())) {
+                 return false;
+         }
+
+         String codigoTipoDoc = StringUtils.upperCase(tipoDocumento.getCodTipoDocumento());
+         return DOCUMENTOS_DEVOLUCION.contains(codigoTipoDoc);
+ }
+
+ private void ajustarTotalesDevolucion(Ticket ticketRequest) {
+         TicketIssueData ticketIssueData = ticketRequest.getTicketIssueData();
+         if (ticketIssueData == null) {
+                 return;
+         }
+
+         ticketIssueData.setTotalBaseAmount(toNegative(ticketIssueData.getTotalBaseAmount()));
+         ticketIssueData.setTotalTaxAmount(toNegative(ticketIssueData.getTotalTaxAmount()));
+         ticketIssueData.setTotalGrossAmount(toNegative(ticketIssueData.getTotalGrossAmount()));
+
+         TaxesData taxesData = ticketIssueData.getTaxesData();
+         if (taxesData != null && taxesData.getTaxData() != null) {
+                 for (TaxData tax : taxesData.getTaxData()) {
+                         tax.setBaseAmount(toNegative(tax.getBaseAmount()));
+                         tax.setTaxAmount(toNegative(tax.getTaxAmount()));
+                         tax.setTotal(toNegative(tax.getTotal()));
+                 }
+         }
+ }
+
+ private void ajustarLineasDevolucion(Ticket ticketRequest) {
+         TicketItems ticketItems = ticketRequest.getTicketItems();
+         if (ticketItems == null || ticketItems.getTicketItem() == null) {
+                 return;
+         }
+
+         for (TicketItem ticketItem : ticketItems.getTicketItem()) {
+                 ticketItem.setPriceWithoutDTO(toNegative(ticketItem.getPriceWithoutDTO()));
+                 ticketItem.setTotalPriceWithoutDTO(toNegative(ticketItem.getTotalPriceWithoutDTO()));
+                 ticketItem.setPrice(toNegative(ticketItem.getPrice()));
+                 ticketItem.setTotalPrice(toNegative(ticketItem.getTotalPrice()));
+                 ticketItem.setAmount(toNegative(ticketItem.getAmount()));
+                 ticketItem.setTotalAmount(toNegative(ticketItem.getTotalAmount()));
+                 ticketItem.setDiscount(toNegative(ticketItem.getDiscount()));
+                 ticketItem.setUnitPrice(toNegative(ticketItem.getUnitPrice()));
+
+					if (ticketItem.getPromotions() != null && ticketItem.getPromotions().getPromotion() != null) {
+						for (Promotion promotion : ticketItem.getPromotions().getPromotion()) {
+							promotion.setDiscountAmount(toNegative(promotion.getDiscountAmount()));
+						}
+					}
+                 
+                 Reason reason = ticketItem.getReason();
+                 if (reason != null) {
+                         reason.setOriginalItemPrice(toNegative(reason.getOriginalItemPrice()));
+                         reason.setItemPriceApplied(toNegative(reason.getItemPriceApplied()));
+                 }
+         }
+         
+			if (request.getPromotionsSummary() != null && request.getPromotionsSummary().getPromotionsApplied() != null
+			        && request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied() != null) {
+				for (PromotionApplied promotionApplied : request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied()) {
+					BigDecimal negativeAmount = toNegative(BigDecimal.valueOf(promotionApplied.getDiscountAmount()));
+					if (negativeAmount != null) {
+						promotionApplied.setDiscountAmount(negativeAmount.doubleValue());
+					}
+				}
+			}
+ }
+
+	private void ajustarPagosDevolucion() {
+		PaymentsData paymentsData = request.getPaymentsData();
+		if (paymentsData == null || paymentsData.getPaymentData() == null) {
+			return;
+		}
+
+		for (PaymentData payment : paymentsData.getPaymentData()) {
+			payment.setPaymentAmount(toNegative(payment.getPaymentAmount()));
+		}
+	}
+
+	private BigDecimal toNegative(BigDecimal value) {
+		if (value == null) {
+			return null;
+		}
+
+		return value.signum() > 0 ? value.negate() : value;
+	}
+
+	private String toNegative(String value) {
+		if (StringUtils.isBlank(value)) {
+			return value;
+		}
+
+		BigDecimal numericValue = new BigDecimal(value);
+		return toNegative(numericValue).toPlainString();
+	}
+
 	private void nuevaLineaRecuento(SqlSession sqlSession) throws CajasServiceException {
 		log.debug("nuevaLineaRecuento() - Creando nueva linea de recuento");
 		List<PagoTicket> pagos = ticket.getPagos();
@@ -271,146 +397,19 @@ public class FacturacionService {
 		cajasService.salvarRecuento(sqlSession, cajaAbierta, ticket.getUidActividad());
 	}
 
-        private void inicializarVariables(DatosSesionBean datosSesionBean, FacturacionRequest facturacionRequest) throws FacturacionException {
-                log.debug("inicializarVariables()");
+	private void inicializarVariables(DatosSesionBean datosSesionBean, FacturacionRequest facturacionRequest) throws FacturacionException {
+		log.debug("inicializarVariables()");
 
-                request = facturacionRequest;
-                datosSesion = datosSesionBean;
-                tienda = obtenerTienda();
-                cliente = obtenerCliente();
-                tipoDocumento = obtenerTipoDocumento(datosSesionBean);
-                empresa = obtenerEmpresa(datosSesionBean);
+		request = facturacionRequest;
+		datosSesion = datosSesionBean;
+		tienda = obtenerTienda();
+		cliente = obtenerCliente();
+		tipoDocumento = obtenerTipoDocumento(datosSesionBean);
+		empresa = obtenerEmpresa(datosSesionBean);
 
-                /* Consultamos el usuario predeterminado para apertura de caja y para la cabecera del ticket */
-                usuario = usuariosService.obtenerUsuarioPredeterminado(datosSesion);
-        }
-
-        private void ajustarValoresDevolucion() throws FacturacionException {
-                log.debug("ajustarValoresDevolucion()");
-
-                if (!esDocumentoDevolucion()) {
-                        return;
-                }
-
-                if (cliente == null || StringUtils.isBlank(cliente.getCodpais())) {
-                        return;
-                }
-
-                if (!"ES".equalsIgnoreCase(cliente.getCodpais())) {
-                        return;
-                }
-
-                try {
-                        Ticket ticketRequest = request.getTicket();
-                        if (ticketRequest != null) {
-                                ajustarTotalesDevolucion(ticketRequest);
-                                ajustarLineasDevolucion(ticketRequest);
-                        }
-                        ajustarPagosDevolucion();
-                }
-                catch (NumberFormatException e) {
-                        String msg = "Error ajustando los importes de la devolución: " + e.getMessage();
-                        log.error("ajustarValoresDevolucion() - " + msg, e);
-                        throw new FacturacionException(msg, e);
-                }
-        }
-
-        private boolean esDocumentoDevolucion() {
-                if (tipoDocumento == null || StringUtils.isBlank(tipoDocumento.getCodTipoDocumento())) {
-                        return false;
-                }
-
-                String codigoTipoDoc = StringUtils.upperCase(tipoDocumento.getCodTipoDocumento());
-                return DOCUMENTOS_DEVOLUCION.contains(codigoTipoDoc);
-        }
-
-        private void ajustarTotalesDevolucion(Ticket ticketRequest) {
-                TicketIssueData ticketIssueData = ticketRequest.getTicketIssueData();
-                if (ticketIssueData == null) {
-                        return;
-                }
-
-                ticketIssueData.setTotalBaseAmount(toNegative(ticketIssueData.getTotalBaseAmount()));
-                ticketIssueData.setTotalTaxAmount(toNegative(ticketIssueData.getTotalTaxAmount()));
-                ticketIssueData.setTotalGrossAmount(toNegative(ticketIssueData.getTotalGrossAmount()));
-
-                TaxesData taxesData = ticketIssueData.getTaxesData();
-                if (taxesData != null && taxesData.getTaxData() != null) {
-                        for (TaxData tax : taxesData.getTaxData()) {
-                                tax.setBaseAmount(toNegative(tax.getBaseAmount()));
-                                tax.setTaxAmount(toNegative(tax.getTaxAmount()));
-                                tax.setTotal(toNegative(tax.getTotal()));
-                        }
-                }
-        }
-
-        private void ajustarLineasDevolucion(Ticket ticketRequest) {
-                TicketItems ticketItems = ticketRequest.getTicketItems();
-                if (ticketItems == null || ticketItems.getTicketItem() == null) {
-                        return;
-                }
-
-                for (TicketItem ticketItem : ticketItems.getTicketItem()) {
-                        ticketItem.setPriceWithoutDTO(toNegative(ticketItem.getPriceWithoutDTO()));
-                        ticketItem.setTotalPriceWithoutDTO(toNegative(ticketItem.getTotalPriceWithoutDTO()));
-                        ticketItem.setPrice(toNegative(ticketItem.getPrice()));
-                        ticketItem.setTotalPrice(toNegative(ticketItem.getTotalPrice()));
-                        ticketItem.setAmount(toNegative(ticketItem.getAmount()));
-                        ticketItem.setTotalAmount(toNegative(ticketItem.getTotalAmount()));
-                        ticketItem.setDiscount(toNegative(ticketItem.getDiscount()));
-                        ticketItem.setUnitPrice(toNegative(ticketItem.getUnitPrice()));
-
-                        if (ticketItem.getPromotions() != null && ticketItem.getPromotions().getPromotion() != null) {
-                                for (Promotion promotion : ticketItem.getPromotions().getPromotion()) {
-                                        promotion.setDiscountAmount(toNegative(promotion.getDiscountAmount()));
-                                }
-                        }
-
-                        Reason reason = ticketItem.getReason();
-                        if (reason != null) {
-                                reason.setOriginalItemPrice(toNegative(reason.getOriginalItemPrice()));
-                                reason.setItemPriceApplied(toNegative(reason.getItemPriceApplied()));
-                        }
-                }
-
-                if (request.getPromotionsSummary() != null && request.getPromotionsSummary().getPromotionsApplied() != null
-                                && request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied() != null) {
-                        for (PromotionApplied promotionApplied : request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied()) {
-                                BigDecimal negativeAmount = toNegative(BigDecimal.valueOf(promotionApplied.getDiscountAmount()));
-                                if (negativeAmount != null) {
-                                        promotionApplied.setDiscountAmount(negativeAmount.doubleValue());
-                                }
-                        }
-                }
-        }
-
-        private void ajustarPagosDevolucion() {
-                PaymentsData paymentsData = request.getPaymentsData();
-                if (paymentsData == null || paymentsData.getPaymentData() == null) {
-                        return;
-                }
-
-                for (PaymentData payment : paymentsData.getPaymentData()) {
-                        payment.setPaymentAmount(toNegative(payment.getPaymentAmount()));
-                }
-        }
-
-        private BigDecimal toNegative(BigDecimal value) {
-                if (value == null) {
-                        return null;
-                }
-
-                return value.signum() > 0 ? value.negate() : value;
-        }
-
-        private String toNegative(String value) {
-                if (StringUtils.isBlank(value)) {
-                        return value;
-                }
-
-                BigDecimal numericValue = new BigDecimal(value);
-                return toNegative(numericValue).toPlainString();
-        }
+		/* Consultamos el usuario predeterminado para apertura de caja y para la cabecera del ticket */
+		usuario = usuariosService.obtenerUsuarioPredeterminado(datosSesion);
+	}
 
 	private Tienda obtenerTienda() throws FacturacionException {
 		String storeId = request.getStore().getStoreId();
@@ -962,125 +961,44 @@ public class FacturacionService {
 		return cliente;
 	}
 
-        private DatosDocumentoOrigenTicket obtenerDatosTicketOrigen(Long idTratImpuestos) throws FacturacionException {
-                DatosDocumentoOrigenTicket datosTicketOrigen = null;
+	private DatosDocumentoOrigenTicket obtenerDatosTicketOrigen(Long idTratImpuestos) throws FacturacionException {
+		DatosDocumentoOrigenTicket datosTicketOrigen = null;
 
-                DocumentOriginData documentOriginData = request.getTicket().getTicketHeader().getDocumentOriginData();
-                String uidTicketOrigen = request.getTicket().getTicketHeader().getOriginalTicket();
+		try {
+			String uidTicketOrigen = request.getTicket().getTicketHeader().getOriginalTicket();
 
-                if (StringUtils.isNotBlank(uidTicketOrigen)) {
-                        try {
-                                log.debug("obtenerDatosTicketOrigen() - Consultando ticket con UID = " + uidTicketOrigen);
-                                TicketBean ticketOrigen = ticketService.consultarTicketUid(datosSesion, uidTicketOrigen);
+			if (StringUtils.isNotBlank(uidTicketOrigen)) {
+				log.debug("obtenerDatosTicketOrigen() - Consultando ticket con UID = " + uidTicketOrigen);
+				TicketBean ticketOrigen = ticketService.consultarTicketUid(datosSesion, uidTicketOrigen);
 
-                                datosTicketOrigen = new DatosDocumentoOrigenTicket();
-                                datosTicketOrigen.setCaja(ticketOrigen.getCodCaja());
-                                datosTicketOrigen.setCodTicket(ticketOrigen.getCodTicket());
-                                datosTicketOrigen.setCodTipoDoc(ticketOrigen.getCodTipoDocumento());
-                                datosTicketOrigen.setDesTipoDoc(ticketOrigen.getDesTipoDocumento());
-                                datosTicketOrigen.setIdTipoDoc(ticketOrigen.getIdTipoDocumento());
-                                datosTicketOrigen.setIdTratImpuestos(idTratImpuestos);
-                                datosTicketOrigen.setNumFactura(ticketOrigen.getIdTicket());
-                                datosTicketOrigen.setRecoveredOnline(true);
-                                datosTicketOrigen.setSerie(ticketOrigen.getSerieTicket());
-                                datosTicketOrigen.setUidTicket(ticketOrigen.getUidTicket());
-                                Date fechaOrigen = ticketOrigen.getFecha();
-                                datosTicketOrigen.setFecha(fechaOrigen);
+				datosTicketOrigen = new DatosDocumentoOrigenTicket();
+				datosTicketOrigen.setCaja(ticketOrigen.getCodCaja());
+				datosTicketOrigen.setCodTicket(ticketOrigen.getCodTicket());
+				datosTicketOrigen.setCodTipoDoc(ticketOrigen.getCodTipoDocumento());
+				datosTicketOrigen.setDesTipoDoc(ticketOrigen.getDesTipoDocumento());
+				datosTicketOrigen.setIdTipoDoc(ticketOrigen.getIdTipoDocumento());
+				datosTicketOrigen.setIdTratImpuestos(idTratImpuestos);
+				datosTicketOrigen.setNumFactura(ticketOrigen.getIdTicket());
+				datosTicketOrigen.setRecoveredOnline(true);
+				datosTicketOrigen.setSerie(ticketOrigen.getSerieTicket());
+				datosTicketOrigen.setUidTicket(ticketOrigen.getUidTicket());
+				Date fechaOrigen = ticketOrigen.getFecha();
+				datosTicketOrigen.setFecha(fechaOrigen);
 
-                                /* Añadimos a la request la fecha origen para que al generar el response más tarde tenga este dato */
-                                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                                String fechaFormateada = dateFormat.format(fechaOrigen);
-                                request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
-                        }
-                        catch (Exception e) {
-                                if (documentOriginData == null) {
-                                        String msg = "Error consultando ticket origen " + e.getMessage();
-                                        log.error("obtenerDatosTicketOrigen() - " + msg);
-                                        throw new FacturacionException(msg, e);
-                                }
+				/* Añadimos a la request la fecha origen para que al generar el response más tarde tenga este dato */
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+				String fechaFormateada = dateFormat.format(fechaOrigen);
+				request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
+			}
+		}
+		catch (Exception e) {
+			String msg = "Error consultando ticket origen " + e.getMessage();
+			log.error("obtenerDatosTicketOrigen() - " + msg);
+			throw new FacturacionException(msg, e);
+		}
 
-                                log.warn("obtenerDatosTicketOrigen() - No se pudo recuperar el ticket origen por UID. Se utilizarán los datos enviados en la petición.", e);
-                        }
-                }
-
-                if (datosTicketOrigen == null && documentOriginData != null) {
-                        datosTicketOrigen = crearDatosTicketOrigenDesdeRequest(documentOriginData, idTratImpuestos);
-                }
-
-                return datosTicketOrigen;
-        }
-
-        private DatosDocumentoOrigenTicket crearDatosTicketOrigenDesdeRequest(DocumentOriginData documentOriginData,
-                        Long idTratImpuestos) throws FacturacionException {
-
-                DatosDocumentoOrigenTicket datosTicketOrigen = new DatosDocumentoOrigenTicket();
-                datosTicketOrigen.setIdTratImpuestos(idTratImpuestos);
-
-                datosTicketOrigen.setSerie(documentOriginData.getSerie());
-                datosTicketOrigen.setCaja(documentOriginData.getCaja());
-                datosTicketOrigen.setCodTicket(documentOriginData.getCodTicket());
-                datosTicketOrigen.setCodTipoDoc(documentOriginData.getCodTipoDocumento());
-                datosTicketOrigen.setDesTipoDoc(documentOriginData.getDesTipoDocumento());
-                datosTicketOrigen.setUidTicket(documentOriginData.getUidTicket());
-
-                if (documentOriginData.getRecoveredOnline() != null) {
-                        datosTicketOrigen.setRecoveredOnline(documentOriginData.getRecoveredOnline());
-                }
-
-                try {
-                        if (StringUtils.isNotBlank(documentOriginData.getNumeroFactura())) {
-                                datosTicketOrigen.setNumFactura(Long.parseLong(documentOriginData.getNumeroFactura()));
-                        }
-
-                        if (StringUtils.isNotBlank(documentOriginData.getIdTipoDocumento())) {
-                                datosTicketOrigen.setIdTipoDoc(Long.parseLong(documentOriginData.getIdTipoDocumento()));
-                        }
-                }
-                catch (NumberFormatException e) {
-                        String msg = "Los datos numéricos del documento origen no tienen el formato correcto";
-                        log.error("crearDatosTicketOrigenDesdeRequest() - " + msg);
-                        throw new FacturacionException(msg, e);
-                }
-
-                Date fechaOrigen = parseFechaDocumentoOrigen(documentOriginData.getFecha());
-                if (fechaOrigen != null) {
-                        datosTicketOrigen.setFecha(fechaOrigen);
-                        actualizarFechaOrigenEnRequest(fechaOrigen);
-                }
-
-                return datosTicketOrigen;
-        }
-
-        private Date parseFechaDocumentoOrigen(String fecha) throws FacturacionException {
-                if (StringUtils.isBlank(fecha)) {
-                        return null;
-                }
-
-                String[] patrones = { "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX",
-                                "yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss" };
-
-                for (String patron : patrones) {
-                        try {
-                                SimpleDateFormat dateFormat = new SimpleDateFormat(patron);
-                                dateFormat.setLenient(false);
-                                return dateFormat.parse(fecha);
-                        }
-                        catch (ParseException e) {
-                                /* Continuamos probando con el siguiente patrón */
-                        }
-                }
-
-                String msg = "La fecha del documento origen no tiene un formato válido";
-                log.error("parseFechaDocumentoOrigen() - " + msg + ": " + fecha);
-                throw new FacturacionException(msg);
-        }
-
-        private void actualizarFechaOrigenEnRequest(Date fechaOrigen) {
-                if (request.getTicket() != null && request.getTicket().getTicketIssueData() != null) {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                        request.getTicket().getTicketIssueData().setOrigenIssueDate(dateFormat.format(fechaOrigen));
-                }
-        }
+		return datosTicketOrigen;
+	}
 
 	private void rellenarLineas(TicketVentaAbono ticketVentaAbono) throws FacturacionException {
 		log.debug("rellenarLineas() - Rellenamos las lineas");
