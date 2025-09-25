@@ -724,13 +724,18 @@ public class FacturacionService {
 		ClienteBean datosEnvio = obtenerDatosEnvio();
 		cabecera.setDatosEnvio(datosEnvio);
 
-		DatosDocumentoOrigenTicket datosTicketOrigen = obtenerDatosTicketOrigen(cliente.getIdTratImpuestos());
-		cabecera.setDatosDocOrigen(datosTicketOrigen);
+                DatosDocumentoOrigenTicket datosTicketOrigen = obtenerDatosTicketOrigen(cliente.getIdTratImpuestos());
+                cabecera.setDatosDocOrigen(datosTicketOrigen);
 
-		rellenarTotalesCabecera(cabecera);
-		rellenarImpuestosCabecera(cabecera);
+                TicketIssueData ticketIssueData = request.getTicket() != null ? request.getTicket().getTicketIssueData() : null;
+                if (ticketIssueData != null && StringUtils.isNotBlank(ticketIssueData.getFechaTicketOrigen())) {
+                        cabecera.setFechaTicketOrigen(ticketIssueData.getFechaTicketOrigen());
+                }
 
-		ticketVentaAbono.setCabecera(cabecera);
+                rellenarTotalesCabecera(cabecera);
+                rellenarImpuestosCabecera(cabecera);
+
+                ticketVentaAbono.setCabecera(cabecera);
 	}
 
 	private void setearAuditEvents(BricodepotCabeceraTicket cabecera) throws FacturacionException {
@@ -986,11 +991,17 @@ public class FacturacionService {
 				datosTicketOrigen.setFecha(fechaOrigen);
 
 				/* Añadimos a la request la fecha origen para que al generar el response más tarde tenga este dato */
-				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-				String fechaFormateada = dateFormat.format(fechaOrigen);
-				request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
-			}
-		}
+                                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                                String fechaFormateada = dateFormat.format(fechaOrigen);
+                                request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
+
+                                if (StringUtils.isBlank(request.getTicket().getTicketIssueData().getFechaTicketOrigen())) {
+                                        SimpleDateFormat fechaTicketOrigenFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+                                        request.getTicket().getTicketIssueData()
+                                                        .setFechaTicketOrigen(fechaTicketOrigenFormat.format(fechaOrigen));
+                                }
+                        }
+                }
 		catch (Exception e) {
 			String msg = "Error consultando ticket origen " + e.getMessage();
 			log.error("obtenerDatosTicketOrigen() - " + msg);
