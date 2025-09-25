@@ -359,10 +359,26 @@ public class FacturacionService {
                         ticketItem.setDiscount(toNegative(ticketItem.getDiscount()));
                         ticketItem.setUnitPrice(toNegative(ticketItem.getUnitPrice()));
 
+                        if (ticketItem.getPromotions() != null && ticketItem.getPromotions().getPromotion() != null) {
+                                for (Promotion promotion : ticketItem.getPromotions().getPromotion()) {
+                                        promotion.setDiscountAmount(toNegative(promotion.getDiscountAmount()));
+                                }
+                        }
+
                         Reason reason = ticketItem.getReason();
                         if (reason != null) {
                                 reason.setOriginalItemPrice(toNegative(reason.getOriginalItemPrice()));
                                 reason.setItemPriceApplied(toNegative(reason.getItemPriceApplied()));
+                        }
+                }
+
+                if (request.getPromotionsSummary() != null && request.getPromotionsSummary().getPromotionsApplied() != null
+                                && request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied() != null) {
+                        for (PromotionApplied promotionApplied : request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied()) {
+                                BigDecimal negativeAmount = toNegative(BigDecimal.valueOf(promotionApplied.getDiscountAmount()));
+                                if (negativeAmount != null) {
+                                        promotionApplied.setDiscountAmount(negativeAmount.doubleValue());
+                                }
                         }
                 }
         }
