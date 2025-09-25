@@ -8,13 +8,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TicketHeader {
 
-	private String origenTicket;
-	private String originalTicket;
-	private String invoiceDocumentType;
-	private String posId;
+        private String origenTicket;
+        private String originalTicket;
+        private String invoiceDocumentType;
+        private String posId;
+        private DocumentOriginData documentOriginData;
 
-	@JsonProperty("audit_events")
-	private AuditEvents auditEvents;
+        @JsonProperty("audit_events")
+        private AuditEvents auditEvents;
 
 	public String getOrigenTicket() {
 		return origenTicket;
@@ -44,15 +45,23 @@ public class TicketHeader {
 		return posId;
 	}
 
-	public void setPosId(String posId) {
-		this.posId = posId;
-	}
+        public void setPosId(String posId) {
+                this.posId = posId;
+        }
 
-	public AuditEvents getAuditEvents() {
-		return auditEvents;
-	}
+        public DocumentOriginData getDocumentOriginData() {
+                return documentOriginData;
+        }
 
-	public void setAuditEvents(AuditEvents auditEvents) {
+        public void setDocumentOriginData(DocumentOriginData documentOriginData) {
+                this.documentOriginData = documentOriginData;
+        }
+
+        public AuditEvents getAuditEvents() {
+                return auditEvents;
+        }
+
+        public void setAuditEvents(AuditEvents auditEvents) {
 		this.auditEvents = auditEvents;
 	}
 
