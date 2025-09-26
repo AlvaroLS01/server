@@ -1,4 +1,4 @@
-package com.comerzzia.iskaypet.api.omnichannel.api;
+package com.comerzzia.bricodepot.api.omnichannel.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -22,15 +22,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableScheduling
 @EnableTransactionManagement
 
-public class IskaypetApplication extends SpringBootServletInitializer {
+public class BricodepotApplication extends SpringBootServletInitializer {
 
-	public static void main(String[] args) {
-		SpringApplication.run(IskaypetApplication.class, args);
-	}
-	
-	@Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(IskaypetApplication.class);
-    }
-		
+        public static void main(String[] args) {
+                SpringApplication.run(BricodepotApplication.class, args);
+        }
+
+        @Override
+        protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+                return application.sources(BricodepotApplication.class);
+        }
+
 }

@@ -27,7 +27,7 @@ logging:
     level:
         ROOT: INFO        
         com.comerzzia.api: DEBUG
-        com.comerzzia.iskaypet: DEBUG
+        com.comerzzia.bricodepot: DEBUG
         com.comerzzia.custom.api: DEBUG
-        org.mybatis: INFO   
-        org.springframework : INFO     
+        org.mybatis: INFO
+        org.springframework : INFO
