@@ -1,4 +1,4 @@
-package com.comerzzia.iskaypet.api.omnichannel.api.web.config.cache;
+package com.comerzzia.bricodepot.api.omnichannel.api.web.config.cache;
 
 import org.apache.log4j.Logger;
 import org.modelmapper.ModelMapper;
