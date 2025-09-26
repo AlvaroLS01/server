@@ -1,24 +1,24 @@
 {
     "resourcePackages": [
-        "com.comerzzia.api.v2.web.rest"
+        "com.comerzzia.api"
     ],
     "prettyPrint" : true,
     "cacheTTL": 0,
     "openAPI": {
         "servers": [
                 {
-			      "url": "/api/v2/billing",
+			      "url": "/api/v2/omnichannel",
 			      "description": "Sandbox server (uses test data)"
 			    },
 			    {
-			      "url": "http://localhost:8080/api/v2/billing",
+			      "url": "http://localhost:8080/api/v2/custom",
 			      "description": "Local test"
 			    }
 			  ],
         "info": {
             "version": "2.0.1 BETA",
-            "title": "Bricodepot Facturacion Magento API",
-            "description": "Servicio API para facturación automática de pedidos de Magento",
+            "title": "comerzzia loyalty API",
+            "description": "This is a beta release of comerzzia API version 2.0.1.  You can find out more about comerzzia at [http://www.comerzzia.com](http://www.comerzzia.com).",
             "termsOfService": "http://www.comerzzia.com/terms/",
             "contact": {
                 "email": "apiteam@comerzzia.com"
@@ -102,7 +102,7 @@
 		                "$ref": "#/components/schemas/LoginData"
 		              },
 		              "example": { 
-				          "uidActividad" : "40f314f4-8a6e-4c38-82f6-a95a5c8dd0af",
+				          "uidActividad" : "NON-FOOD",
 				          "username" : "administrador",
 				          "password" : "cmz"
 				      }  

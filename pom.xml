@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.comerzzia.bricodepot</groupId>
-	<artifactId>comerzzia-bricodepot-api-facturacionmagento</artifactId>
+	<groupId>com.comerzzia.iskaypet.api.omnichannel</groupId>
+	<artifactId>comerzzia-iskaypet-api-omnichannel</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
-	<name>comerzzia-bricodepot-api-facturacion</name>
+	<name>comerzzia-iskaypet-api-omnichannel</name>
 	<description>comerzzia API V2 custom project</description>
 
 	<parent>
@@ -18,30 +18,21 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<swagger-version>2.0.1</swagger-version>
-		<comerzzia.core.version>2.0-SNAPSHOT</comerzzia.core.version>
-		<bricodepot.backoffice.version>0.0.1-SNAPSHOT</bricodepot.backoffice.version>
-	</properties>
-	
-	<repositories>
-		<repository>
-			<id>artifactory</id>
-			<url>http://repo.comerzzia.com/artifactory/comerzzia/</url>
-		</repository>
-		<repository>
-			<id>clientes</id>
-			<url>http://software.tier1.es/artifactory/clientes.local/</url>
-		</repository>
-	</repositories>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<id>artifactory</id>
-			<url>http://repo.comerzzia.com/artifactory/comerzzia/</url>
-		</pluginRepository>
-	</pluginRepositories>	
+		<junit-version>4.12</junit-version>
+		<spring.version>5.1.6.RELEASE</spring.version>
+		<swagger-version>2.0.1</swagger-version>
+
+		<comerzzia.core.version>4.8.1-SNAPSHOT</comerzzia.core.version>
+		<comerzzia.pos.version>4.8.1-SNAPSHOT</comerzzia.pos.version>
+		
+		<comerzzia.api.ise.version>4.8-SNAPSHOT</comerzzia.api.ise.version>
+		<comerzzia.api.v1.version>1.2.0-SNAPSHOT</comerzzia.api.v1.version>
+		<comerzzia.api.loyalty.version>2.0.1-SNAPSHOT</comerzzia.api.loyalty.version>
+		<comerzzia.api.core.version>1.0.0-SNAPSHOT</comerzzia.api.core.version>
+		<comerzzia.api.core.services.version>2.0-SNAPSHOT</comerzzia.api.core.services.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -110,47 +101,35 @@
 		</dependency>
 		<!-- comerzzia dependencies -->
 		<dependency>
-			<groupId>com.comerzzia.api.v2.core</groupId>
-			<artifactId>comerzzia-api-core-services</artifactId>
+			<groupId>com.comerzzia</groupId>
+			<artifactId>comerzzia-core-servicios</artifactId>
 			<version>${comerzzia.core.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.comerzzia.bricodepot</groupId>
-			<artifactId>comerzzia-custom-backoffice-services</artifactId>
-			<version>${bricodepot.backoffice.version}</version>
+				<groupId>com.comerzzia.api.v2.core</groupId>
+				<artifactId>comerzzia-api-core-services</artifactId>
+				<version>${comerzzia.api.core.services.version}</version>
+			</dependency>
+		<dependency>
+			<groupId>com.comerzzia.api.v2</groupId>
+			<artifactId>comerzzia-api-commons</artifactId>
+			<version>2.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.comerzzia.omnichannel</groupId>
+			<artifactId>comerzzia-basket-calculator-services</artifactId>
+			<version>4.8-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.comerzzia.omnichannel</groupId>
 			<artifactId>comerzzia-omnichannel-services</artifactId>
-			<version>4.8.231222</version>	
+			<version>4.8-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>com.comerzzia</groupId>
-			<artifactId>comerzzia-core-util</artifactId>
-			<version>4.8.1.230529</version>
+			<groupId>com.comerzzia.api.omnichannel</groupId>
+			<artifactId>comerzzia-api-omnichannel-web</artifactId>
+			<version>2.0-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>com.comerzzia.api.v2</groupId>
-			<artifactId>comerzzia-api-commons</artifactId>
-			<version>2.0.1.221028</version>
-		</dependency>
-		<dependency>
-			<groupId>com.comerzzia</groupId>
-			<artifactId>comerzzia-core-servicios</artifactId>
-			<version>4.8.1.230529</version>
-		</dependency>
-		<dependency>
-    		<groupId>javax.xml.bind</groupId>
-    		<artifactId>jaxb-api</artifactId>
-		</dependency>
-		<dependency>
-    		<groupId>org.glassfish.jaxb</groupId>
-		    <artifactId>jaxb-runtime</artifactId>
-    		</dependency>
-    		<dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        </dependency>
 	</dependencies>
 
 	<build>
@@ -245,25 +224,13 @@
 										<exclude>**/comerzzia.xml</exclude>
 									</excludes>
 								</resource>
-								<resource>
-									<directory>src/main/java</directory>
-									<filtering>true</filtering>
-									<includes>
-										<include>**/*Mapper.xml</include>
-									</includes>
-								</resource>
 							</resources>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
+
 		</plugins>
-		<resources>
-			<resource>
-				<targetPath>${project.build.outputDirectory}</targetPath>
-				<directory>src/main/resources</directory>
-			</resource>
-		</resources>
 	</build>
 	<profiles>
 		<profile>
