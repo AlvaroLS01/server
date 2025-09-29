@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-        <groupId>com.comerzzia.bricodepot.api.omnichannel</groupId>
-        <artifactId>comerzzia-bricodepot-api-omnichannel</artifactId>
+	<groupId>com.comerzzia.bricodepot.api.omnichannel</groupId>
+	<artifactId>comerzzia-bricodepot-api-omnichannel</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
-        <name>comerzzia-bricodepot-api-omnichannel</name>
+	<name>comerzzia-bricodepot-api-omnichannel</name>
 	<description>comerzzia API V2 custom project</description>
 
 	<parent>
@@ -26,7 +28,7 @@
 
 		<comerzzia.core.version>4.8.1-SNAPSHOT</comerzzia.core.version>
 		<comerzzia.pos.version>4.8.1-SNAPSHOT</comerzzia.pos.version>
-		
+
 		<comerzzia.api.ise.version>4.8-SNAPSHOT</comerzzia.api.ise.version>
 		<comerzzia.api.v1.version>1.2.0-SNAPSHOT</comerzzia.api.v1.version>
 		<comerzzia.api.loyalty.version>2.0.1-SNAPSHOT</comerzzia.api.loyalty.version>
@@ -70,7 +72,7 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-jdbc</artifactId>
 		</dependency>
-	    <dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
@@ -106,10 +108,10 @@
 			<version>${comerzzia.core.version}</version>
 		</dependency>
 		<dependency>
-				<groupId>com.comerzzia.api.v2.core</groupId>
-				<artifactId>comerzzia-api-core-services</artifactId>
-				<version>${comerzzia.api.core.services.version}</version>
-			</dependency>
+			<groupId>com.comerzzia.api.v2.core</groupId>
+			<artifactId>comerzzia-api-core-services</artifactId>
+			<version>${comerzzia.api.core.services.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.comerzzia.api.v2</groupId>
 			<artifactId>comerzzia-api-commons</artifactId>
