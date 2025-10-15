@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.cajas.conceptos.CashJournalConceptMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.cajas.conceptos.CashJournalConcept" >
+    <id column="UID_ACTIVIDAD" property="activityId" jdbcType="VARCHAR" />
+    <id column="CODCONCEPTO_MOV" property="cashJournalConceptCode" jdbcType="VARCHAR" />
+    <result column="DESCONCEPTO_MOV" property="cashJournalConceptDes" jdbcType="VARCHAR" />
+    <result column="ACTIVO" property="active" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+    <result column="MANUAL" property="manual" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+  	<result column="IN_OUT" property="inOutType" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.manualCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, CODCONCEPTO_MOV, DESCONCEPTO_MOV, ACTIVO, MANUAL, IN_OUT
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.cajas.conceptos.CashJournalConceptExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_CONCEPTOS_MOV_CAJA_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+</mapper>

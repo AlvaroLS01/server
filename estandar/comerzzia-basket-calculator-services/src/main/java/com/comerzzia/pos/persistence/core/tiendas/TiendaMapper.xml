@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    ComerZZia 3.0
+
+    Copyright (c) 2008-2015 Comerzzia, S.L.  All Rights Reserved.
+
+    THIS WORK IS  SUBJECT  TO  SPAIN  AND  INTERNATIONAL  COPYRIGHT  LAWS  AND
+    TREATIES.   NO  PART  OF  THIS  WORK MAY BE  USED,  PRACTICED,  PERFORMED
+    COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED,  ABRIDGED, CONDENSED,
+    EXPANDED,  COLLECTED,  COMPILED,  LINKED,  RECAST, TRANSFORMED OR ADAPTED
+    WITHOUT THE PRIOR WRITTEN CONSENT OF COMERZZIA, S.L. ANY USE OR EXPLOITATION
+    OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO
+    CRIMINAL AND CIVIL LIABILITY.
+
+    CONSULT THE END USER LICENSE AGREEMENT FOR INFORMATION ON ADDITIONAL
+    RESTRICTIONS.
+
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.core.tiendas.TiendaMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.tiendas.TiendaBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="CODALM" property="codAlmacen" jdbcType="VARCHAR" />
+    <result column="ID_TIPO_TIENDA" property="idTipoTienda" jdbcType="DECIMAL" />
+    <result column="VERSION_ARTICULOS_APL" property="versionArticulosApl" jdbcType="DECIMAL" />
+    <result column="VERSION_ARTICULOS_REV" property="versionArticulosRev" jdbcType="DECIMAL" />
+    <result column="ACTIVO" property="activo" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+    <result column="FECHA_VERSION_ARTICULOS_APL" property="fechaVersionArticulosApl" jdbcType="DATE" />
+    <result column="FECHA_VERSION_ARTICULOS_REV" property="fechaVersionArticulosRev" jdbcType="DATE" />
+    <result column="CODMEDPAG_POR_DEFECTO" property="codMedioPagoPorDefecto" jdbcType="VARCHAR" />
+    <result column="CODCONALM_VENTAS" property="codConceptoAlmacenVentas" jdbcType="VARCHAR" />
+    <result column="VERSION_CATEGORIZACIONES_APL" property="versionCategorizacionesApl" jdbcType="DECIMAL" />
+    <result column="ID_ACT_VERSION_ARTICULOS_APL" property="idActVersionArticulosApl" jdbcType="DECIMAL" />
+    <result column="ID_ACT_VERSION_ARTICULOS_REV" property="idActVersionArticulosRev" jdbcType="DECIMAL" />
+    <result column="CODMEDPAG_APARTADO" property="codMedioPagoApartado" jdbcType="VARCHAR" />
+    <result column="CODMEDPAG_PROMOCION" property="codMedioPagoPromocion" jdbcType="VARCHAR" />
+    <result column="VERSION_ARTICULOS_GEN" property="versionArticulosGen" jdbcType="DECIMAL"/>
+    <result column="FECHA_VERSION_ARTICULOS_GEN" property="fechaVersionArticulosGen" jdbcType="DATE"/>
+    <result column="ID_ACT_VERSION_ARTICULOS_GEN" property="idActVersionArticulosGen" jdbcType="DECIMAL"/>
+    <result column="VERSION_CATEGORIZACIONES_GEN" property="versionCategorizacionesGen" jdbcType="DECIMAL"/>
+    <result column="CODCANAL" property="codcanal" jdbcType="VARCHAR"/>
+    <result column="CODCALSERV" property="codcalserv" jdbcType="VARCHAR"/>
+    <result column="LATITUD" property="latitud" jdbcType="DECIMAL"/>
+    <result column="LONGITUD" property="longitud" jdbcType="DECIMAL"/>
+  </resultMap>
+  <resultMap id="ResultMapWithBLOBs" type="com.comerzzia.pos.persistence.core.tiendas.TiendaBean" extends="BaseResultMap" >
+    <result column="CONFIGURACION" property="configuracion" jdbcType="BLOB" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, CODALM, ID_TIPO_TIENDA, VERSION_ARTICULOS_APL VERSION_ARTICULOS_REV, CONFIGURACION,
+    ACTIVO, FECHA_VERSION_ARTICULOS_APL, FECHA_VERSION_ARTICULOS_REV, CODMEDPAG_POR_DEFECTO, 
+    CODCONALM_VENTAS, VERSION_CATEGORIZACIONES_APL, ID_ACT_VERSION_ARTICULOS_APL, ID_ACT_VERSION_ARTICULOS_REV, 
+    CODMEDPAG_APARTADO, CODMEDPAG_PROMOCION, VERSION_ARTICULOS_GEN, FECHA_VERSION_ARTICULOS_GEN, ID_ACT_VERSION_ARTICULOS_GEN, VERSION_CATEGORIZACIONES_GEN,
+    CODCANAL, CODCALSERV, LATITUD, LONGITUD
+  </sql>
+  <sql id="Blob_Column_List" >
+    CONFIGURACION
+  </sql>
+  <select id="selectByExampleWithBLOBs" resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_TIENDAS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_TIENDAS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaKey" >
+    select 
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_TIENDAS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODALM = #{codAlmacen,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaKey" >
+    delete from D_TIENDAS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODALM = #{codAlmacen,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaExample" >
+    delete from D_TIENDAS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaBean" >
+    insert into D_TIENDAS_TBL (UID_ACTIVIDAD, CODALM, ID_TIPO_TIENDA, 
+      VERSION_ARTICULOS_APL, VERSION_ARTICULOS_REV, 
+      ACTIVO, 
+      FECHA_VERSION_ARTICULOS_APL, FECHA_VERSION_ARTICULOS_REV, 
+      CODMEDPAG_POR_DEFECTO, CODCONALM_VENTAS, 
+      VERSION_CATEGORIZACIONES_APL, ID_ACT_VERSION_ARTICULOS_APL, 
+      ID_ACT_VERSION_ARTICULOS_REV, CODMEDPAG_APARTADO, 
+      CODMEDPAG_PROMOCION, CONFIGURACION, CODCANAL, CODCALSERV, LATITUD, LONGITUD)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{codAlmacen,jdbcType=VARCHAR}, #{idTipoTienda,jdbcType=DECIMAL}, 
+      #{versionArticulosApl,jdbcType=DECIMAL}, #{versionArticulosRev,jdbcType=DECIMAL}, 
+      #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}, 
+      #{fechaVersionArticulosApl,jdbcType=TIMESTAMP}, #{fechaVersionArticulosRev,jdbcType=TIMESTAMP}, 
+      #{codMedioPagoPorDefecto,jdbcType=VARCHAR}, #{codConceptoAlmacenVentas,jdbcType=VARCHAR}, 
+      #{versionCategorizacionesApl,jdbcType=DECIMAL}, #{idActVersionArticulosApl,jdbcType=DECIMAL}, 
+      #{idActVersionArticulosRev,jdbcType=DECIMAL}, #{codMedioPagoApartado,jdbcType=VARCHAR}, 
+      #{codMedioPagoPromocion,jdbcType=VARCHAR}, #{configuracion,jdbcType=BLOB},
+       #{codcanal,jdbcType=VARCHAR},  #{codcalserv,jdbcType=VARCHAR},  #{latitud,jdbcType=DECIMAL},
+        #{longitud,jdbcType=DECIMAL})
+  </insert>
+  <insert id="insertSelective" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaBean" >
+    insert into D_TIENDAS_TBL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        UID_ACTIVIDAD,
+      </if>
+      <if test="codAlmacen != null" >
+        CODALM,
+      </if>
+      <if test="idTipoTienda != null" >
+        ID_TIPO_TIENDA,
+      </if>
+      <if test="versionArticulosApl != null" >
+        VERSION_ARTICULOS_APL,
+      </if>
+      <if test="versionArticulosRev != null" >
+        VERSION_ARTICULOS_REV,
+      </if>
+      <if test="activo != null" >
+        ACTIVO,
+      </if>
+      <if test="fechaVersionArticulosApl != null" >
+        FECHA_VERSION_ARTICULOS_APL,
+      </if>
+      <if test="fechaVersionArticulosRev != null" >
+        FECHA_VERSION_ARTICULOS_REV,
+      </if>
+      <if test="codMedioPagoPorDefecto != null" >
+        CODMEDPAG_POR_DEFECTO,
+      </if>
+      <if test="codConceptoAlmacenVentas != null" >
+        CODCONALM_VENTAS,
+      </if>
+      <if test="versionCategorizacionesApl != null" >
+        VERSION_CATEGORIZACIONES_APL,
+      </if>
+      <if test="idActVersionArticulosApl != null" >
+        ID_ACT_VERSION_ARTICULOS_APL,
+      </if>
+      <if test="idActVersionArticulosRev != null" >
+        ID_ACT_VERSION_ARTICULOS_REV,
+      </if>
+      <if test="codMedioPagoApartado != null" >
+        CODMEDPAG_APARTADO,
+      </if>
+      <if test="codMedioPagoPromocion != null" >
+        CODMEDPAG_PROMOCION,
+      </if>
+      <if test="configuracion != null" >
+        CONFIGURACION,
+      </if>
+      <if test="codcanal != null" >
+      	CODCANAL,
+      </if>
+      <if test="codcalserv != null" >
+      	CODCALSERV,
+      </if>
+      <if test="latitud != null" >
+      	LATITUD,
+      </if>
+      <if test="longitud != null" >
+      	LONGITUD,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        #{uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="codAlmacen != null" >
+        #{codAlmacen,jdbcType=VARCHAR},
+      </if>
+      <if test="idTipoTienda != null" >
+        #{idTipoTienda,jdbcType=DECIMAL},
+      </if>
+      <if test="versionArticulosApl!= null" >
+        #{versionArticulosApl,jdbcType=DECIMAL},
+      </if>
+      <if test="versionArticulosRev != null" >
+        #{versionArticulosRev,jdbcType=DECIMAL},
+      </if>
+      <if test="activo != null" >
+        #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      </if>
+      <if test="fechaVersionArticulosApl  != null" >
+        #{fechaVersionArticulosApl,jdbcType=TIMESTAMP},
+      </if>
+      <if test="fechaVersionArticulosRev != null" >
+        #{fechaVersionArticulosRev,jdbcType=TIMESTAMP},
+      </if>
+      <if test="codMedioPagoPorDefecto != null" >
+        #{codMedioPagoPorDefecto,jdbcType=VARCHAR},
+      </if>
+      <if test="codConceptoAlmacenVentas != null" >
+        #{codConceptoAlmacenVentas,jdbcType=VARCHAR},
+      </if>
+      <if test="versionCategorizacionesApl != null" >
+        #{versionCategorizacionesApl,jdbcType=DECIMAL},
+      </if>
+      <if test="idActVersionArticulosApl != null" >
+        #{idActVersionArticulosApl,jdbcType=DECIMAL},
+      </if>
+      <if test="idActVersionArticulosRev != null" >
+        #{idActVersionArticulosRev,jdbcType=DECIMAL},
+      </if>
+      <if test="codMedioPagoApartado != null" >
+        #{codMedioPagoApartado,jdbcType=VARCHAR},
+      </if>
+      <if test="codMedioPagoPromocion != null" >
+        #{codMedioPagoPromocion,jdbcType=VARCHAR},
+      </if>
+      <if test="configuracion != null" >
+        #{configuracion,jdbcType=BLOB},
+      </if>                
+      <if test="codcanal != null" >
+      	#{codcanal,jdbcType=VARCHAR},
+      </if>
+      <if test="codcalserv != null" >
+      	#{codcalserv,jdbcType=VARCHAR},
+      </if>
+      <if test="latitud != null" >
+      	#{latitud,jdbcType=DECIMAL},
+      </if>
+      <if test="longitud != null" >
+      	#{longitud,jdbcType=DECIMAL},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaExample" resultType="java.lang.Integer" >
+    select count(*) from D_TIENDAS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update D_TIENDAS_TBL
+    <set >
+      <if test="record.uidActividad != null" >
+        UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codAlmacen != null" >
+        CODALM = #{record.codAlmacen,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idTipoTienda != null" >
+        ID_TIPO_TIENDA = #{record.idTipoTienda,jdbcType=DECIMAL},
+      </if>
+      <if test="record.versionArticulosApl!= null" >
+        VERSION_ARTICULOS_APL = #{record.versionArticulos,jdbcType=DECIMAL},
+      </if>
+      <if test="record.versionArticulosRev != null" >
+        VERSION_ARTICULOS_REV = #{record.versionArticulosRev,jdbcType=DECIMAL},
+      </if>
+      <if test="record.activo != null" >
+        ACTIVO = #{record.activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      </if>
+      <if test="record.fechaVersionArticulosApl  != null" >
+        FECHA_VERSION_ARTICULOS_APL = #{record.fechaVersionArticulos,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.fechaVersionArticulosRev != null" >
+        FECHA_VERSION_ARTICULOS_REV = #{record.fechaVersionArticulosRev,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.codMedioPagoPorDefecto != null" >
+        CODMEDPAG_POR_DEFECTO = #{record.codMedioPagoPorDefecto,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codConceptoAlmacenVentas != null" >
+        CODCONALM_VENTAS = #{record.codConceptoAlmacenVentas,jdbcType=VARCHAR},
+      </if>
+      <if test="record.versionCategorizacionesApl != null" >
+        VERSION_CATEGORIZACIONES_APL = #{record.versionCategorizaciones,jdbcType=DECIMAL},
+      </if>
+      <if test="record.idActVersionArticulosApl != null" >
+        ID_ACT_VERSION_ARTICULOS_APL = #{record.idActVersionArticulos,jdbcType=DECIMAL},
+      </if>
+      <if test="record.idActVersionArticulosRev != null" >
+        ID_ACT_VERSION_ARTICULOS_REV = #{record.idActVersionArticulosRev,jdbcType=DECIMAL},
+      </if>
+      <if test="record.codMedioPagoApartado != null" >
+        CODMEDPAG_APARTADO = #{record.codMedioPagoApartado,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codMedioPagoPromocion != null" >
+        CODMEDPAG_PROMOCION = #{record.codMedioPagoPromocion,jdbcType=VARCHAR},
+      </if>
+      <if test="record.configuracion != null" >
+        CONFIGURACION = #{record.configuracion,jdbcType=BLOB},
+      </if>
+       <if test="record.codcanal != null" >
+      	CODCANAL = #{record.codcanal,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codcalserv != null" >
+      	CODCALSERV = #{record.codcalserv,jdbcType=VARCHAR},
+      </if>
+      <if test="record.latitud != null" >
+      	LATITUD = #{record.latitud,jdbcType=DECIMAL},
+      </if>
+      <if test="record.longitud != null" >
+      	LONGITUD = #{record.longitud,jdbcType=DECIMAL},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExampleWithBLOBs" parameterType="map" >
+    update D_TIENDAS_TBL
+    set UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      CODALM = #{record.codAlmacen,jdbcType=VARCHAR},
+      ID_TIPO_TIENDA = #{record.idTipoTienda,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_APL = #{record.versionArticulosApl,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_REV = #{record.versionArticulosRev,jdbcType=DECIMAL},
+      ACTIVO = #{record.activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      FECHA_VERSION_ARTICULOS_APL = #{record.fechaVersionArticulosApl,jdbcType=TIMESTAMP},
+      FECHA_VERSION_ARTICULOS_REV = #{record.fechaVersionArticulosRev,jdbcType=TIMESTAMP},
+      CODMEDPAG_POR_DEFECTO = #{record.codMedioPagoPorDefecto,jdbcType=VARCHAR},
+      CODCONALM_VENTAS = #{record.codConceptoAlmacenVentas,jdbcType=VARCHAR},
+      VERSION_CATEGORIZACIONES_APL = #{record.versionCategorizacionesApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_APL = #{record.idActVersionArticulosApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_REV = #{record.idActVersionArticulosRev,jdbcType=DECIMAL},
+      CODMEDPAG_APARTADO = #{record.codMedioPagoApartado,jdbcType=VARCHAR},
+      CODMEDPAG_PROMOCION = #{record.codMedioPagoPromocion,jdbcType=VARCHAR},
+      CONFIGURACION = #{record.configuracion,jdbcType=BLOB},
+      CODCANAL = #{record.codcanal,jdbcType=VARCHAR},
+      CODCALSERV = #{record.codcalserv,jdbcType=VARCHAR},
+      LATITUD = #{record.latitud,jdbcType=DECIMAL},
+      LONGITUD = #{record.longitud,jdbcType=DECIMAL}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update D_TIENDAS_TBL
+    set UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      CODALM = #{record.codAlmacen,jdbcType=VARCHAR},
+      ID_TIPO_TIENDA = #{record.idTipoTienda,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_APL = #{record.versionArticulosApl,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_REV = #{record.versionArticulosRev,jdbcType=DECIMAL},
+      ACTIVO = #{record.activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      FECHA_VERSION_ARTICULOS_APL = #{record.fechaVersionArticulosApl,jdbcType=TIMESTAMP},
+      FECHA_VERSION_ARTICULOS_REV = #{record.fechaVersionArticulosRev,jdbcType=TIMESTAMP},
+      CODMEDPAG_POR_DEFECTO = #{record.codMedioPagoPorDefecto,jdbcType=VARCHAR},
+      CODCONALM_VENTAS = #{record.codConceptoAlmacenVentas,jdbcType=VARCHAR},
+      VERSION_CATEGORIZACIONES_APL = #{record.versionCategorizacionesApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_APL = #{record.idActVersionArticulosApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_REV = #{record.idActVersionArticulosRev,jdbcType=DECIMAL},
+      CODMEDPAG_APARTADO = #{record.codMedioPagoApartado,jdbcType=VARCHAR},
+      CODMEDPAG_PROMOCION = #{record.codMedioPagoPromocion,jdbcType=VARCHAR},
+      CODCANAL = #{record.codcanal,jdbcType=VARCHAR},
+      CODCALSERV = #{record.codcalserv,jdbcType=VARCHAR},
+      LATITUD = #{record.latitud,jdbcType=DECIMAL},
+      LONGITUD = #{record.longitud,jdbcType=DECIMAL}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaBean" >
+    update D_TIENDAS_TBL
+    <set >
+      <if test="idTipoTienda != null" >
+        ID_TIPO_TIENDA = #{idTipoTienda,jdbcType=DECIMAL},
+      </if>
+      <if test="versionArticulosApl!= null" >
+        VERSION_ARTICULOS_APL = #{versionArticulosApl,jdbcType=DECIMAL},
+      </if>
+      <if test="versionArticulosRev != null" >
+        VERSION_ARTICULOS_REV = #{versionArticulosRev,jdbcType=DECIMAL},
+      </if>
+      <if test="activo != null" >
+        ACTIVO = #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      </if>
+      <if test="fechaVersionArticulosApl  != null" >
+        FECHA_VERSION_ARTICULOS_APL = #{fechaVersionArticulosApl,jdbcType=TIMESTAMP},
+      </if>
+      <if test="fechaVersionArticulosRev != null" >
+        FECHA_VERSION_ARTICULOS_REV = #{fechaVersionArticulosRev,jdbcType=TIMESTAMP},
+      </if>
+      <if test="codMedioPagoPorDefecto != null" >
+        CODMEDPAG_POR_DEFECTO = #{codMedioPagoPorDefecto,jdbcType=VARCHAR},
+      </if>
+      <if test="codConceptoAlmacenVentas != null" >
+        CODCONALM_VENTAS = #{codConceptoAlmacenVentas,jdbcType=VARCHAR},
+      </if>
+      <if test="versionCategorizacionesApl != null" >
+        VERSION_CATEGORIZACIONES_APL = #{versionCategorizacionesApl,jdbcType=DECIMAL},
+      </if>
+      <if test="idActVersionArticulosApl != null" >
+        ID_ACT_VERSION_ARTICULOS_APL = #{idActVersionArticulosApl,jdbcType=DECIMAL},
+      </if>
+      <if test="idActVersionArticulosRev != null" >
+        ID_ACT_VERSION_ARTICULOS_REV = #{idActVersionArticulosRev,jdbcType=DECIMAL},
+      </if>
+      <if test="codMedioPagoApartado != null" >
+        CODMEDPAG_APARTADO = #{codMedioPagoApartado,jdbcType=VARCHAR},
+      </if>
+      <if test="codMedioPagoPromocion != null" >
+        CODMEDPAG_PROMOCION = #{codMedioPagoPromocion,jdbcType=VARCHAR},
+      </if>
+      <if test="configuracion != null" >
+        CONFIGURACION = #{configuracion,jdbcType=BLOB},
+      </if>
+      <if test="codcanal != null" >
+      	CODCANAL = #{codcanal,jdbcType=VARCHAR},
+      </if>
+      <if test="codcalserv != null" >
+      	CODCALSERV = #{codcalserv,jdbcType=VARCHAR},
+      </if>
+      <if test="latitud != null" >
+      	LATITUD = #{latitud,jdbcType=DECIMAL},
+      </if>
+      <if test="longitud != null" >
+      	LONGITUD = #{longitud,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODALM = #{codAlmacen,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKeyWithBLOBs" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaBean" >
+    update D_TIENDAS_TBL
+    set ID_TIPO_TIENDA = #{idTipoTienda,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_APL = #{versionArticulosApl,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_REV = #{versionArticulosRev,jdbcType=DECIMAL},
+      ACTIVO = #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      FECHA_VERSION_ARTICULOS_APL = #{fechaVersionArticulosApl,jdbcType=TIMESTAMP},
+      FECHA_VERSION_ARTICULOS_REV = #{fechaVersionArticulosRev,jdbcType=TIMESTAMP},
+      CODMEDPAG_POR_DEFECTO = #{codMedioPagoPorDefecto,jdbcType=VARCHAR},
+      CODCONALM_VENTAS = #{codConceptoAlmacenVentas,jdbcType=VARCHAR},
+      VERSION_CATEGORIZACIONES_APL = #{versionCategorizacionesApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_APL = #{idActVersionArticulosApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_REV = #{idActVersionArticulosRev,jdbcType=DECIMAL},
+      CODMEDPAG_APARTADO = #{codMedioPagoApartado,jdbcType=VARCHAR},
+      CODMEDPAG_PROMOCION = #{codMedioPagoPromocion,jdbcType=VARCHAR},
+      CONFIGURACION = #{configuracion,jdbcType=BLOB},
+      CODCANAL = #{record.codcanal,jdbcType=VARCHAR},
+      CODCALSERV = #{record.codcalserv,jdbcType=VARCHAR},
+      LATITUD = #{record.latitud,jdbcType=DECIMAL},
+      LONGITUD = #{record.longitud,jdbcType=DECIMAL}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODALM = #{codAlmacen,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaBean" >
+    update D_TIENDAS_TBL
+    set ID_TIPO_TIENDA = #{idTipoTienda,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_APL = #{versionArticulosApl,jdbcType=DECIMAL},
+      VERSION_ARTICULOS_REV = #{versionArticulosRev,jdbcType=DECIMAL},
+      ACTIVO = #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      FECHA_VERSION_ARTICULOS_APL = #{fechaVersionArticulosApl,jdbcType=TIMESTAMP},
+      FECHA_VERSION_ARTICULOS_REV = #{fechaVersionArticulosRev,jdbcType=TIMESTAMP},
+      CODMEDPAG_POR_DEFECTO = #{codMedioPagoPorDefecto,jdbcType=VARCHAR},
+      CODCONALM_VENTAS = #{codConceptoAlmacenVentas,jdbcType=VARCHAR},
+      VERSION_CATEGORIZACIONES_APL = #{versionCategorizacionesApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_APL = #{idActVersionArticulosApl,jdbcType=DECIMAL},
+      ID_ACT_VERSION_ARTICULOS_REV = #{idActVersionArticulosRev,jdbcType=DECIMAL},
+      CODMEDPAG_APARTADO = #{codMedioPagoApartado,jdbcType=VARCHAR},
+      CODMEDPAG_PROMOCION = #{codMedioPagoPromocion,jdbcType=VARCHAR},
+      CODCANAL = #{record.codcanal,jdbcType=VARCHAR},
+      CODCALSERV = #{record.codcalserv,jdbcType=VARCHAR},
+      LATITUD = #{record.latitud,jdbcType=DECIMAL},
+      LONGITUD = #{record.longitud,jdbcType=DECIMAL}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODALM = #{codAlmacen,jdbcType=VARCHAR}
+  </update>
+  <select resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaExample" id="selectByExampleWithBLOBsWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_TIENDAS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.tiendas.TiendaExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_TIENDAS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+</mapper>

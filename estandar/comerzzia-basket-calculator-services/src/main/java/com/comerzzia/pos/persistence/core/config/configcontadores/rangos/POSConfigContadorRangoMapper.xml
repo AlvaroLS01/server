@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.POSConfigContadorRangoMapper">
+	<resultMap id="BaseResultMap"
+		type="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoBean">
+		<id column="ID_CONTADOR" property="idContador" jdbcType="VARCHAR" />
+		<id column="ID_RANGO" property="idRango" jdbcType="VARCHAR" />
+		<result column="RANGO_DESCRIPCION" property="rangoDescripcion"
+			jdbcType="VARCHAR" />
+		<result column="RANGO_INICIO" property="rangoInicio" jdbcType="DECIMAL" />
+		<result column="RANGO_FIN" property="rangoFin" jdbcType="DECIMAL" />
+		<result column="RANGO_AVISO" property="rangoAviso" jdbcType="DECIMAL" />
+		<result column="RANGO_AVISO_INTERVALO" property="rangoAvisoIntervalo"
+			jdbcType="DECIMAL" />
+		<result column="RANGO_ULTIMO_AVISO" property="rangoUltimoAviso"
+			jdbcType="DECIMAL" />
+		<result column="RANGO_FECHA_INICIO" property="rangoFechaInicio"
+			jdbcType="TIMESTAMP" />
+		<result column="RANGO_FECHA_FIN" property="rangoFechaFin"
+			jdbcType="TIMESTAMP" />
+		<result column="RANGO_FECHA_AVISO" property="rangoFechaAviso"
+			jdbcType="TIMESTAMP" />
+		<result column="RANGO_FECHA_AVISO_INTERVALO" property="rangoFechaAvisoIntervalo"
+			jdbcType="DECIMAL" />
+		<result column="RANGO_FECHA_ULTIMO_AVISO" property="rangoFechaUltimoAviso"
+			jdbcType="TIMESTAMP" />
+		<result column="CODEMP" property="codemp" jdbcType="VARCHAR" />
+		<result column="CODALM" property="codalm" jdbcType="VARCHAR" />
+		<result column="CODCAJA" property="codcaja" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Example_Where_Clause">
+		<where>
+			<foreach collection="oredCriteria" item="criteria" separator="or">
+				<if test="criteria.valid">
+					<trim prefix="(" suffix=")" prefixOverrides="and">
+						<foreach collection="criteria.criteria" item="criterion">
+							<choose>
+								<when test="criterion.noValue">
+									and ${criterion.condition}
+								</when>
+								<when test="criterion.singleValue">
+									and ${criterion.condition} #{criterion.value}
+								</when>
+								<when test="criterion.betweenValue">
+									and ${criterion.condition} #{criterion.value} and
+									#{criterion.secondValue}
+								</when>
+								<when test="criterion.listValue">
+									and ${criterion.condition}
+									<foreach collection="criterion.value" item="listItem"
+										open="(" close=")" separator=",">
+										#{listItem}
+									</foreach>
+								</when>
+							</choose>
+						</foreach>
+					</trim>
+				</if>
+			</foreach>
+		</where>
+	</sql>
+	<sql id="Example_Where_Or_Null_Clause">
+		<where>
+			<foreach collection="oredCriteria" item="criteria" separator="or">
+				<if test="criteria.valid">
+					<trim prefix="(" suffix=")" prefixOverrides="and">
+						<foreach collection="criteria.criteria" item="criterion">
+							<choose>
+								<when test="criterion.noValue">
+									and ${criterion.condition}
+								</when>
+								<when test="criterion.singleValue">
+									and ${criterion.condition} #{criterion.value}
+								</when>
+								<when test="criterion.betweenValue">
+									and (${criterion.condition} #{criterion.value} or
+									#{criterion.secondValue} is null)
+								</when>
+								<when test="criterion.listValue">
+									and ${criterion.condition}
+									<foreach collection="criterion.value" item="listItem"
+										open="(" close=")" separator=",">
+										#{listItem}
+									</foreach>
+								</when>
+							</choose>
+						</foreach>
+					</trim>
+				</if>
+			</foreach>
+		</where>
+	</sql>
+	<sql id="Update_By_Example_Where_Clause">
+		<where>
+			<foreach collection="example.oredCriteria" item="criteria"
+				separator="or">
+				<if test="criteria.valid">
+					<trim prefix="(" suffix=")" prefixOverrides="and">
+						<foreach collection="criteria.criteria" item="criterion">
+							<choose>
+								<when test="criterion.noValue">
+									and ${criterion.condition}
+								</when>
+								<when test="criterion.singleValue">
+									and ${criterion.condition} #{criterion.value}
+								</when>
+								<when test="criterion.betweenValue">
+									and ${criterion.condition} #{criterion.value} and
+									#{criterion.secondValue}
+								</when>
+								<when test="criterion.listValue">
+									and ${criterion.condition}
+									<foreach collection="criterion.value" item="listItem"
+										open="(" close=")" separator=",">
+										#{listItem}
+									</foreach>
+								</when>
+							</choose>
+						</foreach>
+					</trim>
+				</if>
+			</foreach>
+		</where>
+	</sql>
+	<sql id="Base_Column_List">
+		ID_CONTADOR, ID_RANGO, RANGO_DESCRIPCION, RANGO_INICIO, RANGO_FIN, RANGO_AVISO,
+		RANGO_AVISO_INTERVALO,
+		RANGO_ULTIMO_AVISO, RANGO_FECHA_INICIO, RANGO_FECHA_FIN, RANGO_FECHA_AVISO,
+		RANGO_FECHA_AVISO_INTERVALO,
+		RANGO_FECHA_ULTIMO_AVISO, CODEMP, CODALM, CODCAJA
+	</sql>
+	<select id="selectByExample" resultMap="BaseResultMap"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoExample"
+		resultSetType="SCROLL_INSENSITIVE">
+		select
+		<if test="distinct">
+			distinct
+		</if>
+		<include refid="Base_Column_List" />
+		from CONFIG_CONTADORES_RANGOS_TBL
+		<if test="_parameter != null">
+			<include refid="Example_Where_Clause" />
+		</if>
+		<if test="orderByClause != null">
+			order by ${orderByClause}
+		</if>
+	</select>
+	<select id="selectByExampleOrNull" resultMap="BaseResultMap"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoExample"
+		resultSetType="SCROLL_INSENSITIVE">
+		select
+		<if test="distinct">
+			distinct
+		</if>
+		<include refid="Base_Column_List" />
+		from CONFIG_CONTADORES_RANGOS_TBL
+		<if test="_parameter != null">
+			<include refid="Example_Where_Or_Null_Clause" />
+		</if>
+		<if test="orderByClause != null">
+			order by ${orderByClause}
+		</if>
+	</select>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoKey">
+		select
+		<include refid="Base_Column_List" />
+		from CONFIG_CONTADORES_RANGOS_TBL
+		where ID_CONTADOR = #{idContador,jdbcType=VARCHAR}
+		and ID_RANGO = #{idRango,jdbcType=VARCHAR}
+	</select>
+	<delete id="deleteByPrimaryKey"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoKey">
+		delete from CONFIG_CONTADORES_RANGOS_TBL
+		where ID_CONTADOR = #{idContador,jdbcType=VARCHAR}
+		and ID_RANGO = #{idRango,jdbcType=VARCHAR}
+	</delete>
+	<delete id="deleteByExample"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoExample">
+		delete from CONFIG_CONTADORES_RANGOS_TBL
+		<if test="_parameter != null">
+			<include refid="Example_Where_Clause" />
+		</if>
+	</delete>
+	<insert id="insert"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoBean">
+		insert into CONFIG_CONTADORES_RANGOS_TBL (ID_CONTADOR, ID_RANGO,
+		RANGO_DESCRIPCION,
+		RANGO_INICIO, RANGO_FIN, RANGO_AVISO,
+		RANGO_AVISO_INTERVALO, RANGO_ULTIMO_AVISO,
+		RANGO_FECHA_INICIO, RANGO_FECHA_FIN, RANGO_FECHA_AVISO,
+		RANGO_FECHA_AVISO_INTERVALO, RANGO_FECHA_ULTIMO_AVISO,
+		CODEMP, CODALM, CODCAJA
+		)
+		values (#{idContador,jdbcType=VARCHAR}, #{idRango,jdbcType=VARCHAR},
+		#{rangoDescripcion,jdbcType=VARCHAR},
+		#{rangoInicio,jdbcType=DECIMAL}, #{rangoFin,jdbcType=DECIMAL}, #{rangoAviso,jdbcType=DECIMAL},
+		#{rangoAvisoIntervalo,jdbcType=DECIMAL},
+		#{rangoUltimoAviso,jdbcType=DECIMAL},
+		#{rangoFechaInicio,jdbcType=TIMESTAMP},
+		#{rangoFechaFin,jdbcType=TIMESTAMP},
+		#{rangoFechaAviso,jdbcType=TIMESTAMP},
+		#{rangoFechaAvisoIntervalo,jdbcType=DECIMAL},
+		#{rangoFechaUltimoAviso,jdbcType=TIMESTAMP},
+		#{codemp,jdbcType=VARCHAR}, #{codalm,jdbcType=VARCHAR},
+		#{codcaja,jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="insertSelective"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoBean">
+		insert into CONFIG_CONTADORES_RANGOS_TBL
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="idContador != null">
+				ID_CONTADOR,
+			</if>
+			<if test="idRango != null">
+				ID_RANGO,
+			</if>
+			<if test="rangoDescripcion != null">
+				RANGO_DESCRIPCION,
+			</if>
+			<if test="rangoInicio != null">
+				RANGO_INICIO,
+			</if>
+			<if test="rangoFin != null">
+				RANGO_FIN,
+			</if>
+			<if test="rangoAviso != null">
+				RANGO_AVISO,
+			</if>
+			<if test="rangoAvisoIntervalo != null">
+				RANGO_AVISO_INTERVALO,
+			</if>
+			<if test="rangoUltimoAviso != null">
+				RANGO_ULTIMO_AVISO,
+			</if>
+			<if test="rangoFechaInicio != null">
+				RANGO_FECHA_INICIO,
+			</if>
+			<if test="rangoFechaFin != null">
+				RANGO_FECHA_FIN,
+			</if>
+			<if test="rangoFechaAviso != null">
+				RANGO_FECHA_AVISO,
+			</if>
+			<if test="rangoFechaAvisoIntervalo != null">
+				RANGO_FECHA_AVISO_INTERVALO,
+			</if>
+			<if test="rangoFechaUltimoAviso != null">
+				RANGO_FECHA_ULTIMO_AVISO,
+			</if>
+			<if test="codemp != null">
+				CODEMP,
+			</if>
+			<if test="codalm != null">
+				CODALM,
+			</if>
+			<if test="codcaja != null">
+				CODCAJA,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="idContador != null">
+				#{idContador,jdbcType=VARCHAR},
+			</if>
+			<if test="idRango != null">
+				#{idRango,jdbcType=VARCHAR},
+			</if>
+			<if test="rangoDescripcion != null">
+				#{rangoDescripcion,jdbcType=VARCHAR},
+			</if>
+			<if test="rangoInicio != null">
+				#{rangoInicio,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoFin != null">
+				#{rangoFin,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoAviso != null">
+				#{rangoAviso,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoAvisoIntervalo != null">
+				#{rangoAvisoIntervalo,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoUltimoAviso != null">
+				#{rangoUltimoAviso,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoFechaInicio != null">
+				#{rangoFechaInicio,jdbcType=TIMESTAMP},
+			</if>
+			<if test="rangoFechaFin != null">
+				#{rangoFechaFin,jdbcType=TIMESTAMP},
+			</if>
+			<if test="rangoFechaAviso != null">
+				#{rangoFechaAviso,jdbcType=TIMESTAMP},
+			</if>
+			<if test="rangoFechaAvisoIntervalo != null">
+				#{rangoFechaAvisoIntervalo,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoFechaUltimoAviso != null">
+				#{rangoFechaUltimoAviso,jdbcType=TIMESTAMP},
+			</if>
+			<if test="codemp != null">
+				#{codemp,jdbcType=VARCHAR},
+			</if>
+			<if test="codalm != null">
+				#{codalm,jdbcType=VARCHAR},
+			</if>
+			<if test="codcaja != null">
+				#{codcaja,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<select id="countByExample"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoExample"
+		resultType="java.lang.Integer">
+		select count(*) from CONFIG_CONTADORES_RANGOS_TBL
+		<if test="_parameter != null">
+			<include refid="Example_Where_Clause" />
+		</if>
+	</select>
+	<update id="updateByExampleSelective" parameterType="map">
+		update CONFIG_CONTADORES_RANGOS_TBL
+		<set>
+			<if test="record.idContador != null">
+				ID_CONTADOR = #{record.idContador,jdbcType=VARCHAR},
+			</if>
+			<if test="record.idRango != null">
+				ID_RANGO = #{record.idRango,jdbcType=VARCHAR},
+			</if>
+			<if test="record.rangoDescripcion != null">
+				RANGO_DESCRIPCION = #{record.rangoDescripcion,jdbcType=VARCHAR},
+			</if>
+			<if test="record.rangoInicio != null">
+				RANGO_INICIO = #{record.rangoInicio,jdbcType=DECIMAL},
+			</if>
+			<if test="record.rangoFin != null">
+				RANGO_FIN = #{record.rangoFin,jdbcType=DECIMAL},
+			</if>
+			<if test="record.rangoAviso != null">
+				RANGO_AVISO = #{record.rangoAviso,jdbcType=DECIMAL},
+			</if>
+			<if test="record.rangoAvisoIntervalo != null">
+				RANGO_AVISO_INTERVALO =
+				#{record.rangoAvisoIntervalo,jdbcType=DECIMAL},
+			</if>
+			<if test="record.rangoUltimoAviso != null">
+				RANGO_ULTIMO_AVISO = #{record.rangoUltimoAviso,jdbcType=DECIMAL},
+			</if>
+			<if test="record.rangoFechaInicio != null">
+				RANGO_FECHA_INICIO = #{record.rangoFechaInicio,jdbcType=TIMESTAMP},
+			</if>
+			<if test="record.rangoFechaFin != null">
+				RANGO_FECHA_FIN = #{record.rangoFechaFin,jdbcType=TIMESTAMP},
+			</if>
+			<if test="record.rangoFechaAviso != null">
+				RANGO_FECHA_AVISO = #{record.rangoFechaAviso,jdbcType=TIMESTAMP},
+			</if>
+			<if test="record.rangoFechaAvisoIntervalo != null">
+				RANGO_FECHA_AVISO_INTERVALO =
+				#{record.rangoFechaAvisoIntervalo,jdbcType=DECIMAL},
+			</if>
+			<if test="record.rangoFechaUltimoAviso != null">
+				RANGO_FECHA_ULTIMO_AVISO =
+				#{record.rangoFechaUltimoAviso,jdbcType=TIMESTAMP},
+			</if>
+			<if test="record.codemp != null">
+				CODEMP = #{record.codemp,jdbcType=VARCHAR},
+			</if>
+			<if test="record.codalm != null">
+				CODALM = #{record.codalm,jdbcType=VARCHAR},
+			</if>
+			<if test="record.codcaja != null">
+				CODCAJA = #{record.codcaja,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<if test="_parameter != null">
+			<include refid="Update_By_Example_Where_Clause" />
+		</if>
+	</update>
+	<update id="updateByExample" parameterType="map">
+		update CONFIG_CONTADORES_RANGOS_TBL
+		set ID_CONTADOR = #{record.idContador,jdbcType=VARCHAR},
+		ID_RANGO = #{record.idRango,jdbcType=VARCHAR},
+		RANGO_DESCRIPCION = #{record.rangoDescripcion,jdbcType=VARCHAR},
+		RANGO_INICIO = #{record.rangoInicio,jdbcType=DECIMAL},
+		RANGO_FIN = #{record.rangoFin,jdbcType=DECIMAL},
+		RANGO_AVISO = #{record.rangoAviso,jdbcType=DECIMAL},
+		RANGO_AVISO_INTERVALO = #{record.rangoAvisoIntervalo,jdbcType=DECIMAL},
+		RANGO_ULTIMO_AVISO = #{record.rangoUltimoAviso,jdbcType=DECIMAL},
+		RANGO_FECHA_INICIO = #{record.rangoFechaInicio,jdbcType=TIMESTAMP},
+		RANGO_FECHA_FIN = #{record.rangoFechaFin,jdbcType=TIMESTAMP},
+		RANGO_FECHA_AVISO = #{record.rangoFechaAviso,jdbcType=TIMESTAMP},
+		RANGO_FECHA_AVISO_INTERVALO =
+		#{record.rangoFechaAvisoIntervalo,jdbcType=DECIMAL},
+		RANGO_FECHA_ULTIMO_AVISO =
+		#{record.rangoFechaUltimoAviso,jdbcType=TIMESTAMP},
+		CODEMP = #{record.codemp,jdbcType=VARCHAR},
+		CODALM = #{record.codalm,jdbcType=VARCHAR},
+		CODCAJA = #{record.codcaja,jdbcType=VARCHAR}
+		<if test="_parameter != null">
+			<include refid="Update_By_Example_Where_Clause" />
+		</if>
+	</update>
+	<update id="updateByPrimaryKeySelective"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoBean">
+		update CONFIG_CONTADORES_RANGOS_TBL
+		<set>
+			<if test="rangoDescripcion != null">
+				RANGO_DESCRIPCION = #{rangoDescripcion,jdbcType=VARCHAR},
+			</if>
+			<if test="rangoInicio != null">
+				RANGO_INICIO = #{rangoInicio,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoFin != null">
+				RANGO_FIN = #{rangoFin,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoAviso != null">
+				RANGO_AVISO = #{rangoAviso,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoAvisoIntervalo != null">
+				RANGO_AVISO_INTERVALO = #{rangoAvisoIntervalo,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoUltimoAviso != null">
+				RANGO_ULTIMO_AVISO = #{rangoUltimoAviso,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoFechaInicio != null">
+				RANGO_FECHA_INICIO = #{rangoFechaInicio,jdbcType=TIMESTAMP},
+			</if>
+			<if test="rangoFechaFin != null">
+				RANGO_FECHA_FIN = #{rangoFechaFin,jdbcType=TIMESTAMP},
+			</if>
+			<if test="rangoFechaAviso != null">
+				RANGO_FECHA_AVISO = #{rangoFechaAviso,jdbcType=TIMESTAMP},
+			</if>
+			<if test="rangoFechaAvisoIntervalo != null">
+				RANGO_FECHA_AVISO_INTERVALO =
+				#{rangoFechaAvisoIntervalo,jdbcType=DECIMAL},
+			</if>
+			<if test="rangoFechaUltimoAviso != null">
+				RANGO_FECHA_ULTIMO_AVISO = #{rangoFechaUltimoAviso,jdbcType=TIMESTAMP},
+			</if>
+			<if test="codemp != null">
+				CODEMP = #{codemp,jdbcType=VARCHAR},
+			</if>
+			<if test="codalm != null">
+				CODALM = #{codalm,jdbcType=VARCHAR},
+			</if>
+			<if test="codcaja != null">
+				CODCAJA = #{codcaja,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID_CONTADOR = #{idContador,jdbcType=VARCHAR}
+		and ID_RANGO = #{idRango,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKey"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoBean">
+		update CONFIG_CONTADORES_RANGOS_TBL
+		set RANGO_DESCRIPCION = #{rangoDescripcion,jdbcType=VARCHAR},
+		RANGO_INICIO = #{rangoInicio,jdbcType=DECIMAL},
+		RANGO_FIN = #{rangoFin,jdbcType=DECIMAL},
+		RANGO_AVISO = #{rangoAviso,jdbcType=DECIMAL},
+		RANGO_AVISO_INTERVALO = #{rangoAvisoIntervalo,jdbcType=DECIMAL},
+		RANGO_ULTIMO_AVISO = #{rangoUltimoAviso,jdbcType=DECIMAL},
+		RANGO_FECHA_INICIO = #{rangoFechaInicio,jdbcType=TIMESTAMP},
+		RANGO_FECHA_FIN = #{rangoFechaFin,jdbcType=TIMESTAMP},
+		RANGO_FECHA_AVISO = #{rangoFechaAviso,jdbcType=TIMESTAMP},
+		RANGO_FECHA_AVISO_INTERVALO = #{rangoFechaAvisoIntervalo,jdbcType=DECIMAL},
+		RANGO_FECHA_ULTIMO_AVISO =
+		#{rangoFechaUltimoAviso,jdbcType=TIMESTAMP},
+		CODEMP = #{codemp,jdbcType=VARCHAR},
+		CODALM = #{codalm,jdbcType=VARCHAR},
+		CODCAJA = #{codcaja,jdbcType=VARCHAR}
+		where ID_CONTADOR = #{idContador,jdbcType=VARCHAR}
+		and ID_RANGO = #{idRango,jdbcType=VARCHAR}
+	</update>
+	<select resultMap="BaseResultMap"
+		parameterType="com.comerzzia.pos.persistence.core.config.configcontadores.rangos.ConfigContadorRangoExample"
+		id="selectByExampleWithRowbounds">
+		select
+		<if test="distinct">
+			distinct
+		</if>
+		<include refid="Base_Column_List" />
+		from CONFIG_CONTADORES_RANGOS_TBL
+		<if test="_parameter != null">
+			<include refid="Example_Where_Clause" />
+		</if>
+		<if test="orderByClause != null">
+			order by ${orderByClause}
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.omnichannel.repository.basket.BasketMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.omnichannel.domain.entity.basket.BasketEntity" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="UID_CESTA" property="uidCesta" jdbcType="VARCHAR" />
+    <result column="CODALM" property="codAlmacen" jdbcType="VARCHAR" />
+    <result column="CODCAJA" property="codcaja" jdbcType="VARCHAR" />
+    <result column="ID_TIPO_DOCUMENTO" property="idTipoDocumento" jdbcType="DECIMAL" />
+    <result column="FECHA_CREACION" property="fechaCreacion" jdbcType="TIMESTAMP" />
+    <result column="FECHA_ACTUALIZACION" property="fechaActualizacion" jdbcType="TIMESTAMP" />
+    <result column="USUARIO" property="usuario" jdbcType="VARCHAR" />
+    <result column="CODCLI" property="codCliente" jdbcType="VARCHAR" />
+    <result column="ID_FIDELIZADO" property="idFidelizado" jdbcType="DECIMAL" />
+    <result column="IMPORTE" property="importe" jdbcType="DECIMAL" />
+    <result column="NUM_ARTICULOS" property="numArticulos" jdbcType="DECIMAL" />
+  </resultMap>
+  <resultMap id="ResultMapWithBLOBs" type="com.comerzzia.omnichannel.domain.entity.basket.BasketEntity" extends="BaseResultMap" >
+    <result column="CESTA" property="cesta" jdbcType="BLOB" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, UID_CESTA, CODALM, CODCAJA, ID_TIPO_DOCUMENTO, FECHA_CREACION, FECHA_ACTUALIZACION, 
+    USUARIO, CODCLI, ID_FIDELIZADO, IMPORTE, NUM_ARTICULOS
+  </sql>
+  <sql id="Blob_Column_List" >
+    CESTA
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.omnichannel.domain.entity.basket.BasketKey" >
+    select 
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_CESTAS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and UID_CESTA = #{uidCesta,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.omnichannel.domain.entity.basket.BasketKey" >
+    delete from D_CESTAS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and UID_CESTA = #{uidCesta,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="insert" parameterType="com.comerzzia.omnichannel.domain.entity.basket.BasketEntity" >
+    insert into D_CESTAS_TBL (UID_ACTIVIDAD, UID_CESTA, CODALM, 
+      CODCAJA, ID_TIPO_DOCUMENTO, FECHA_CREACION, 
+      FECHA_ACTUALIZACION, USUARIO, CODCLI, 
+      ID_FIDELIZADO, IMPORTE, NUM_ARTICULOS, 
+      CESTA)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{uidCesta,jdbcType=VARCHAR}, #{codAlmacen,jdbcType=VARCHAR}, 
+      #{codcaja,jdbcType=VARCHAR}, #{idTipoDocumento,jdbcType=DECIMAL}, #{fechaCreacion,jdbcType=TIMESTAMP}, 
+      #{fechaActualizacion,jdbcType=TIMESTAMP}, #{usuario,jdbcType=VARCHAR}, #{codCliente,jdbcType=VARCHAR}, 
+      #{idFidelizado,jdbcType=DECIMAL}, #{importe,jdbcType=DECIMAL}, #{numArticulos,jdbcType=DECIMAL}, 
+      #{cesta,jdbcType=BLOB})
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.omnichannel.domain.entity.basket.BasketEntity" >
+    update D_CESTAS_TBL
+    <set >
+      <if test="codAlmacen != null" >
+        CODALM = #{codAlmacen,jdbcType=VARCHAR},
+      </if>
+      <if test="codcaja != null" >
+        CODCAJA = #{codcaja,jdbcType=VARCHAR},
+      </if>
+      <if test="idTipoDocumento != null" >
+        ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL},
+      </if>
+      <if test="fechaCreacion != null" >
+        FECHA_CREACION = #{fechaCreacion,jdbcType=TIMESTAMP},
+      </if>
+      <if test="fechaActualizacion != null" >
+        FECHA_ACTUALIZACION = #{fechaActualizacion,jdbcType=TIMESTAMP},
+      </if>
+      <if test="usuario != null" >
+        USUARIO = #{usuario,jdbcType=VARCHAR},
+      </if>
+      <if test="codCliente != null" >
+        CODCLI = #{codCliente,jdbcType=VARCHAR},
+      </if>
+      <if test="idFidelizado != null" >
+        ID_FIDELIZADO = #{idFidelizado,jdbcType=DECIMAL},
+      </if>
+      <if test="importe != null" >
+        IMPORTE = #{importe,jdbcType=DECIMAL},
+      </if>
+      <if test="numArticulos != null" >
+        NUM_ARTICULOS = #{numArticulos,jdbcType=DECIMAL},
+      </if>
+      <if test="cesta != null" >
+        CESTA = #{cesta,jdbcType=BLOB},
+      </if>
+    </set>
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and UID_CESTA = #{uidCesta,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKeyWithBLOBs" parameterType="com.comerzzia.omnichannel.domain.entity.basket.BasketEntity" >
+    update D_CESTAS_TBL
+    set CODALM = #{codAlmacen,jdbcType=VARCHAR},
+      CODCAJA = #{codcaja,jdbcType=VARCHAR},
+      ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL},
+      FECHA_CREACION = #{fechaCreacion,jdbcType=TIMESTAMP},
+      FECHA_ACTUALIZACION = #{fechaActualizacion,jdbcType=TIMESTAMP},
+      USUARIO = #{usuario,jdbcType=VARCHAR},
+      CODCLI = #{codCliente,jdbcType=VARCHAR},
+      ID_FIDELIZADO = #{idFidelizado,jdbcType=DECIMAL},
+      IMPORTE = #{importe,jdbcType=DECIMAL},
+      NUM_ARTICULOS = #{numArticulos,jdbcType=DECIMAL},
+      CESTA = #{cesta,jdbcType=BLOB}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and UID_CESTA = #{uidCesta,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.omnichannel.domain.entity.basket.BasketEntity" >
+    update D_CESTAS_TBL
+    set CODALM = #{codAlmacen,jdbcType=VARCHAR},
+      CODCAJA = #{codcaja,jdbcType=VARCHAR},
+      ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL},
+      FECHA_CREACION = #{fechaCreacion,jdbcType=TIMESTAMP},
+      FECHA_ACTUALIZACION = #{fechaActualizacion,jdbcType=TIMESTAMP},
+      USUARIO = #{usuario,jdbcType=VARCHAR},
+      CODCLI = #{codCliente,jdbcType=VARCHAR},
+      ID_FIDELIZADO = #{idFidelizado,jdbcType=DECIMAL},
+      IMPORTE = #{importe,jdbcType=DECIMAL},
+      NUM_ARTICULOS = #{numArticulos,jdbcType=DECIMAL}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and UID_CESTA = #{uidCesta,jdbcType=VARCHAR}
+  </update>
+</mapper>

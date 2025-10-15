@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.omnichannel.repository.document.DocumentMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.omnichannel.domain.entity.document.DocumentEntity" >
+    <result column="PROCESSED" property="processed" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD AS ACTIVITY_UID, 
+    UID_TICKET AS DOCUMENT_UID, 
+    CODALM AS STORE_CODE, 
+    ID_TICKET AS DOCUMENT_NUMBER, 
+    FECHA AS CREATION_DATE, 
+    PROCESADO AS PROCESSED, 
+    FECHA_PROCESO AS PROCESSED_DATE, 
+    MENSAJE_PROCESO AS PROCESSED_MESSAGE, 
+    CODCAJA AS TILL_CODE, 
+    ID_TIPO_DOCUMENTO AS DOCUMENT_TYPE_ID, 
+    COD_TICKET AS DOCUMENT_CODE, 
+    FIRMA AS DOCUMENT_SIGNATURE, 
+    SERIE_TICKET AS DOCUMENT_SERIA, 
+    ID_ACCION_ESTADOS AS STATUS_ACTION_ID, 
+    ID_ESTADO AS STATUS_ID,
+    LOCATOR_ID AS LOCATOR_CODE,
+    TICKET AS DOCUMENT_CONTENT
+  </sql>
+
+  <select id="selectByDocumentUid" resultMap="BaseResultMap" parameterType="map" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_TICKETS_TBL
+    where UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and UID_TICKET = #{documentUid,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectByDocumentCode" resultMap="BaseResultMap" parameterType="map" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_TICKETS_TBL
+    where UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and ID_TIPO_DOCUMENTO = #{documentTypeId,jdbcType=DECIMAL}
+      and COD_TICKET = #{documentUid,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectByDocumentLocatorCode" resultMap="BaseResultMap" parameterType="map" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_TICKETS_TBL
+    where UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and LOCATOR_ID = #{locatorCode,jdbcType=VARCHAR}
+  </select>
+  
+  <insert id="insert" parameterType="com.comerzzia.omnichannel.domain.entity.document.DocumentEntity" >
+    insert into D_TICKETS_TBL (UID_ACTIVIDAD, UID_TICKET, CODALM, 
+      ID_TICKET, FECHA, PROCESADO, 
+      FECHA_PROCESO, MENSAJE_PROCESO, CODCAJA, 
+      ID_TIPO_DOCUMENTO, COD_TICKET, FIRMA, 
+      SERIE_TICKET, TICKET, ID_ACCION_ESTADOS, ID_ESTADO, LOCATOR_ID)
+    values (#{activityUid,jdbcType=VARCHAR}, #{documentUid,jdbcType=VARCHAR}, #{storeCode,jdbcType=VARCHAR}, 
+      #{documentNumber,jdbcType=DECIMAL}, #{creationDate,jdbcType=TIMESTAMP}, #{processed,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}, 
+      #{processedDate,jdbcType=TIMESTAMP}, #{processedMessage,jdbcType=VARCHAR}, #{tillCode,jdbcType=VARCHAR}, 
+      #{documentTypeId,jdbcType=DECIMAL}, #{documentCode,jdbcType=VARCHAR}, #{documentSignature,jdbcType=VARCHAR}, 
+      #{documentSerial,jdbcType=VARCHAR}, #{documentContent,jdbcType=BLOB}, #{statusActionId,jdbcType=DECIMAL}, 
+      #{statusId,jdbcType=DECIMAL},
+      #{locatorCode,jdbcType=VARCHAR})
+  </insert>  
+  
+  <!-- DOCUMENT CONTENT ******************** -->
+  <sql id="Content_Basic_Column_List" >
+	UID_ACTIVIDAD AS ACTIVITY_UID,           
+	UID_DOCUMENTO AS DOCUMENT_UID,          
+	URL_CONTENIDO AS CONTENT_URL,           
+	FIRMA_DOCUMENTO AS DOCUMENT_SIGNATURE,  
+	NOMBRE_DOCUMENTO AS DOCUMENT_NAME,      
+	MIME_TYPE AS MIME_TYPE,                 
+	LONGITUD AS DOCUMENT_SIZE                                          
+  </sql>
+
+  <resultMap id="ContentResultMap" type="com.comerzzia.omnichannel.domain.entity.document.DocumentContentEntity" >
+  </resultMap>
+
+  <select id="selectDocumentContent" resultMap="ContentResultMap" parameterType="map" >
+    select 
+    <include refid="Content_Basic_Column_List" />
+       , CONTENIDO_DOCUMENTO AS DOCUMENT_CONTENT
+    from D_DOCUMENTOS_CONTENIDO_TBL
+    where UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and UID_DOCUMENTO = #{documentUid,jdbcType=VARCHAR}    
+  </select>
+  
+  <select id="selectDocumentContentType" resultMap="ContentResultMap" parameterType="map" >
+    select   
+    <include refid="Content_Basic_Column_List" />    
+    from D_DOCUMENTOS_CONTENIDO_TBL
+    where UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and UID_DOCUMENTO = #{documentUid,jdbcType=VARCHAR}    
+      and MIME_TYPE = #{mimeType,jdbcType=VARCHAR}
+  </select>
+</mapper>

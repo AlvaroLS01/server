@@ -1,0 +1,116 @@
+stages:
+  - maven
+  - build-containers
+  - deploy-containers
+  
+image: maven:3.6-jdk-8-slim
+
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+  DOCKER_IMAGE: api/v2/omnichannel
+  RELEASE_IMAGE: $DEVELOP_CZZ_REGISTRY_SERVER/$DOCKER_IMAGE:$CI_COMMIT_REF_NAME
+  RELEASE_IMAGE_GCP: $CZZ_REGISTRY_SERVER_GCP/$DOCKER_IMAGE:$CI_COMMIT_REF_NAME
+  K8S_WORKLOAD: api-v2-omnichannel
+  K8S_NAMESPACE: comerzzia-4-8
+  MAVEN_OPTS: >-
+    -Dhttps.protocols=TLSv1.2
+    -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
+    -Dorg.slf4j.simpleLogger.showDateTime=true
+    -Djava.awt.headless=true
+    -DbuildTimestamp=${CI_COMMIT_TIMESTAMP}
+    -DbuildNumber=${CI_PIPELINE_ID}
+    -DbuildCommit=${CI_COMMIT_SHA}
+    -DbuildUser=${GITLAB_USER_LOGIN}
+  MAVEN_CLI_OPTS: >-
+    --batch-mode
+    --errors
+    --fail-at-end
+    --show-version
+    --no-transfer-progress
+    -s .m2/settings.xml
+    -DaltReleaseDeploymentRepository=artifactory::default::https://artifactory.tier1.es/artifactory/comerzzia-releases.local
+    -DaltSnapshotDeploymentRepository=artifactory::default::https://artifactory.tier1.es/artifactory/comerzzia-snapshots.local
+  
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+  - .m2/repository
+
+before_script:
+  - export BUILD_DATE=$(TZ="Europe/Madrid" \date +"%d-%m-%Y %H:%M:%S")
+  
+build_maven:
+  stage: maven
+  only:
+  - develop
+  - /^support-.*$/
+  - /^release-.*$/
+  script:
+  - mvn $MAVEN_CLI_OPTS deploy -DskipTests
+  artifacts:
+    paths:
+    - application/target/*.war
+    expire_in: 1 hour  
+
+release_maven:
+  stage: maven
+  only:
+  - tags
+  script:
+  - mvn $MAVEN_CLI_OPTS versions:set -DnewVersion=$CI_COMMIT_TAG
+  - mvn $MAVEN_CLI_OPTS -f web/pom.xml versions:set -DnewVersion=$CI_COMMIT_TAG
+  - mvn $MAVEN_CLI_OPTS -f application/pom.xml versions:set -DnewVersion=$CI_COMMIT_TAG
+  - mvn $MAVEN_CLI_OPTS deploy -DskipTests
+  artifacts:
+    paths:
+    - application/target/*.war
+    expire_in: 1 hour  
+
+docker_build:
+  stage: build-containers
+  only:
+  - develop
+  - /^support-.*$/
+  - /^release-.*$/
+  dependencies:
+  - build_maven
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    ### create kaniko credentials file
+  - cp "$KANIKO_SECRET" /kaniko/.docker/config.json
+  - echo Generando imagen $RELEASE_IMAGE
+  - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/application/src/main/docker/Dockerfile --destination $RELEASE_IMAGE
+  
+docker_release:
+  stage: build-containers
+  only:
+  - tags
+  dependencies:
+  - release_maven
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    ### create kaniko credentials file
+  - cp "$KANIKO_SECRET" /kaniko/.docker/config.json
+  - echo Generando imagen $RELEASE_IMAGE
+  - echo Generando imagen $RELEASE_IMAGE_GCP
+  - echo Generando imagen $RELEASE_IMAGE_GCP_OLD
+  - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/application/src/main/docker/Dockerfile --destination $RELEASE_IMAGE --destination $RELEASE_IMAGE_GCP
+
+
+# Realizar redeploy en Kubernetes a través de rancher a DESARROLLO  
+deploy_latest:
+  stage: deploy-containers
+  only:
+  - develop
+  when: manual
+  dependencies:
+  - docker_build
+  image: $TR1_REGISTRY_SERVER/contrib/rancher-cli-k8s
+  script:
+    - rancher login $RANCHER_SERVER --token $RANCHER_TOKEN --context $RANCHER_PROJECT_CLIENTES
+    - rancher kubectl patch deployment $K8S_WORKLOAD -n $K8S_NAMESPACE -p '{"spec":{"template":{"metadata":{"labels":{"date":"'`date +'%s'`'", "vcs-commit":"'$CI_COMMIT_SHA'" }}}}}'
+

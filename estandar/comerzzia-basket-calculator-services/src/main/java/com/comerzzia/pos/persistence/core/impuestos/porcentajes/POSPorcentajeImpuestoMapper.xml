@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    ComerZZia 3.0
+
+    Copyright (c) 2008-2015 Comerzzia, S.L.  All Rights Reserved.
+
+    THIS WORK IS  SUBJECT  TO  SPAIN  AND  INTERNATIONAL  COPYRIGHT  LAWS  AND
+    TREATIES.   NO  PART  OF  THIS  WORK MAY BE  USED,  PRACTICED,  PERFORMED
+    COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED,  ABRIDGED, CONDENSED,
+    EXPANDED,  COLLECTED,  COMPILED,  LINKED,  RECAST, TRANSFORMED OR ADAPTED
+    WITHOUT THE PRIOR WRITTEN CONSENT OF COMERZZIA, S.L. ANY USE OR EXPLOITATION
+    OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO
+    CRIMINAL AND CIVIL LIABILITY.
+
+    CONSULT THE END USER LICENSE AGREEMENT FOR INFORMATION ON ADDITIONAL
+    RESTRICTIONS.
+
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.core.impuestos.porcentajes.POSPorcentajeImpuestoMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="ID_GRUPO_IMPUESTOS" property="idGrupoImpuestos" jdbcType="DECIMAL" />
+    <id column="ID_TRAT_IMPUESTOS" property="idTratamientoImpuestos" jdbcType="DECIMAL" />
+    <id column="CODIMP" property="codImpuesto" jdbcType="CHAR" />
+    <result column="PORCENTAJE" property="porcentaje" jdbcType="DECIMAL" />
+    <result column="PORCENTAJE_RECARGO" property="porcentajeRecargo" jdbcType="DECIMAL" />
+    <result column="CODIMP_FISCAL" property="codimpFiscal" jdbcType="VARCHAR" /> 
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, ID_GRUPO_IMPUESTOS, ID_TRAT_IMPUESTOS, CODIMP, PORCENTAJE, PORCENTAJE_RECARGO, CODIMP_FISCAL 
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_IMP_PORCENTAJES_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoKey" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_IMP_PORCENTAJES_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_GRUPO_IMPUESTOS = #{idGrupoImpuestos,jdbcType=DECIMAL}
+      and ID_TRAT_IMPUESTOS = #{idTratamientoImpuestos,jdbcType=DECIMAL}
+      and CODIMP = #{codImpuesto,jdbcType=CHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoKey" >
+    delete from D_IMP_PORCENTAJES_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_GRUPO_IMPUESTOS = #{idGrupoImpuestos,jdbcType=DECIMAL}
+      and ID_TRAT_IMPUESTOS = #{idTratamientoImpuestos,jdbcType=DECIMAL}
+      and CODIMP = #{codImpuesto,jdbcType=CHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoExample" >
+    delete from D_IMP_PORCENTAJES_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoBean" >
+    insert into D_IMP_PORCENTAJES_TBL (UID_ACTIVIDAD, ID_GRUPO_IMPUESTOS, ID_TRAT_IMPUESTOS, 
+      CODIMP, PORCENTAJE, PORCENTAJE_RECARGO, CODIMP_FISCAL 
+      )
+    values (#{uidActividad,jdbcType=VARCHAR}, #{idGrupoImpuestos,jdbcType=DECIMAL}, #{idTratamientoImpuestos,jdbcType=DECIMAL}, 
+      #{codImpuesto,jdbcType=CHAR}, #{porcentaje,jdbcType=DECIMAL}, #{porcentajeRecargo,jdbcType=DECIMAL}, #{codimpFiscal,jdbcType=DECIMAL} 
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoBean" >
+    insert into D_IMP_PORCENTAJES_TBL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        UID_ACTIVIDAD,
+      </if>
+      <if test="idGrupoImpuestos != null" >
+        ID_GRUPO_IMPUESTOS,
+      </if>
+      <if test="idTratamientoImpuestos != null" >
+        ID_TRAT_IMPUESTOS,
+      </if>
+      <if test="codImpuesto != null" >
+        CODIMP,
+      </if>
+      <if test="porcentaje != null" >
+        PORCENTAJE,
+      </if>
+      <if test="porcentajeRecargo != null" >
+        PORCENTAJE_RECARGO,
+      </if>
+      <if test="codimpFiscal != null" > 
+ 	    CODIMP_FISCAL, 
+ 	  </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        #{uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="idGrupoImpuestos != null" >
+        #{idGrupoImpuestos,jdbcType=DECIMAL},
+      </if>
+      <if test="idTratamientoImpuestos != null" >
+        #{idTratamientoImpuestos,jdbcType=DECIMAL},
+      </if>
+      <if test="codImpuesto != null" >
+        #{codImpuesto,jdbcType=CHAR},
+      </if>
+      <if test="porcentaje != null" >
+        #{porcentaje,jdbcType=DECIMAL},
+      </if>
+      <if test="porcentajeRecargo != null" >
+        #{porcentajeRecargo,jdbcType=DECIMAL},
+      </if>
+      <if test="codimpFiscal != null" > 
+ 	    #{codimpFiscal,jdbcType=VARCHAR}, 
+ 	  </if> 
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoExample" resultType="java.lang.Integer" >
+    select count(*) from D_IMP_PORCENTAJES_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update D_IMP_PORCENTAJES_TBL
+    <set >
+      <if test="record.uidActividad != null" >
+        UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idGrupoImpuestos != null" >
+        ID_GRUPO_IMPUESTOS = #{record.idGrupoImpuestos,jdbcType=DECIMAL},
+      </if>
+      <if test="record.idTratamientoImpuestos != null" >
+        ID_TRAT_IMPUESTOS = #{record.idTratamientoImpuestos,jdbcType=DECIMAL},
+      </if>
+      <if test="record.codImpuesto != null" >
+        CODIMP = #{record.codImpuesto,jdbcType=CHAR},
+      </if>
+      <if test="record.porcentaje != null" >
+        PORCENTAJE = #{record.porcentaje,jdbcType=DECIMAL},
+      </if>
+      <if test="record.porcentajeRecargo != null" >
+        PORCENTAJE_RECARGO = #{record.porcentajeRecargo,jdbcType=DECIMAL},
+      </if>
+      <if test="record.codimpFiscal != null" > 
+ 		CODIMP_FISCAL = #{record.codimpFiscal,jdbcType=VARCHAR}, 
+	  </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update D_IMP_PORCENTAJES_TBL
+    set UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      ID_GRUPO_IMPUESTOS = #{record.idGrupoImpuestos,jdbcType=DECIMAL},
+      ID_TRAT_IMPUESTOS = #{record.idTratamientoImpuestos,jdbcType=DECIMAL},
+      CODIMP = #{record.codImpuesto,jdbcType=CHAR},
+      PORCENTAJE = #{record.porcentaje,jdbcType=DECIMAL},
+      PORCENTAJE_RECARGO = #{record.porcentajeRecargo,jdbcType=DECIMAL}, 
+ 	  CODIMP_FISCAL = #{record.codimpFiscal,jdbcType=VARCHAR}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoBean" >
+    update D_IMP_PORCENTAJES_TBL
+    <set >
+      <if test="porcentaje != null" >
+        PORCENTAJE = #{porcentaje,jdbcType=DECIMAL},
+      </if>
+      <if test="porcentajeRecargo != null" >
+        PORCENTAJE_RECARGO = #{porcentajeRecargo,jdbcType=DECIMAL},
+      </if>
+      <if test="codimpFiscal != null" > 
+ 	    CODIMP_FISCAL = #{codimpFiscal,jdbcType=VARCHAR}, 
+ 	  </if>
+    </set>
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_GRUPO_IMPUESTOS = #{idGrupoImpuestos,jdbcType=DECIMAL}
+      and ID_TRAT_IMPUESTOS = #{idTratamientoImpuestos,jdbcType=DECIMAL}
+      and CODIMP = #{codImpuesto,jdbcType=CHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoBean" >
+    update D_IMP_PORCENTAJES_TBL
+    set PORCENTAJE = #{porcentaje,jdbcType=DECIMAL},
+      PORCENTAJE_RECARGO = #{porcentajeRecargo,jdbcType=DECIMAL}, 
+ 	  CODIMP_FISCAL = #{codimpFiscal,jdbcType=VARCHAR} 
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_GRUPO_IMPUESTOS = #{idGrupoImpuestos,jdbcType=DECIMAL}
+      and ID_TRAT_IMPUESTOS = #{idTratamientoImpuestos,jdbcType=DECIMAL}
+      and CODIMP = #{codImpuesto,jdbcType=CHAR}
+  </update>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.impuestos.porcentajes.PorcentajeImpuestoExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_IMP_PORCENTAJES_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+</mapper>

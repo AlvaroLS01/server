@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    ComerZZia 3.0
+
+    Copyright (c) 2008-2015 Comerzzia, S.L.  All Rights Reserved.
+
+    THIS WORK IS  SUBJECT  TO  SPAIN  AND  INTERNATIONAL  COPYRIGHT  LAWS  AND
+    TREATIES.   NO  PART  OF  THIS  WORK MAY BE  USED,  PRACTICED,  PERFORMED
+    COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED,  ABRIDGED, CONDENSED,
+    EXPANDED,  COLLECTED,  COMPILED,  LINKED,  RECAST, TRANSFORMED OR ADAPTED
+    WITHOUT THE PRIOR WRITTEN CONSENT OF COMERZZIA, S.L. ANY USE OR EXPLOITATION
+    OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO
+    CRIMINAL AND CIVIL LIABILITY.
+
+    CONSULT THE END USER LICENSE AGREEMENT FOR INFORMATION ON ADDITIONAL
+    RESTRICTIONS.
+
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.core.usuarios.POSUsuarioMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.usuarios.UsuarioBean" >
+    <id column="UID_INSTANCIA" property="uidInstancia" jdbcType="VARCHAR" />
+    <id column="ID_USUARIO" property="idUsuario" jdbcType="DECIMAL" />
+    <result column="USUARIO" property="usuario" jdbcType="VARCHAR" />
+    <result column="DESUSUARIO" property="desusuario" jdbcType="VARCHAR" />
+    <result column="CLAVE" property="clave" jdbcType="VARCHAR" />
+    <result column="ACTIVO" property="activo" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+    <result column="UID_MENU_POR_DEFECTO" property="menuPorDefecto" jdbcType="VARCHAR" />
+    <result column="PUEDE_CAMBIAR_MENU" property="puedeCambiarMenu" jdbcType="CHAR" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_INSTANCIA, ID_USUARIO, USUARIO, DESUSUARIO, CLAVE, ACTIVO, UID_MENU_POR_DEFECTO, 
+    PUEDE_CAMBIAR_MENU
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_USUARIOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioKey" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_USUARIOS_TBL
+    where UID_INSTANCIA = #{uidInstancia,jdbcType=VARCHAR}
+      and ID_USUARIO = #{idUsuario,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioKey" >
+    delete from D_USUARIOS_TBL
+    where UID_INSTANCIA = #{uidInstancia,jdbcType=VARCHAR}
+      and ID_USUARIO = #{idUsuario,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioExample" >
+    delete from D_USUARIOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioBean" >
+    insert into D_USUARIOS_TBL (UID_INSTANCIA, ID_USUARIO, USUARIO, 
+      DESUSUARIO, CLAVE, ACTIVO, 
+      UID_MENU_POR_DEFECTO, PUEDE_CAMBIAR_MENU
+      )
+    values (#{uidInstancia,jdbcType=VARCHAR}, #{idUsuario,jdbcType=DECIMAL}, #{usuario,jdbcType=VARCHAR}, 
+      #{desusuario,jdbcType=VARCHAR}, #{clave,jdbcType=VARCHAR}, #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}, 
+      #{menuPorDefecto,jdbcType=VARCHAR}, #{puedeCambiarMenu,jdbcType=CHAR}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioBean" >
+    insert into D_USUARIOS_TBL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="uidInstancia != null" >
+        UID_INSTANCIA,
+      </if>
+      <if test="idUsuario != null" >
+        ID_USUARIO,
+      </if>
+      <if test="usuario != null" >
+        USUARIO,
+      </if>
+      <if test="desusuario != null" >
+        DESUSUARIO,
+      </if>
+      <if test="clave != null" >
+        CLAVE,
+      </if>
+      <if test="activo != null" >
+        ACTIVO,
+      </if>
+      <if test="menuPorDefecto != null" >
+        UID_MENU_POR_DEFECTO,
+      </if>
+      <if test="puedeCambiarMenu != null" >
+        PUEDE_CAMBIAR_MENU,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="uidInstancia != null" >
+        #{uidInstancia,jdbcType=VARCHAR},
+      </if>
+      <if test="idUsuario != null" >
+        #{idUsuario,jdbcType=DECIMAL},
+      </if>
+      <if test="usuario != null" >
+        #{usuario,jdbcType=VARCHAR},
+      </if>
+      <if test="desusuario != null" >
+        #{desusuario,jdbcType=VARCHAR},
+      </if>
+      <if test="clave != null" >
+        #{clave,jdbcType=VARCHAR},
+      </if>
+      <if test="activo != null" >
+        #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      </if>
+      <if test="menuPorDefecto != null" >
+        #{menuPorDefecto,jdbcType=VARCHAR},
+      </if>
+      <if test="puedeCambiarMenu != null" >
+        #{puedeCambiarMenu,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioExample" resultType="java.lang.Integer" >
+    select count(*) from D_USUARIOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update D_USUARIOS_TBL
+    <set >
+      <if test="record.uidInstancia != null" >
+        UID_INSTANCIA = #{record.uidInstancia,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idUsuario != null" >
+        ID_USUARIO = #{record.idUsuario,jdbcType=DECIMAL},
+      </if>
+      <if test="record.usuario != null" >
+        USUARIO = #{record.usuario,jdbcType=VARCHAR},
+      </if>
+      <if test="record.desusuario != null" >
+        DESUSUARIO = #{record.desusuario,jdbcType=VARCHAR},
+      </if>
+      <if test="record.clave != null" >
+        CLAVE = #{record.clave,jdbcType=VARCHAR},
+      </if>
+      <if test="record.activo != null" >
+        ACTIVO = #{record.activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      </if>
+      <if test="record.menuPorDefecto != null" >
+        UID_MENU_POR_DEFECTO = #{record.menuPorDefecto,jdbcType=VARCHAR},
+      </if>
+      <if test="record.puedeCambiarMenu != null" >
+        PUEDE_CAMBIAR_MENU = #{record.puedeCambiarMenu,jdbcType=CHAR},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update D_USUARIOS_TBL
+    set UID_INSTANCIA = #{record.uidInstancia,jdbcType=VARCHAR},
+      ID_USUARIO = #{record.idUsuario,jdbcType=DECIMAL},
+      USUARIO = #{record.usuario,jdbcType=VARCHAR},
+      DESUSUARIO = #{record.desusuario,jdbcType=VARCHAR},
+      CLAVE = #{record.clave,jdbcType=VARCHAR},
+      ACTIVO = #{record.activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      UID_MENU_POR_DEFECTO = #{record.menuPorDefecto,jdbcType=VARCHAR},
+      PUEDE_CAMBIAR_MENU = #{record.puedeCambiarMenu,jdbcType=CHAR}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioBean" >
+    update D_USUARIOS_TBL
+    <set >
+      <if test="usuario != null" >
+        USUARIO = #{usuario,jdbcType=VARCHAR},
+      </if>
+      <if test="desusuario != null" >
+        DESUSUARIO = #{desusuario,jdbcType=VARCHAR},
+      </if>
+      <if test="clave != null" >
+        CLAVE = #{clave,jdbcType=VARCHAR},
+      </if>
+      <if test="activo != null" >
+        ACTIVO = #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      </if>
+      <if test="menuPorDefecto != null" >
+        UID_MENU_POR_DEFECTO = #{menuPorDefecto,jdbcType=VARCHAR},
+      </if>
+      <if test="puedeCambiarMenu != null" >
+        PUEDE_CAMBIAR_MENU = #{puedeCambiarMenu,jdbcType=CHAR},
+      </if>
+    </set>
+    where UID_INSTANCIA = #{uidInstancia,jdbcType=VARCHAR}
+      and ID_USUARIO = #{idUsuario,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioBean" >
+    update D_USUARIOS_TBL
+    set USUARIO = #{usuario,jdbcType=VARCHAR},
+      DESUSUARIO = #{desusuario,jdbcType=VARCHAR},
+      CLAVE = #{clave,jdbcType=VARCHAR},
+      ACTIVO = #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      UID_MENU_POR_DEFECTO = #{menuPorDefecto,jdbcType=VARCHAR},
+      PUEDE_CAMBIAR_MENU = #{puedeCambiarMenu,jdbcType=CHAR}
+    where UID_INSTANCIA = #{uidInstancia,jdbcType=VARCHAR}
+      and ID_USUARIO = #{idUsuario,jdbcType=DECIMAL}
+  </update>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.usuarios.UsuarioExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_USUARIOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+</mapper>

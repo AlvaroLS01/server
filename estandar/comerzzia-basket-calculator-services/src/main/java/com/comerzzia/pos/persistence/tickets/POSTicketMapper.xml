@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.tickets.POSTicketMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.tickets.TicketBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="UID_TICKET" property="uidTicket" jdbcType="VARCHAR" />
+    <result column="CODALM" property="codAlmacen" jdbcType="VARCHAR" />
+    <result column="ID_TICKET" property="idTicket" jdbcType="DECIMAL" />
+    <result column="FECHA" property="fecha" jdbcType="TIMESTAMP" />
+    <result column="PROCESADO" property="procesado" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+    <result column="FECHA_PROCESO" property="fechaProceso" jdbcType="TIMESTAMP" />
+    <result column="MENSAJE_PROCESO" property="mensajeProceso" jdbcType="VARCHAR" />
+    <result column="CODCAJA" property="codcaja" jdbcType="VARCHAR" />
+    <result column="ID_TIPO_DOCUMENTO" property="idTipoDocumento" jdbcType="DECIMAL" />
+    <result column="COD_TICKET" property="codTicket" jdbcType="VARCHAR" />
+    <result column="FIRMA" property="firma" jdbcType="VARCHAR" />
+    <result column="SERIE_TICKET" property="serieTicket" jdbcType="VARCHAR" />
+    <result column="LOCATOR_ID" property="locatorId" jdbcType="VARCHAR" />
+  </resultMap>
+  <resultMap id="ResultMapWithBLOBs" type="com.comerzzia.pos.persistence.tickets.TicketBean" extends="BaseResultMap" >
+    <result column="TICKET" property="ticket" jdbcType="BLOB" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.procesadoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, UID_TICKET, CODALM, ID_TICKET, FECHA, PROCESADO, FECHA_PROCESO, MENSAJE_PROCESO, 
+    CODCAJA, ID_TIPO_DOCUMENTO, COD_TICKET, FIRMA, SERIE_TICKET, LOCATOR_ID
+  </sql>
+  <sql id="Blob_Column_List" >
+    TICKET
+  </sql>
+  <select id="selectByExampleWithBLOBs" resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.pos.persistence.tickets.TicketExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_TICKETS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.tickets.TicketExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_TICKETS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.pos.persistence.tickets.TicketKey" >
+    select 
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_TICKETS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and UID_TICKET = #{uidTicket,jdbcType=VARCHAR}
+  </select>
+  <select id="selectByLocatorKey" resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.pos.persistence.tickets.TicketLocatorKey" >
+    select 
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_TICKETS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL}
+      and LOCATOR_ID = #{locatorId,jdbcType=VARCHAR}
+  </select>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.tickets.TicketBean" >
+    insert into D_TICKETS_TBL (UID_ACTIVIDAD, UID_TICKET, CODALM, 
+      ID_TICKET, FECHA, PROCESADO, 
+      FECHA_PROCESO, MENSAJE_PROCESO, CODCAJA, 
+      ID_TIPO_DOCUMENTO, COD_TICKET, FIRMA, 
+      TICKET, SERIE_TICKET, LOCATOR_ID)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{uidTicket,jdbcType=VARCHAR}, #{codAlmacen,jdbcType=VARCHAR}, 
+      #{idTicket,jdbcType=DECIMAL}, #{fecha,jdbcType=TIMESTAMP}, #{procesado,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}, 
+      #{fechaProceso,jdbcType=TIMESTAMP}, #{mensajeProceso,jdbcType=VARCHAR}, #{codcaja,jdbcType=VARCHAR}, 
+      #{idTipoDocumento,jdbcType=DECIMAL}, #{codTicket,jdbcType=VARCHAR}, #{firma,jdbcType=VARCHAR}, 
+      #{ticket,jdbcType=BLOB}, #{serieTicket,jdbcType=VARCHAR}, #{locatorId,jdbcType=VARCHAR})
+  </insert>
+  <select resultMap="ResultMapWithBLOBs" parameterType="com.comerzzia.pos.persistence.tickets.TicketExample" id="selectByExampleWithBLOBsWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from D_TICKETS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.tickets.TicketExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_TICKETS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <update id="updateProcesado" parameterType="com.comerzzia.pos.persistence.tickets.TicketBean" >
+    update D_TICKETS_TBL
+    set 
+      PROCESADO = #{procesado,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and UID_TICKET = #{uidTicket,jdbcType=VARCHAR}
+  </update>
+</mapper>

@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    ComerZZia 3.0
+
+    Copyright (c) 2008-2015 Comerzzia, S.L.  All Rights Reserved.
+
+    THIS WORK IS  SUBJECT  TO  SPAIN  AND  INTERNATIONAL  COPYRIGHT  LAWS  AND
+    TREATIES.   NO  PART  OF  THIS  WORK MAY BE  USED,  PRACTICED,  PERFORMED
+    COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED,  ABRIDGED, CONDENSED,
+    EXPANDED,  COLLECTED,  COMPILED,  LINKED,  RECAST, TRANSFORMED OR ADAPTED
+    WITHOUT THE PRIOR WRITTEN CONSENT OF COMERZZIA, S.L. ANY USE OR EXPLOITATION
+    OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO
+    CRIMINAL AND CIVIL LIABILITY.
+
+    CONSULT THE END USER LICENSE AGREEMENT FOR INFORMATION ON ADDITIONAL
+    RESTRICTIONS.
+
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="CODAPLICACION" property="codaplicacion" jdbcType="VARCHAR" />
+    <id column="CODCONALM" property="codconalm" jdbcType="VARCHAR" />
+    <result column="DESCONALM" property="desconalm" jdbcType="VARCHAR" />
+    <result column="SIGNO" property="signo" jdbcType="CHAR" />
+    <result column="CODALM_ORIGEN" property="codalmOrigen" jdbcType="VARCHAR" />
+    <result column="CODALM_DESTINO" property="codalmDestino" jdbcType="VARCHAR" />
+    <result column="SOLICITUD_ACEPTACION_AUTO" property="solicitudAceptacionAuto" jdbcType="VARCHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler" />
+    <result column="SOLICITUD_RECEPCION_AUTO" property="solicitudRecepcionAuto" jdbcType="VARCHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler" />
+    <result column="SOLICITUD_GENERAR_FALTAS" property="solicitudGenerarFaltas" jdbcType="VARCHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler" />
+    <result column="VISIBLE_TIENDAS" property="visibleTiendas" jdbcType="VARCHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler" />
+    <result column="ACTIVO" property="activo" jdbcType="VARCHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler" />
+    <result column="OPERACION_ALMACEN" property="operacionAlmacen" jdbcType="DECIMAL" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.solicitudAceptacionAutoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.solicitudRecepcionAutoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.solicitudGenerarFaltasCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.visibleTiendasCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.solicitudAceptacionAutoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.solicitudRecepcionAutoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.solicitudGenerarFaltasCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.visibleTiendasCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, CODAPLICACION, CODCONALM, DESCONALM, SIGNO, CODALM_ORIGEN, CODALM_DESTINO, 
+    SOLICITUD_ACEPTACION_AUTO, SOLICITUD_RECEPCION_AUTO, SOLICITUD_GENERAR_FALTAS, VISIBLE_TIENDAS, 
+    ACTIVO, OPERACION_ALMACEN
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_ALMACENES_CONCEPTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenKey" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_ALMACENES_CONCEPTOS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODAPLICACION = #{codaplicacion,jdbcType=VARCHAR}
+      and CODCONALM = #{codconalm,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenKey" >
+    delete from D_ALMACENES_CONCEPTOS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODAPLICACION = #{codaplicacion,jdbcType=VARCHAR}
+      and CODCONALM = #{codconalm,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenExample" >
+    delete from D_ALMACENES_CONCEPTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenBean" >
+    insert into D_ALMACENES_CONCEPTOS_TBL (UID_ACTIVIDAD, CODAPLICACION, CODCONALM, 
+      DESCONALM, SIGNO, CODALM_ORIGEN, 
+      CODALM_DESTINO, SOLICITUD_ACEPTACION_AUTO, 
+      SOLICITUD_RECEPCION_AUTO, 
+      SOLICITUD_GENERAR_FALTAS, 
+      VISIBLE_TIENDAS, 
+      ACTIVO, 
+      OPERACION_ALMACEN)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{codaplicacion,jdbcType=VARCHAR}, #{codconalm,jdbcType=VARCHAR}, 
+      #{desconalm,jdbcType=VARCHAR}, #{signo,jdbcType=CHAR}, #{codalmOrigen,jdbcType=VARCHAR}, 
+      #{codalmDestino,jdbcType=VARCHAR}, #{solicitudAceptacionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}, 
+      #{solicitudRecepcionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}, 
+      #{solicitudGenerarFaltas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}, 
+      #{visibleTiendas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}, 
+      #{activo,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler}, 
+      #{operacionAlmacen,jdbcType=DECIMAL})
+  </insert>
+  <insert id="insertSelective" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenBean" >
+    insert into D_ALMACENES_CONCEPTOS_TBL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        UID_ACTIVIDAD,
+      </if>
+      <if test="codaplicacion != null" >
+        CODAPLICACION,
+      </if>
+      <if test="codconalm != null" >
+        CODCONALM,
+      </if>
+      <if test="desconalm != null" >
+        DESCONALM,
+      </if>
+      <if test="signo != null" >
+        SIGNO,
+      </if>
+      <if test="codalmOrigen != null" >
+        CODALM_ORIGEN,
+      </if>
+      <if test="codalmDestino != null" >
+        CODALM_DESTINO,
+      </if>
+      <if test="solicitudAceptacionAuto != null" >
+        SOLICITUD_ACEPTACION_AUTO,
+      </if>
+      <if test="solicitudRecepcionAuto != null" >
+        SOLICITUD_RECEPCION_AUTO,
+      </if>
+      <if test="solicitudGenerarFaltas != null" >
+        SOLICITUD_GENERAR_FALTAS,
+      </if>
+      <if test="visibleTiendas != null" >
+        VISIBLE_TIENDAS,
+      </if>
+      <if test="activo != null" >
+        ACTIVO,
+      </if>
+      <if test="operacionAlmacen != null" >
+        OPERACION_ALMACEN,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        #{uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="codaplicacion != null" >
+        #{codaplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="codconalm != null" >
+        #{codconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="desconalm != null" >
+        #{desconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="signo != null" >
+        #{signo,jdbcType=CHAR},
+      </if>
+      <if test="codalmOrigen != null" >
+        #{codalmOrigen,jdbcType=VARCHAR},
+      </if>
+      <if test="codalmDestino != null" >
+        #{codalmDestino,jdbcType=VARCHAR},
+      </if>
+      <if test="solicitudAceptacionAuto != null" >
+        #{solicitudAceptacionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="solicitudRecepcionAuto != null" >
+        #{solicitudRecepcionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="solicitudGenerarFaltas != null" >
+        #{solicitudGenerarFaltas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="visibleTiendas != null" >
+        #{visibleTiendas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="activo != null" >
+        #{activo,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="operacionAlmacen != null" >
+        #{operacionAlmacen,jdbcType=DECIMAL},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenExample" resultType="java.lang.Integer" >
+    select count(*) from D_ALMACENES_CONCEPTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update D_ALMACENES_CONCEPTOS_TBL
+    <set >
+      <if test="record.uidActividad != null" >
+        UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codaplicacion != null" >
+        CODAPLICACION = #{record.codaplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codconalm != null" >
+        CODCONALM = #{record.codconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="record.desconalm != null" >
+        DESCONALM = #{record.desconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="record.signo != null" >
+        SIGNO = #{record.signo,jdbcType=CHAR},
+      </if>
+      <if test="record.codalmOrigen != null" >
+        CODALM_ORIGEN = #{record.codalmOrigen,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codalmDestino != null" >
+        CODALM_DESTINO = #{record.codalmDestino,jdbcType=VARCHAR},
+      </if>
+      <if test="record.solicitudAceptacionAuto != null" >
+        SOLICITUD_ACEPTACION_AUTO = #{record.solicitudAceptacionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="record.solicitudRecepcionAuto != null" >
+        SOLICITUD_RECEPCION_AUTO = #{record.solicitudRecepcionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="record.solicitudGenerarFaltas != null" >
+        SOLICITUD_GENERAR_FALTAS = #{record.solicitudGenerarFaltas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="record.visibleTiendas != null" >
+        VISIBLE_TIENDAS = #{record.visibleTiendas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="record.activo != null" >
+        ACTIVO = #{record.activo,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="record.operacionAlmacen != null" >
+        OPERACION_ALMACEN = #{record.operacionAlmacen,jdbcType=DECIMAL},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update D_ALMACENES_CONCEPTOS_TBL
+    set UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      CODAPLICACION = #{record.codaplicacion,jdbcType=VARCHAR},
+      CODCONALM = #{record.codconalm,jdbcType=VARCHAR},
+      DESCONALM = #{record.desconalm,jdbcType=VARCHAR},
+      SIGNO = #{record.signo,jdbcType=CHAR},
+      CODALM_ORIGEN = #{record.codalmOrigen,jdbcType=VARCHAR},
+      CODALM_DESTINO = #{record.codalmDestino,jdbcType=VARCHAR},
+      SOLICITUD_ACEPTACION_AUTO = #{record.solicitudAceptacionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      SOLICITUD_RECEPCION_AUTO = #{record.solicitudRecepcionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      SOLICITUD_GENERAR_FALTAS = #{record.solicitudGenerarFaltas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      VISIBLE_TIENDAS = #{record.visibleTiendas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      ACTIVO = #{record.activo,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      OPERACION_ALMACEN = #{record.operacionAlmacen,jdbcType=DECIMAL}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenBean" >
+    update D_ALMACENES_CONCEPTOS_TBL
+    <set >
+      <if test="desconalm != null" >
+        DESCONALM = #{desconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="signo != null" >
+        SIGNO = #{signo,jdbcType=CHAR},
+      </if>
+      <if test="codalmOrigen != null" >
+        CODALM_ORIGEN = #{codalmOrigen,jdbcType=VARCHAR},
+      </if>
+      <if test="codalmDestino != null" >
+        CODALM_DESTINO = #{codalmDestino,jdbcType=VARCHAR},
+      </if>
+      <if test="solicitudAceptacionAuto != null" >
+        SOLICITUD_ACEPTACION_AUTO = #{solicitudAceptacionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="solicitudRecepcionAuto != null" >
+        SOLICITUD_RECEPCION_AUTO = #{solicitudRecepcionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="solicitudGenerarFaltas != null" >
+        SOLICITUD_GENERAR_FALTAS = #{solicitudGenerarFaltas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="visibleTiendas != null" >
+        VISIBLE_TIENDAS = #{visibleTiendas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="activo != null" >
+        ACTIVO = #{activo,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      </if>
+      <if test="operacionAlmacen != null" >
+        OPERACION_ALMACEN = #{operacionAlmacen,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODAPLICACION = #{codaplicacion,jdbcType=VARCHAR}
+      and CODCONALM = #{codconalm,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenBean" >
+    update D_ALMACENES_CONCEPTOS_TBL
+    set DESCONALM = #{desconalm,jdbcType=VARCHAR},
+      SIGNO = #{signo,jdbcType=CHAR},
+      CODALM_ORIGEN = #{codalmOrigen,jdbcType=VARCHAR},
+      CODALM_DESTINO = #{codalmDestino,jdbcType=VARCHAR},
+      SOLICITUD_ACEPTACION_AUTO = #{solicitudAceptacionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      SOLICITUD_RECEPCION_AUTO = #{solicitudRecepcionAuto,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      SOLICITUD_GENERAR_FALTAS = #{solicitudGenerarFaltas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      VISIBLE_TIENDAS = #{visibleTiendas,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      ACTIVO = #{activo,jdbcType=VARCHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanTypeHandler},
+      OPERACION_ALMACEN = #{operacionAlmacen,jdbcType=DECIMAL}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODAPLICACION = #{codaplicacion,jdbcType=VARCHAR}
+      and CODCONALM = #{codconalm,jdbcType=VARCHAR}
+  </update>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.conceptosalmacen.ConceptoAlmacenExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_ALMACENES_CONCEPTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+</mapper>

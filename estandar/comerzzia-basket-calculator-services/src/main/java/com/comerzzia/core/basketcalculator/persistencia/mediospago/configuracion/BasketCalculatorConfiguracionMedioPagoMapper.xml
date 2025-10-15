@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.core.basketcalculator.persistencia.mediospago.configuracion.BasketCalculatorConfiguracionMedioPagoMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="ID_CLASE" property="idClase" jdbcType="VARCHAR" />
+    <id column="ID_OBJETO" property="idObjeto" jdbcType="VARCHAR" />
+    <id column="CODMEDPAG" property="codmedpag" jdbcType="VARCHAR" />
+    <result column="ID_CONF_PASARELA" property="idConfPasarela" jdbcType="VARCHAR" />
+    <result column="DESMEDPAG" property="desmedpag" jdbcType="VARCHAR" />
+    <result column="ACTIVO" property="activo" jdbcType="VARCHAR" typeHandler="com.comerzzia.core.basketcalculator.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+    <result column="DESCLASE" property="desclase" jdbcType="VARCHAR" />
+    <result column="ID_TIPO_PASARELA" property="idTipoPasarela" jdbcType="VARCHAR" />
+    <result column="DESTIPOPASARELA" property="destipopasarela" jdbcType="VARCHAR" />
+    <result column="DESCONFPASARELA" property="desconfpasarela" jdbcType="VARCHAR" />
+    <result column="CONF_ACTIVO" property="confActivo" jdbcType="CHAR" />
+    <result column="CLASE_CONTROL" property="claseControl" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, ID_CLASE, ID_OBJETO, CODMEDPAG, ID_CONF_PASARELA, CLASE_CONTROL
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_MEDIOS_PAGO_CONF_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoKey" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_MEDIOS_PAGO_CONF_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_CLASE = #{idClase,jdbcType=VARCHAR}
+      and ID_OBJETO = #{idObjeto,jdbcType=VARCHAR}
+      and CODMEDPAG = #{codmedpag,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoKey" >
+    delete from D_MEDIOS_PAGO_CONF_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_CLASE = #{idClase,jdbcType=VARCHAR}
+      and ID_OBJETO = #{idObjeto,jdbcType=VARCHAR}
+      and CODMEDPAG = #{codmedpag,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoExample" >
+    delete from D_MEDIOS_PAGO_CONF_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoBean" >
+    insert into D_MEDIOS_PAGO_CONF_TBL (UID_ACTIVIDAD, ID_CLASE, ID_OBJETO, 
+      CODMEDPAG, ID_CONF_PASARELA, CLASE_CONTROL)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{idClase,jdbcType=VARCHAR}, #{idObjeto,jdbcType=VARCHAR}, 
+      #{codmedpag,jdbcType=VARCHAR}, #{idConfPasarela,jdbcType=VARCHAR}, #{claseControl,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoBean" >
+    insert into D_MEDIOS_PAGO_CONF_TBL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        UID_ACTIVIDAD,
+      </if>
+      <if test="idClase != null" >
+        ID_CLASE,
+      </if>
+      <if test="idObjeto != null" >
+        ID_OBJETO,
+      </if>
+      <if test="codmedpag != null" >
+        CODMEDPAG,
+      </if>
+      <if test="idConfPasarela != null" >
+        ID_CONF_PASARELA,
+      </if>
+      <if test="claseControl != null" >
+        CLASE_CONTROL,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        #{uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="idClase != null" >
+        #{idClase,jdbcType=VARCHAR},
+      </if>
+      <if test="idObjeto != null" >
+        #{idObjeto,jdbcType=VARCHAR},
+      </if>
+      <if test="codmedpag != null" >
+        #{codmedpag,jdbcType=VARCHAR},
+      </if>
+      <if test="idConfPasarela != null" >
+        #{idConfPasarela,jdbcType=VARCHAR},
+      </if>
+      <if test="claseControl != null" >
+        #{claseControl,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoExample" resultType="java.lang.Integer" >
+    select count(*) from D_MEDIOS_PAGO_CONF_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update D_MEDIOS_PAGO_CONF_TBL
+    <set >
+      <if test="record.uidActividad != null" >
+        UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idClase != null" >
+        ID_CLASE = #{record.idClase,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idObjeto != null" >
+        ID_OBJETO = #{record.idObjeto,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codmedpag != null" >
+        CODMEDPAG = #{record.codmedpag,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idConfPasarela != null" >
+        ID_CONF_PASARELA = #{record.idConfPasarela,jdbcType=VARCHAR},
+      </if>
+      <if test="record.claseControl != null" >
+        CLASE_CONTROL = #{record.claseControl,jdbcType=VARCHAR},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update D_MEDIOS_PAGO_CONF_TBL
+    set UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      ID_CLASE = #{record.idClase,jdbcType=VARCHAR},
+      ID_OBJETO = #{record.idObjeto,jdbcType=VARCHAR},
+      CODMEDPAG = #{record.codmedpag,jdbcType=VARCHAR},
+      ID_CONF_PASARELA = #{record.idConfPasarela,jdbcType=VARCHAR},
+      CLASE_CONTROL = #{record.claseControl,jdbcType=VARCHAR}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoBean" >
+    update D_MEDIOS_PAGO_CONF_TBL
+    <set >
+      <if test="idConfPasarela != null" >
+        ID_CONF_PASARELA = #{idConfPasarela,jdbcType=VARCHAR},
+      </if>
+      <if test="claseControl != null" >
+        CLASE_CONTROL = #{claseControl,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_CLASE = #{idClase,jdbcType=VARCHAR}
+      and ID_OBJETO = #{idObjeto,jdbcType=VARCHAR}
+      and CODMEDPAG = #{codmedpag,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoBean" >
+    update D_MEDIOS_PAGO_CONF_TBL
+    set ID_CONF_PASARELA = #{idConfPasarela,jdbcType=VARCHAR},
+    	CLASE_CONTROL = #{claseControl, jdbcType=VARCHAR}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_CLASE = #{idClase,jdbcType=VARCHAR}
+      and ID_OBJETO = #{idObjeto,jdbcType=VARCHAR}
+      and CODMEDPAG = #{codmedpag,jdbcType=VARCHAR}
+  </update>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_MEDIOS_PAGO_CONF_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectFromViewByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="View_Base_Column_List" />
+    from D_MEDIOS_PAGO_CONF
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectFromViewByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.core.basketcalculator.model.mediospago.configuracion.ConfiguracionMedioPagoKey" >
+    select 
+    <include refid="View_Base_Column_List" />
+    from D_MEDIOS_PAGO_CONF
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_CLASE = #{idClase,jdbcType=VARCHAR}
+      and ID_OBJETO = #{idObjeto,jdbcType=VARCHAR}
+      and CODMEDPAG = #{codmedpag,jdbcType=VARCHAR}
+  </select>
+  <sql id="View_Base_Column_List" >
+     ID_CLASE, ID_OBJETO, CODMEDPAG, UID_ACTIVIDAD,  DESCLASE , 
+    CONF_ACTIVO, DESCONFPASARELA, DESMEDPAG, ACTIVO, ID_CONF_PASARELA , ID_TIPO_PASARELA, DESTIPOPASARELA, CLASE_CONTROL 
+  </sql>
+</mapper>

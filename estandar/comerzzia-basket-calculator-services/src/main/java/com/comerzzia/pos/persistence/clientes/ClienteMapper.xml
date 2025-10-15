@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.clientes.ClienteMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.clientes.ClienteBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="CODCLI" property="codCliente" jdbcType="VARCHAR" />
+    <result column="DESCLI" property="desCliente" jdbcType="VARCHAR" />
+    <result column="NOMBRE_COMERCIAL" property="nombreComercial" jdbcType="VARCHAR" />
+    <result column="DOMICILIO" property="domicilio" jdbcType="VARCHAR" />
+    <result column="POBLACION" property="poblacion" jdbcType="VARCHAR" />
+    <result column="PROVINCIA" property="provincia" jdbcType="VARCHAR" />
+    <result column="CP" property="cp" jdbcType="VARCHAR" />
+    <result column="TELEFONO1" property="telefono1" jdbcType="VARCHAR" />
+    <result column="TELEFONO2" property="telefono2" jdbcType="VARCHAR" />
+    <result column="FAX" property="fax" jdbcType="VARCHAR" />
+    <result column="CODPAIS" property="codpais" jdbcType="VARCHAR" />
+    <result column="PERSONA_CONTACTO" property="personaContacto" jdbcType="VARCHAR" />
+    <result column="EMAIL" property="email" jdbcType="VARCHAR" />
+    <result column="CIF" property="cif" jdbcType="VARCHAR" />
+    <result column="ID_TRAT_IMPUESTOS" property="idTratImpuestos" jdbcType="DECIMAL" />
+    <result column="ID_MEDPAG_VEN" property="IdMedioPagoVencimiento" jdbcType="DECIMAL" />
+    <result column="CODTAR" property="codtar" jdbcType="VARCHAR" />
+    <result column="CODSEC" property="codsec" jdbcType="VARCHAR" />
+    <result column="BANCO" property="banco" jdbcType="VARCHAR" />
+    <result column="BANCO_DOMICILIO" property="bancoDomicilio" jdbcType="VARCHAR" />
+    <result column="BANCO_POBLACION" property="bancoPoblacion" jdbcType="VARCHAR" />
+    <result column="CCC" property="ccc" jdbcType="VARCHAR" />
+    <result column="OBSERVACIONES" property="observaciones" jdbcType="VARCHAR" />
+    <result column="ACTIVO" property="activo" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+    <result column="FECHA_ALTA" property="fechaAlta" jdbcType="TIMESTAMP" />
+    <result column="FECHA_BAJA" property="fechaBaja" jdbcType="TIMESTAMP" />
+    <result column="RIESGO_CONCEDIDO" property="riesgoConcedido" jdbcType="DECIMAL" />
+    <result column="CODCLI_FACTURA" property="codcliFactura" jdbcType="VARCHAR" />
+    <result column="LOCALIDAD" property="localidad" jdbcType="VARCHAR" />
+    <result column="CODTIPOIDEN" property="tipoIdentificacion" jdbcType="VARCHAR" />
+    <result column="DEPOSITO" property="deposito" jdbcType="VARCHAR" />
+    <result column="CODLENGUA" property="codlengua" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+            <foreach collection="criteria.activoCriteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler} and #{criterion.secondValue,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, CODCLI, DESCLI, NOMBRE_COMERCIAL, DOMICILIO, POBLACION, PROVINCIA, 
+    CP, TELEFONO1, TELEFONO2, FAX, CODPAIS, PERSONA_CONTACTO, EMAIL, CIF, ID_TRAT_IMPUESTOS, 
+    ID_MEDPAG_VEN, CODTAR, CODSEC, BANCO, BANCO_DOMICILIO, BANCO_POBLACION, CCC, OBSERVACIONES, 
+    ACTIVO, FECHA_ALTA, FECHA_BAJA, RIESGO_CONCEDIDO, CODCLI_FACTURA, LOCALIDAD, CODTIPOIDEN,
+    DEPOSITO, CODLENGUA
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.clientes.ClienteExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_CLIENTES_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.clientes.ClienteKey" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_CLIENTES_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODCLI = #{codCliente,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.pos.persistence.clientes.ClienteKey" >
+    delete from D_CLIENTES_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODCLI = #{codCliente,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.clientes.ClienteBean" >
+    insert into D_CLIENTES_TBL (UID_ACTIVIDAD, CODCLI, DESCLI, 
+      NOMBRE_COMERCIAL, DOMICILIO, POBLACION, 
+      PROVINCIA, CP, TELEFONO1, 
+      TELEFONO2, FAX, CODPAIS, 
+      PERSONA_CONTACTO, EMAIL, CIF, 
+      ID_TRAT_IMPUESTOS, ID_MEDPAG_VEN, 
+      CODTAR, CODSEC, BANCO, 
+      BANCO_DOMICILIO, BANCO_POBLACION, CCC, 
+      OBSERVACIONES, ACTIVO, 
+      FECHA_ALTA, FECHA_BAJA, RIESGO_CONCEDIDO, 
+      CODCLI_FACTURA, LOCALIDAD, CODTIPOIDEN, DEPOSITO, CODLENGUA
+      )
+    values (#{uidActividad,jdbcType=VARCHAR}, #{codCliente,jdbcType=VARCHAR}, #{desCliente,jdbcType=VARCHAR}, 
+      #{nombreComercial,jdbcType=VARCHAR}, #{domicilio,jdbcType=VARCHAR}, #{poblacion,jdbcType=VARCHAR}, 
+      #{provincia,jdbcType=VARCHAR}, #{cp,jdbcType=VARCHAR}, #{telefono1,jdbcType=VARCHAR}, 
+      #{telefono2,jdbcType=VARCHAR}, #{fax,jdbcType=VARCHAR}, #{codpais,jdbcType=VARCHAR}, 
+      #{personaContacto,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR}, #{cif,jdbcType=VARCHAR}, 
+      #{idTratImpuestos,jdbcType=DECIMAL}, #{IdMedioPagoVencimiento,jdbcType=DECIMAL}, 
+      #{codtar,jdbcType=VARCHAR}, #{codsec,jdbcType=VARCHAR}, #{banco,jdbcType=VARCHAR}, 
+      #{bancoDomicilio,jdbcType=VARCHAR}, #{bancoPoblacion,jdbcType=VARCHAR}, #{ccc,jdbcType=VARCHAR}, 
+      #{observaciones,jdbcType=VARCHAR}, #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler}, 
+      #{fechaAlta,jdbcType=TIMESTAMP}, #{fechaBaja,jdbcType=TIMESTAMP}, #{riesgoConcedido,jdbcType=DECIMAL}, 
+      #{codcliFactura,jdbcType=VARCHAR}, #{localidad,jdbcType=VARCHAR}, #{tipoIdentificacion,jdbcType=VARCHAR},
+      #{deposito,jdbcType=VARCHAR}, #{codlengua,jdbcType=VARCHAR}
+      )
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.pos.persistence.clientes.ClienteBean" >
+    update D_CLIENTES_TBL
+    set DESCLI = #{desCliente,jdbcType=VARCHAR},
+      NOMBRE_COMERCIAL = #{nombreComercial,jdbcType=VARCHAR},
+      DOMICILIO = #{domicilio,jdbcType=VARCHAR},
+      POBLACION = #{poblacion,jdbcType=VARCHAR},
+      PROVINCIA = #{provincia,jdbcType=VARCHAR},
+      CP = #{cp,jdbcType=VARCHAR},
+      TELEFONO1 = #{telefono1,jdbcType=VARCHAR},
+      TELEFONO2 = #{telefono2,jdbcType=VARCHAR},
+      FAX = #{fax,jdbcType=VARCHAR},
+      CODPAIS = #{codpais,jdbcType=VARCHAR},
+      PERSONA_CONTACTO = #{personaContacto,jdbcType=VARCHAR},
+      EMAIL = #{email,jdbcType=VARCHAR},
+      CIF = #{cif,jdbcType=VARCHAR},
+      ID_TRAT_IMPUESTOS = #{idTratImpuestos,jdbcType=DECIMAL},
+      ID_MEDPAG_VEN = #{IdMedioPagoVencimiento,jdbcType=DECIMAL},
+      CODTAR = #{codtar,jdbcType=VARCHAR},
+      CODSEC = #{codsec,jdbcType=VARCHAR},
+      BANCO = #{banco,jdbcType=VARCHAR},
+      BANCO_DOMICILIO = #{bancoDomicilio,jdbcType=VARCHAR},
+      BANCO_POBLACION = #{bancoPoblacion,jdbcType=VARCHAR},
+      CCC = #{ccc,jdbcType=VARCHAR},
+      OBSERVACIONES = #{observaciones,jdbcType=VARCHAR},
+      ACTIVO = #{activo,jdbcType=CHAR,typeHandler=com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler},
+      FECHA_ALTA = #{fechaAlta,jdbcType=TIMESTAMP},
+      FECHA_BAJA = #{fechaBaja,jdbcType=TIMESTAMP},
+      RIESGO_CONCEDIDO = #{riesgoConcedido,jdbcType=DECIMAL},
+      CODCLI_FACTURA = #{codcliFactura,jdbcType=VARCHAR},
+      LOCALIDAD = #{localidad,jdbcType=VARCHAR},
+      CODTIPOIDEN = #{tipoIdentificacion,jdbcType=VARCHAR},
+      DEPOSITO = #{deposito,jdbcType=VARCHAR},
+      CODLENGUA = #{codlengua,jdbcType=VARCHAR}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and CODCLI = #{codCliente,jdbcType=VARCHAR}
+  </update>
+</mapper>

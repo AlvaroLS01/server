@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    ComerZZia 3.0
+
+    Copyright (c) 2008-2015 Comerzzia, S.L.  All Rights Reserved.
+
+    THIS WORK IS  SUBJECT  TO  SPAIN  AND  INTERNATIONAL  COPYRIGHT  LAWS  AND
+    TREATIES.   NO  PART  OF  THIS  WORK MAY BE  USED,  PRACTICED,  PERFORMED
+    COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED,  ABRIDGED, CONDENSED,
+    EXPANDED,  COLLECTED,  COMPILED,  LINKED,  RECAST, TRANSFORMED OR ADAPTED
+    WITHOUT THE PRIOR WRITTEN CONSENT OF COMERZZIA, S.L. ANY USE OR EXPLOITATION
+    OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO
+    CRIMINAL AND CIVIL LIABILITY.
+
+    CONSULT THE END USER LICENSE AGREEMENT FOR INFORMATION ON ADDITIONAL
+    RESTRICTIONS.
+
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.core.impuestos.tratamientos.POSTratamientoImpuestoMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="ID_TRAT_IMPUESTOS" property="idTratImpuestos" jdbcType="DECIMAL" />
+    <result column="CODTRATIMP" property="codtratimp" jdbcType="VARCHAR" />
+    <result column="DESTRATIMP" property="destratimp" jdbcType="VARCHAR" />
+    <result column="APLICA_RECARGO" property="aplicaRecargo" jdbcType="CHAR" />
+    <result column="CODPAIS" property="codpais" jdbcType="VARCHAR" />
+    <result column="REGION_IMPUESTOS" property="regionImpuestos" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, ID_TRAT_IMPUESTOS, CODTRATIMP, DESTRATIMP, APLICA_RECARGO, CODPAIS, 
+    REGION_IMPUESTOS
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_IMP_TRATAMIENTO_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoKey" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_IMP_TRATAMIENTO_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TRAT_IMPUESTOS = #{idTratImpuestos,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoKey" >
+    delete from D_IMP_TRATAMIENTO_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TRAT_IMPUESTOS = #{idTratImpuestos,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoExample" >
+    delete from D_IMP_TRATAMIENTO_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoBean" >
+    insert into D_IMP_TRATAMIENTO_TBL (UID_ACTIVIDAD, ID_TRAT_IMPUESTOS, CODTRATIMP, 
+      DESTRATIMP, APLICA_RECARGO, CODPAIS, 
+      REGION_IMPUESTOS)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{idTratImpuestos,jdbcType=DECIMAL}, #{codtratimp,jdbcType=VARCHAR}, 
+      #{destratimp,jdbcType=VARCHAR}, #{aplicaRecargo,jdbcType=CHAR}, #{codpais,jdbcType=VARCHAR}, 
+      #{regionImpuestos,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoBean" >
+    insert into D_IMP_TRATAMIENTO_TBL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        UID_ACTIVIDAD,
+      </if>
+      <if test="idTratImpuestos != null" >
+        ID_TRAT_IMPUESTOS,
+      </if>
+      <if test="codtratimp != null" >
+        CODTRATIMP,
+      </if>
+      <if test="destratimp != null" >
+        DESTRATIMP,
+      </if>
+      <if test="aplicaRecargo != null" >
+        APLICA_RECARGO,
+      </if>
+      <if test="codpais != null" >
+        CODPAIS,
+      </if>
+      <if test="regionImpuestos != null" >
+        REGION_IMPUESTOS,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        #{uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="idTratImpuestos != null" >
+        #{idTratImpuestos,jdbcType=DECIMAL},
+      </if>
+      <if test="codtratimp != null" >
+        #{codtratimp,jdbcType=VARCHAR},
+      </if>
+      <if test="destratimp != null" >
+        #{destratimp,jdbcType=VARCHAR},
+      </if>
+      <if test="aplicaRecargo != null" >
+        #{aplicaRecargo,jdbcType=CHAR},
+      </if>
+      <if test="codpais != null" >
+        #{codpais,jdbcType=VARCHAR},
+      </if>
+      <if test="regionImpuestos != null" >
+        #{regionImpuestos,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoExample" resultType="java.lang.Integer" >
+    select count(*) from D_IMP_TRATAMIENTO_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update D_IMP_TRATAMIENTO_TBL
+    <set >
+      <if test="record.uidActividad != null" >
+        UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idTratImpuestos != null" >
+        ID_TRAT_IMPUESTOS = #{record.idTratImpuestos,jdbcType=DECIMAL},
+      </if>
+      <if test="record.codtratimp != null" >
+        CODTRATIMP = #{record.codtratimp,jdbcType=VARCHAR},
+      </if>
+      <if test="record.destratimp != null" >
+        DESTRATIMP = #{record.destratimp,jdbcType=VARCHAR},
+      </if>
+      <if test="record.aplicaRecargo != null" >
+        APLICA_RECARGO = #{record.aplicaRecargo,jdbcType=CHAR},
+      </if>
+      <if test="record.codpais != null" >
+        CODPAIS = #{record.codpais,jdbcType=VARCHAR},
+      </if>
+      <if test="record.regionImpuestos != null" >
+        REGION_IMPUESTOS = #{record.regionImpuestos,jdbcType=VARCHAR},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update D_IMP_TRATAMIENTO_TBL
+    set UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      ID_TRAT_IMPUESTOS = #{record.idTratImpuestos,jdbcType=DECIMAL},
+      CODTRATIMP = #{record.codtratimp,jdbcType=VARCHAR},
+      DESTRATIMP = #{record.destratimp,jdbcType=VARCHAR},
+      APLICA_RECARGO = #{record.aplicaRecargo,jdbcType=CHAR},
+      CODPAIS = #{record.codpais,jdbcType=VARCHAR},
+      REGION_IMPUESTOS = #{record.regionImpuestos,jdbcType=VARCHAR}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoBean" >
+    update D_IMP_TRATAMIENTO_TBL
+    <set >
+      <if test="codtratimp != null" >
+        CODTRATIMP = #{codtratimp,jdbcType=VARCHAR},
+      </if>
+      <if test="destratimp != null" >
+        DESTRATIMP = #{destratimp,jdbcType=VARCHAR},
+      </if>
+      <if test="aplicaRecargo != null" >
+        APLICA_RECARGO = #{aplicaRecargo,jdbcType=CHAR},
+      </if>
+      <if test="codpais != null" >
+        CODPAIS = #{codpais,jdbcType=VARCHAR},
+      </if>
+      <if test="regionImpuestos != null" >
+        REGION_IMPUESTOS = #{regionImpuestos,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TRAT_IMPUESTOS = #{idTratImpuestos,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoBean" >
+    update D_IMP_TRATAMIENTO_TBL
+    set CODTRATIMP = #{codtratimp,jdbcType=VARCHAR},
+      DESTRATIMP = #{destratimp,jdbcType=VARCHAR},
+      APLICA_RECARGO = #{aplicaRecargo,jdbcType=CHAR},
+      CODPAIS = #{codpais,jdbcType=VARCHAR},
+      REGION_IMPUESTOS = #{regionImpuestos,jdbcType=VARCHAR}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TRAT_IMPUESTOS = #{idTratImpuestos,jdbcType=DECIMAL}
+  </update>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.impuestos.tratamientos.TratamientoImpuestoExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_IMP_TRATAMIENTO_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+</mapper>

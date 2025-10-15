@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    ComerZZia 3.0
+
+    Copyright (c) 2008-2015 Comerzzia, S.L.  All Rights Reserved.
+
+    THIS WORK IS  SUBJECT  TO  SPAIN  AND  INTERNATIONAL  COPYRIGHT  LAWS  AND
+    TREATIES.   NO  PART  OF  THIS  WORK MAY BE  USED,  PRACTICED,  PERFORMED
+    COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED,  ABRIDGED, CONDENSED,
+    EXPANDED,  COLLECTED,  COMPILED,  LINKED,  RECAST, TRANSFORMED OR ADAPTED
+    WITHOUT THE PRIOR WRITTEN CONSENT OF COMERZZIA, S.L. ANY USE OR EXPLOITATION
+    OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO
+    CRIMINAL AND CIVIL LIABILITY.
+
+    CONSULT THE END USER LICENSE AGREEMENT FOR INFORMATION ON ADDITIONAL
+    RESTRICTIONS.
+
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.core.documentos.tipos.POSTipoDocumentoMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="ID_TIPO_DOCUMENTO" property="idTipoDocumento" jdbcType="DECIMAL" />
+    <result column="DESTIPODOCUMENTO" property="destipodocumento" jdbcType="VARCHAR" />
+    <result column="ID_CONTADOR" property="idContador" jdbcType="VARCHAR" />
+    <result column="CODTIPODOCUMENTO" property="codtipodocumento" jdbcType="VARCHAR" />
+    <result column="CODPAIS" property="codpais" jdbcType="VARCHAR" />
+    <result column="CLASE_PROCESAMIENTO" property="claseProcesamiento" jdbcType="VARCHAR" />
+    <result column="CODAPLICACION" property="codaplicacion" jdbcType="VARCHAR" />
+    <result column="CODCONALM" property="codconalm" jdbcType="VARCHAR" />
+    <result column="AMBITO_APLICACION" property="ambitoAplicacion" jdbcType="VARCHAR" />
+    <result column="PROCESO" property="proceso" jdbcType="VARCHAR" />
+    <result column="CLASE_PROCESAMIENTO_REMOTO" property="claseProcesamientoRemoto" jdbcType="VARCHAR" />
+    <result column="ID_ACCION_ESTADOS" property="idAccionEstados" jdbcType="DECIMAL" />
+    <result column="ID_ESTADO_ALTA" property="idEstadoAlta" jdbcType="DECIMAL" />
+    <result column="DEVOLUCION" property="devolucion" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler"  />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    UID_ACTIVIDAD, ID_TIPO_DOCUMENTO, DESTIPODOCUMENTO, ID_CONTADOR, CODTIPODOCUMENTO, 
+    CODPAIS, CLASE_PROCESAMIENTO, CODAPLICACION, CODCONALM, AMBITO_APLICACION, PROCESO, 
+    CLASE_PROCESAMIENTO_REMOTO, ID_ACCION_ESTADOS, ID_ESTADO_ALTA, DEVOLUCION
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoExample" resultSetType="SCROLL_INSENSITIVE" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_TIPOS_DOCUMENTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoKey" >
+    select 
+    <include refid="Base_Column_List" />
+    from D_TIPOS_DOCUMENTOS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoKey" >
+    delete from D_TIPOS_DOCUMENTOS_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoExample" >
+    delete from D_TIPOS_DOCUMENTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoBean" >
+    insert into D_TIPOS_DOCUMENTOS_TBL (UID_ACTIVIDAD, ID_TIPO_DOCUMENTO, DESTIPODOCUMENTO, 
+      ID_CONTADOR, CODTIPODOCUMENTO, CODPAIS, 
+      CLASE_PROCESAMIENTO, CODAPLICACION, CODCONALM, 
+      AMBITO_APLICACION, PROCESO, CLASE_PROCESAMIENTO_REMOTO, 
+      ID_ACCION_ESTADOS, ID_ESTADO_ALTA, DEVOLUCION)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{idTipoDocumento,jdbcType=DECIMAL}, #{destipodocumento,jdbcType=VARCHAR}, 
+      #{idContador,jdbcType=VARCHAR}, #{codtipodocumento,jdbcType=VARCHAR}, #{codpais,jdbcType=VARCHAR}, 
+      #{claseProcesamiento,jdbcType=VARCHAR}, #{codaplicacion,jdbcType=VARCHAR}, #{codconalm,jdbcType=VARCHAR}, 
+      #{ambitoAplicacion,jdbcType=VARCHAR}, #{proceso,jdbcType=VARCHAR}, #{claseProcesamientoRemoto,jdbcType=VARCHAR},
+      #{idAccionEstados,jdbcType=DECIMAL}, #{idEstadoAlta,jdbcType=DECIMAL}, #{devolucion,jdbcType=CHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoBean" >
+    insert into D_TIPOS_DOCUMENTOS_TBL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        UID_ACTIVIDAD,
+      </if>
+      <if test="idTipoDocumento != null" >
+        ID_TIPO_DOCUMENTO,
+      </if>
+      <if test="destipodocumento != null" >
+        DESTIPODOCUMENTO,
+      </if>
+      <if test="idContador != null" >
+        ID_CONTADOR,
+      </if>
+      <if test="codtipodocumento != null" >
+        CODTIPODOCUMENTO,
+      </if>
+      <if test="codpais != null" >
+        CODPAIS,
+      </if>
+      <if test="claseProcesamiento != null" >
+        CLASE_PROCESAMIENTO,
+      </if>
+      <if test="codaplicacion != null" >
+        CODAPLICACION,
+      </if>
+      <if test="codconalm != null" >
+        CODCONALM,
+      </if>
+      <if test="ambitoAplicacion != null" >
+        AMBITO_APLICACION,
+      </if>
+      <if test="proceso != null" >
+        PROCESO,
+      </if>
+      <if test="claseProcesamientoRemoto != null" >
+        CLASE_PROCESAMIENTO_REMOTO,
+      </if>
+      <if test="idAccionEstados != null" >
+        ID_ACCION_ESTADOS,
+      </if>
+      <if test="idEstadoAlta != null" >
+        ID_ESTADO_ALTA,
+      </if>
+      <if test="devolucion != null" >
+        DEVOLUCION,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="uidActividad != null" >
+        #{uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="idTipoDocumento != null" >
+        #{idTipoDocumento,jdbcType=DECIMAL},
+      </if>
+      <if test="destipodocumento != null" >
+        #{destipodocumento,jdbcType=VARCHAR},
+      </if>
+      <if test="idContador != null" >
+        #{idContador,jdbcType=VARCHAR},
+      </if>
+      <if test="codtipodocumento != null" >
+        #{codtipodocumento,jdbcType=VARCHAR},
+      </if>
+      <if test="codpais != null" >
+        #{codpais,jdbcType=VARCHAR},
+      </if>
+      <if test="claseProcesamiento != null" >
+        #{claseProcesamiento,jdbcType=VARCHAR},
+      </if>
+      <if test="codaplicacion != null" >
+        #{codaplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="codconalm != null" >
+        #{codconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="ambitoAplicacion != null" >
+        #{ambitoAplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="proceso != null" >
+        #{proceso,jdbcType=VARCHAR},
+      </if>
+      <if test="claseProcesamientoRemoto != null" >
+        #{claseProcesamientoRemoto,jdbcType=VARCHAR},
+      </if>
+      <if test="idAccionEstados != null" >
+        #{idAccionEstados,jdbcType=DECIMAL},
+      </if>
+      <if test="idEstadoAlta != null" >
+        #{idEstadoAlta,jdbcType=DECIMAL},
+      </if>
+      <if test="devolucion != null" >
+        #{devolucion,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoExample" resultType="java.lang.Integer" >
+    select count(*) from D_TIPOS_DOCUMENTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update D_TIPOS_DOCUMENTOS_TBL
+    <set >
+      <if test="record.uidActividad != null" >
+        UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idTipoDocumento != null" >
+        ID_TIPO_DOCUMENTO = #{record.idTipoDocumento,jdbcType=DECIMAL},
+      </if>
+      <if test="record.destipodocumento != null" >
+        DESTIPODOCUMENTO = #{record.destipodocumento,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idContador != null" >
+        ID_CONTADOR = #{record.idContador,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codtipodocumento != null" >
+        CODTIPODOCUMENTO = #{record.codtipodocumento,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codpais != null" >
+        CODPAIS = #{record.codpais,jdbcType=VARCHAR},
+      </if>
+      <if test="record.claseProcesamiento != null" >
+        CLASE_PROCESAMIENTO = #{record.claseProcesamiento,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codaplicacion != null" >
+        CODAPLICACION = #{record.codaplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="record.codconalm != null" >
+        CODCONALM = #{record.codconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="record.ambitoAplicacion != null" >
+        AMBITO_APLICACION = #{record.ambitoAplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="record.proceso != null" >
+        PROCESO = #{record.proceso,jdbcType=VARCHAR},
+      </if>
+      <if test="record.claseProcesamientoRemoto != null" >
+        CLASE_PROCESAMIENTO_REMOTO = #{record.claseProcesamientoRemoto,jdbcType=VARCHAR},
+      </if>
+      <if test="record.idAccionEstados != null" >
+        ID_ACCION_ESTADOS = #{record.idAccionEstados,jdbcType=DECIMAL},
+      </if>
+      <if test="record.idEstadoAlta != null" >
+        ID_ESTADO_ALTA = #{record.idEstadoAlta,jdbcType=DECIMAL},
+      </if>
+      <if test="record.devolucion != null" >
+        DEVOLUCION = #{record.devolucion,jdbcType=CHAR},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update D_TIPOS_DOCUMENTOS_TBL
+    set UID_ACTIVIDAD = #{record.uidActividad,jdbcType=VARCHAR},
+      ID_TIPO_DOCUMENTO = #{record.idTipoDocumento,jdbcType=DECIMAL},
+      DESTIPODOCUMENTO = #{record.destipodocumento,jdbcType=VARCHAR},
+      ID_CONTADOR = #{record.idContador,jdbcType=VARCHAR},
+      CODTIPODOCUMENTO = #{record.codtipodocumento,jdbcType=VARCHAR},
+      CODPAIS = #{record.codpais,jdbcType=VARCHAR},
+      CLASE_PROCESAMIENTO = #{record.claseProcesamiento,jdbcType=VARCHAR},
+      CODAPLICACION = #{record.codaplicacion,jdbcType=VARCHAR},
+      CODCONALM = #{record.codconalm,jdbcType=VARCHAR},
+      AMBITO_APLICACION = #{record.ambitoAplicacion,jdbcType=VARCHAR},
+      PROCESO = #{record.proceso,jdbcType=VARCHAR},
+      CLASE_PROCESAMIENTO_REMOTO = #{record.claseProcesamientoRemoto,jdbcType=VARCHAR},
+      ID_ACCION_ESTADOS = #{record.idAccionEstados,jdbcType=DECIMAL},
+      ID_ESTADO_ALTA = #{record.idEstadoAlta,jdbcType=DECIMAL},
+      DEVOLUCION = #{record.devolucion,jdbcType=CHAR}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoBean" >
+    update D_TIPOS_DOCUMENTOS_TBL
+    <set >
+      <if test="destipodocumento != null" >
+        DESTIPODOCUMENTO = #{destipodocumento,jdbcType=VARCHAR},
+      </if>
+      <if test="idContador != null" >
+        ID_CONTADOR = #{idContador,jdbcType=VARCHAR},
+      </if>
+      <if test="codtipodocumento != null" >
+        CODTIPODOCUMENTO = #{codtipodocumento,jdbcType=VARCHAR},
+      </if>
+      <if test="codpais != null" >
+        CODPAIS = #{codpais,jdbcType=VARCHAR},
+      </if>
+      <if test="claseProcesamiento != null" >
+        CLASE_PROCESAMIENTO = #{claseProcesamiento,jdbcType=VARCHAR},
+      </if>
+      <if test="codaplicacion != null" >
+        CODAPLICACION = #{codaplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="codconalm != null" >
+        CODCONALM = #{codconalm,jdbcType=VARCHAR},
+      </if>
+      <if test="ambitoAplicacion != null" >
+        AMBITO_APLICACION = #{ambitoAplicacion,jdbcType=VARCHAR},
+      </if>
+      <if test="proceso != null" >
+        PROCESO = #{proceso,jdbcType=VARCHAR},
+      </if>
+      <if test="claseProcesamientoRemoto != null" >
+        CLASE_PROCESAMIENTO_REMOTO = #{claseProcesamientoRemoto,jdbcType=VARCHAR},
+      </if>
+      <if test="idAccionEstados != null" >
+        ID_ACCION_ESTADOS = #{idAccionEstados,jdbcType=DECIMAL},
+      </if>
+      <if test="idEstadoAlta != null" >
+        ID_ESTADO_ALTA = #{idEstadoAlta,jdbcType=DECIMAL},
+      </if>
+      <if test="devolucion != null" >
+        DEVOLUCION = #{devolucion,jdbcType=CHAR},
+      </if>
+    </set>
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoBean" >
+    update D_TIPOS_DOCUMENTOS_TBL
+    set DESTIPODOCUMENTO = #{destipodocumento,jdbcType=VARCHAR},
+      ID_CONTADOR = #{idContador,jdbcType=VARCHAR},
+      CODTIPODOCUMENTO = #{codtipodocumento,jdbcType=VARCHAR},
+      CODPAIS = #{codpais,jdbcType=VARCHAR},
+      CLASE_PROCESAMIENTO = #{claseProcesamiento,jdbcType=VARCHAR},
+      CODAPLICACION = #{codaplicacion,jdbcType=VARCHAR},
+      CODCONALM = #{codconalm,jdbcType=VARCHAR},
+      AMBITO_APLICACION = #{ambitoAplicacion,jdbcType=VARCHAR},
+      PROCESO = #{proceso,jdbcType=VARCHAR},
+      CLASE_PROCESAMIENTO_REMOTO = #{claseProcesamientoRemoto,jdbcType=VARCHAR},
+      ID_ACCION_ESTADOS = #{idAccionEstados,jdbcType=DECIMAL},
+      ID_ESTADO_ALTA = #{idEstadoAlta,jdbcType=DECIMAL},
+      DEVOLUCION = #{devolucion,jdbcType=CHAR}
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+      and ID_TIPO_DOCUMENTO = #{idTipoDocumento,jdbcType=DECIMAL}
+  </update>
+  <select resultMap="BaseResultMap" parameterType="com.comerzzia.pos.persistence.core.documentos.tipos.TipoDocumentoExample" id="selectByExampleWithRowbounds" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from D_TIPOS_DOCUMENTOS_TBL
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+  </select>
+</mapper>

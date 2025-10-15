@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    ComerZZia 3.0
+
+    Copyright (c) 2008-2015 Comerzzia, S.L.  All Rights Reserved.
+
+    THIS WORK IS  SUBJECT  TO  SPAIN  AND  INTERNATIONAL  COPYRIGHT  LAWS  AND
+    TREATIES.   NO  PART  OF  THIS  WORK MAY BE  USED,  PRACTICED,  PERFORMED
+    COPIED, DISTRIBUTED, REVISED, MODIFIED, TRANSLATED,  ABRIDGED, CONDENSED,
+    EXPANDED,  COLLECTED,  COMPILED,  LINKED,  RECAST, TRANSFORMED OR ADAPTED
+    WITHOUT THE PRIOR WRITTEN CONSENT OF COMERZZIA, S.L. ANY USE OR EXPLOITATION
+    OF THIS WORK WITHOUT AUTHORIZATION COULD SUBJECT THE PERPETRATOR TO
+    CRIMINAL AND CIVIL LIABILITY.
+
+    CONSULT THE END USER LICENSE AGREEMENT FOR INFORMATION ON ADDITIONAL
+    RESTRICTIONS.
+
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.pos.persistence.core.variables.POSVariableMapper" >
+  <resultMap id="BaseResultMap" type="com.comerzzia.pos.persistence.core.variables.VariableBean" >        
+    <id  property="idVariable" column="ID_VARIABLE" jdbcType="VARCHAR" />
+    <result property="valor" column="VALOR" jdbcType="VARCHAR" />
+  </resultMap>
+ 
+  <select id="selectByActivity" resultMap="BaseResultMap" parameterType="String" >
+    select
+       DEFI.ID_VARIABLE,
+       (CASE
+          WHEN VARI.VALOR IS NULL THEN
+             DEFI.VALOR_DEFECTO
+          ELSE VARI.VALOR
+        END ) AS VALOR
+	FROM CONFIG_VARIABLES_TBL DEFI
+	     LEFT JOIN D_VARIABLES_TBL VARI ON (VARI.UID_ACTIVIDAD = #{uidActividad} AND VARI.ID_VARIABLE = DEFI.ID_VARIABLE)
+	ORDER BY DEFI.ID_VARIABLE
+  </select>
+</mapper>

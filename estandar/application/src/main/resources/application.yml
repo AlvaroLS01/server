@@ -1,0 +1,42 @@
+server:
+    port: 8080    
+    servlet:
+        contextPath: /api/v2/omnichannel
+    compression:
+       enabled: true
+       min-response-size: 1024
+         
+
+spring:    
+    main:
+        allow-bean-definition-overriding: true
+    application:
+        name: "comerzzia api v2 for OMNICHANNEL"
+    messages:
+        basename: i18n/messages,i18n/omnichannel-messages,i18n/omnichannel-docs
+    jackson:
+        serialization: 
+           FAIL_ON_EMPTY_BEANS: false
+                  
+management:   
+  server:
+    port: 8081
+  endpoint:
+    prometheus:
+      enabled: true      
+  metrics:
+    export:      
+      prometheus:
+        enabled: true             
+  endpoints:
+    web:
+      base-path: "/manage"        
+      exposure:
+        include: "*" # "health,info"
+                  
+logging:
+    level:
+        ROOT: INFO        
+        com.comerzzia.api: INFO
+        org.mybatis: INFO   
+        org.springframework : INFO   

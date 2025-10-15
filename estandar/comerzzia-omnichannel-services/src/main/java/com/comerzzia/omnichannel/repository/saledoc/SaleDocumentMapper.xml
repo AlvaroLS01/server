@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.comerzzia.omnichannel.repository.saledoc.SaleDocumentMapper" >
+  <resultMap id="HdrResultMap" type="com.comerzzia.omnichannel.domain.entity.saledoc.SaleDocHdrEntity" >
+    <result column="DEPOSIT" property="deposit" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+    <result column="PRICES_WITH_TAXES" property="pricesWithTaxes" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+  </resultMap>
+  
+  <resultMap id="HdrResultMapDTO" extends="HdrResultMap" type="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocHdrDTO" >
+    <collection property="lines" 
+                javaType="ArrayList"
+                select="selectDocumentLinesDTO" 
+                column="{activityUid=ACTIVITY_UID, salesDocId=SALES_DOC_ID" 
+                ofType="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocLineDTO"/>
+
+    <collection property="taxes" 
+                javaType="ArrayList"
+                select="selectDocumentTaxesDTO" 
+                column="{activityUid=ACTIVITY_UID, salesDocId=SALES_DOC_ID" 
+                ofType="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocTaxDTO"/>
+                
+     <collection property="payments" 
+                javaType="ArrayList"
+                select="selectDocumentPaymentsDTO" 
+                column="{activityUid=ACTIVITY_UID, salesDocId=SALES_DOC_ID" 
+                ofType="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocPaymentDTO"/>
+  </resultMap>
+  
+  <sql id="Hdr_Column_List" >
+    CAB.UID_ACTIVIDAD AS ACTIVITY_UID,                  
+	CAB.ID_CLIE_ALBARAN AS SALES_DOC_ID,               
+	CAB.CODEMP AS COMPANY_CODE,                        
+	CAB.PERIODO AS PERIOD,                             
+	CAB.CODSERIE AS SERIAL_CODE,                       
+	CAB.NUMALB AS SALES_DOC_NUMBER,                    
+	CAB.FECHA AS SALES_DOC_DATE,                       
+	CAB.HORA AS HOUR,                                  
+	CAB.FECHA_SUMINISTRO AS SUPPLY_DATE,               
+	CAB.CODALM AS STORE_CODE,                          
+	CAB.CODCAJA AS TILL_CODE,                          
+	CAB.UID_DIARIO_CAJA AS CASH_JOURNAL_UID,           
+	CAB.CODAPLICACION AS APPLICATION_CODE,             
+	CAB.CODCONALM AS WH_CONCEPT_CODE,                  
+	CAB.CODCLI AS CUSTOMER_CODE,                       
+	CAB.CODTAR AS RATE_CODE,                           
+	CAB.ID_TIPO_PORTE AS FREIGHT_TYPE_ID,              
+	CAB.PERSONA_CONTACTO AS CONTACT_PERSON,            
+	CAB.REFERENCIA_CLIENTE AS CUSTOMER_REFERENCE,      
+	CAB.ID_GRUPO_IMPUESTOS AS TAX_GROUP_ID,            
+	CAB.ID_TRAT_IMPUESTOS AS TAX_TREATMENT_ID,         
+	CAB.BASE AS BASE_AMOUNT,                           
+	CAB.IMPUESTOS AS TAX_AMOUNT,                       
+	CAB.TOTAL AS GRAND_AMOUNT,                         
+	CAB.OBSERVACIONES AS COMMENTS,                     
+	CAB.USUARIO AS USER_CODE,                          
+	CAB.ID_FACTURA_REP AS SALE_INVOICE_ID,             
+	CAB.ID_FACTURA_SOP AS SUPP_INVOICE_ID,             
+	CAB.TARJETA_FIDELIZACION AS LY_CUSTOMER_CARD,      
+	CAB.TRACKING_PORTE AS SHIPMENT_TRACKING,           
+	CAB.UID_TICKET AS SALES_DOC_UID,                   
+	CAB.ID_TIPO_DOCUMENTO AS DOC_TYPE_ID,              
+	CAB.COD_ALBARAN AS SALES_DOC_CODE,                 
+	CAB.COD_ALBARAN_ORIGEN AS SOURCE_SALES_DOC_CODE,   
+	CAB.ID_TIPO_DOCUMENTO_ORIGEN AS SOURCE_DOC_TYPE_ID,
+	CAB.SERIE_ALBARAN AS SALES_DOC_SERIAL,             
+	CAB.CODDIVISA AS CURRENCY_CODE,                    
+	CAB.DESCLI AS CUSTOMER_DES,                        
+	CAB.DOMICILIO AS ADDRESS,                          
+	CAB.POBLACION AS CITY,                             
+	CAB.PROVINCIA AS PROVINCE,                         
+	CAB.LOCALIDAD AS LOCATION,                         
+	CAB.CP AS POSTAL_CODE,                             
+	CAB.CODPAIS AS COUNTRY_CODE,                       
+	CAB.CODTIPOIDEN AS IDENTIFICATION_TYPE_CODE,       
+	CAB.CIF AS VAT_NUMBER,                             
+	CAB.CODCLI_FACTURA AS INVOICE_CUSTOMER_CODE,       
+	CAB.DEPOSITO AS DEPOSIT,                           
+	CAB.CODTRANS AS CARRIER_CODE,                      
+	CAB.ID_ACCION_ESTADOS_LOG AS LOG_STATUS_ACTION_ID, 
+	CAB.ID_ESTADO_LOG AS LOG_STATUS_ID,                
+	CAB.UID_EXPEDICION AS EXPEDITION_UID,              
+	CAB.CODALM_DESTINO AS DELIVERY_STORE_CODE,         
+	CAB.PRECIOS_CON_IMPUESTOS AS PRICES_WITH_TAXES    
+  </sql>
+    
+  <select id="selectByDocumentUid" resultMap="HdrResultMap" parameterType="map" >
+    select 
+    <include refid="Hdr_Column_List" />
+    from D_CLIE_ALBARANES_CAB_TBL CAB
+    where CAB.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and CAB.UID_TICKET = #{documentUid,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectByDocumentUidDTO" resultMap="HdrResultMapDTO" parameterType="map" >
+    select 
+    <include refid="Hdr_Column_List" />
+    , DOC.CODTIPODOCUMENTO AS DOC_TYPE_CODE
+    , DOC.DESTIPODOCUMENTO AS DOC_TYPE_DES
+    from D_CLIE_ALBARANES_CAB_TBL CAB
+       LEFT JOIN D_TIPOS_DOCUMENTOS_TBL DOC ON (DOC.UID_ACTIVIDAD = CAB.UID_ACTIVIDAD AND DOC.ID_TIPO_DOCUMENTO = CAB.ID_TIPO_DOCUMENTO)
+    where CAB.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and CAB.UID_TICKET = #{documentUid,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectByDocumentCode" resultMap="HdrResultMap" parameterType="map" >
+    select 
+    <include refid="Hdr_Column_List" />
+    from D_CLIE_ALBARANES_CAB_TBL CAB
+    where CAB.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and CAB.ID_TIPO_DOCUMENTO = #{documentTypeId,jdbcType=DECIMAL}
+      and CAB.COD_ALBARAN = #{documentUid,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectByDocumentCodeDTO" resultMap="HdrResultMapDTO" parameterType="map" >
+    select 
+    <include refid="Hdr_Column_List" />
+    , DOC.CODTIPODOCUMENTO AS DOC_TYPE_CODE
+    , DOC.DESTIPODOCUMENTO AS DOC_TYPE_DES
+    from D_CLIE_ALBARANES_CAB_TBL CAB
+       LEFT JOIN D_TIPOS_DOCUMENTOS_TBL DOC ON (DOC.UID_ACTIVIDAD = CAB.UID_ACTIVIDAD AND DOC.ID_TIPO_DOCUMENTO = CAB.ID_TIPO_DOCUMENTO)
+    where CAB.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and CAB.ID_TIPO_DOCUMENTO = #{documentTypeId,jdbcType=DECIMAL}
+      and CAB.COD_ALBARAN = #{documentUid,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- LINE ******************** -->
+  <sql id="Line_Column_List" >
+	DET.UID_ACTIVIDAD AS ACTIVITY_UID,            
+	DET.ID_CLIE_ALBARAN AS SALES_DOC_ID,         
+	DET.LINEA AS LINE_ID,                        
+	DET.FECHA AS SALES_DOC_DATE,                 
+	DET.CODART AS ITEM_CODE,                     
+	DET.DESGLOSE1 AS COMBINATION1_CODE,          
+	DET.DESGLOSE2 AS COMBINATION2_CODE,          
+	DET.DESART AS ITEM_DES,                      
+	DET.DESCRIPCION_AMPLIADA AS EXPANDED_DES,    
+	DET.UNIDAD_MEDIDA AS UNIT_MEASURE_CODE,      
+	DET.CANTIDAD_MEDIDA AS UNIT_MEASURE_QUANTITY,
+	DET.CANTIDAD AS QUANTITY,                    
+	DET.PRECIO AS SALES_PRICE,                   
+	DET.PRECIO_TOTAL AS SALES_PRICE_WITH_TAXES,  
+	DET.DESCUENTO AS DISCOUNT,                   
+	DET.IMPORTE AS GROSS_AMOUNT,                 
+	DET.IMPORTE_TOTAL AS GRAND_AMOUNT,           
+	DET.CODIMP AS TAX_TYPE_CODE,                 
+	DET.PRECIO_COSTO AS UNIT_COST_PRICE,         
+	DET.ID_CLIE_PEDIDO AS SALES_ORDER_ID,        
+	DET.PEDIDO_LINEA AS ORDER_LINE_ID,           
+	DET.TIPO_LINEA AS LINE_TYPE,                 
+	DET.ID_PROMOCION AS PROMOTION_ID,            
+	DET.CAJERO_AUXILIAR AS AUX_CASHIER,          
+	DET.ID_CLIE_ALBARAN_ENL AS LINK_SALES_DOC_ID,
+	DET.LINEA_ENL AS LINK_SALES_DOC_LINE_ID,     
+	DET.OPERACION_ALMACEN AS STOCK_OPERATION      
+  </sql>
+
+  <resultMap id="LineResultMap" type="com.comerzzia.omnichannel.domain.entity.saledoc.SaleDocLineEntity" >     
+  </resultMap>
+  
+  <select id="selectDocumentLines" resultMap="LineResultMap" parameterType="map" >
+    select 
+    <include refid="Line_Column_List" />
+    from D_CLIE_ALBARANES_DET_TBL DET
+    where DET.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and DET.ID_CLIE_ALBARAN = #{salesDocId,jdbcType=VARCHAR}
+    ORDER BY DET.LINEA
+  </select>
+  
+  <resultMap id="LineResultMapDTO" type="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocLineDTO" >
+     <collection property="priceModifications" 
+          javaType="ArrayList"
+          select="selectDocumentLinePriceMods" 
+          column="{activityUid=ACTIVITY_UID, salesDocUid=SALES_DOC_UID, lineId=LINE_ID" 
+          ofType="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocLinePriceModDTO"/>
+       
+  </resultMap>
+  
+  <select id="selectDocumentLinesDTO" resultMap="LineResultMapDTO" parameterType="map" >
+    select 
+    <include refid="Line_Column_List" />
+    , CAB.UID_TICKET AS SALES_DOC_UID
+    from D_CLIE_ALBARANES_DET_TBL DET
+       INNER JOIN D_CLIE_ALBARANES_CAB_TBL CAB ON (CAB.UID_ACTIVIDAD = DET.UID_ACTIVIDAD AND CAB.ID_CLIE_ALBARAN = DET.ID_CLIE_ALBARAN)
+    where DET.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and DET.ID_CLIE_ALBARAN = #{salesDocId,jdbcType=VARCHAR}
+    ORDER BY DET.LINEA
+  </select>
+  
+  <!-- LINE PRICE MODIFICATIONS ********* -->
+  <sql id="LinePriceMod_Column_List" >
+	UID_ACTIVIDAD AS ACTIVITY_UID,             
+	UID_DOCUMENTO AS SALES_DOC_UID,           
+	LINEA AS LINE_ID,                         
+	LINEA_MODIFICACION AS UPDATE_LINE_ID,     
+	ORIGEN_MODIFICACION AS REASON_CODE,       
+	DOCUMENTO_REFERENCIA AS REASON_DOC,       
+	PRECIO_ENTRADA AS INPUT_PRICE,            
+	PRECIO_SALIDA AS OUTPUT_PRICE,            
+	MODIFICACION AS PRICE_MODIFICATION_AMOUNT,
+	APLICADO_EN AS APPLIED_TO,                
+	ID_USUARIO AS USER_ID                          
+  </sql>
+
+  <resultMap id="LinePriceModResultMap" type="com.comerzzia.omnichannel.domain.entity.saledoc.SaleDocLinePriceModEntity" >
+  </resultMap>
+
+  <select id="selectDocumentLinePriceMods" resultMap="LinePriceModResultMap" parameterType="map" >
+    select 
+    <include refid="LinePriceMod_Column_List" />
+    from D_CLIE_VENTAS_DET_MOD_PRE_TBL
+    where UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and UID_DOCUMENTO = #{salesDocUid,jdbcType=VARCHAR}
+      and LINEA = #{lineId,jdbcType=DECIMAL}
+    ORDER BY LINEA, LINEA_MODIFICACION
+  </select>
+  
+  <!-- TAXES ******************** -->
+  <sql id="Tax_Column_List" >
+	IMP.UID_ACTIVIDAD AS ACTIVITY_UID,   
+	IMP.ID_CLIE_ALBARAN AS SALES_DOC_ID,
+	IMP.CODIMP AS TAX_TYPE_CODE,        
+	IMP.BASE AS BASE_AMOUNT,            
+	IMP.IMPUESTOS AS TAX_AMOUNT,        
+	IMP.TOTAL AS TOTAL                     
+  </sql>
+
+  <resultMap id="TaxResultMap" type="com.comerzzia.omnichannel.domain.entity.saledoc.SaleDocTaxEntity" >
+  </resultMap>
+
+  <select id="selectDocumentTaxes" resultMap="TaxResultMap" parameterType="map" >
+    select 
+    <include refid="Tax_Column_List" />
+    from D_CLIE_ALBARANES_IMP_TBL IMP
+    where IMP.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and IMP.ID_CLIE_ALBARAN = #{salesDocId,jdbcType=VARCHAR}
+    ORDER BY IMP.CODIMP
+  </select>
+  
+  <resultMap id="TaxResultMapDTO" type="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocTaxDTO" >
+  </resultMap>
+
+  <select id="selectDocumentTaxesDTO" resultMap="TaxResultMapDTO" parameterType="map" >
+    select 
+    <include refid="Tax_Column_List" />
+    , PER.PORCENTAJE AS PERCENTAGE
+    , PER.PORCENTAJE_RECARGO AS SURCHARGE_PERCENTAGE
+    , PER.CODIMP_FISCAL AS FISCAL_TAX_TYPE_CODE
+    from D_CLIE_ALBARANES_IMP_TBL IMP
+       LEFT JOIN D_CLIE_ALBARANES_CAB_TBL CAB ON (CAB.UID_ACTIVIDAD = IMP.UID_ACTIVIDAD AND CAB.ID_CLIE_ALBARAN = IMP.ID_CLIE_ALBARAN)
+       LEFT JOIN D_IMP_PORCENTAJES_TBL PER ON (PER.UID_ACTIVIDAD = CAB.UID_ACTIVIDAD AND PER.ID_GRUPO_IMPUESTOS = CAB.ID_GRUPO_IMPUESTOS AND PER.ID_TRAT_IMPUESTOS = CAB.ID_TRAT_IMPUESTOS AND PER.CODIMP = IMP.CODIMP) 
+    where IMP.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and IMP.ID_CLIE_ALBARAN = #{salesDocId,jdbcType=VARCHAR}
+    ORDER BY IMP.CODIMP
+  </select>  
+  
+  <!-- PAYMENTS ******************** -->
+  <sql id="Payment_Column_List" >
+	PAG.UID_ACTIVIDAD AS ACTIVITY_UID,          
+	PAG.ID_CLIE_ALBARAN AS SALES_DOC_ID,       
+	PAG.LINEA AS LINE_ID,                      
+	PAG.ID_MEDPAG_VEN AS PAYMENT_METHOD_ID,    
+	PAG.IMPORTE AS GROSS_AMOUNT,               
+	PAG.NUMERO_OPERACION AS TRANSACTION_NUMBER                    
+  </sql>
+
+  <resultMap id="PaymentResultMap" type="com.comerzzia.omnichannel.domain.entity.saledoc.SaleDocPaymentEntity" >
+  </resultMap>
+
+  <select id="selectDocumentPayments" resultMap="PaymentResultMap" parameterType="map" >
+    select 
+    <include refid="Payment_Column_List" />
+    from D_CLIE_ALBARANES_PAG_TBL PAG
+    where PAG.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and PAG.ID_CLIE_ALBARAN = #{salesDocId,jdbcType=VARCHAR}
+    ORDER BY PAG.LINEA
+  </select>
+  
+  <resultMap id="PaymentResultMapDTO" type="com.comerzzia.omnichannel.domain.dto.saledoc.SaleDocPaymentDTO" >
+    <result column="CASH" property="cash" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />  
+    <result column="CREDIT_CARD" property="creditCard" jdbcType="CHAR" typeHandler="com.comerzzia.core.util.mybatis.typehandlers.BooleanStringTypeHandler" />
+  </resultMap>
+
+  <select id="selectDocumentPaymentsDTO" resultMap="PaymentResultMapDTO" parameterType="map" >
+    select 
+    <include refid="Payment_Column_List" />
+    , MED.CODMEDPAG AS PAYMENT_METHOD_CODE
+    , MED.DESMEDPAG AS PAYMENT_METHOD_DES
+    , MED.EFECTIVO AS CASH
+    , MED.TARJETA_CREDITO AS CREDIT_CARD
+    from D_CLIE_ALBARANES_PAG_TBL PAG
+       LEFT JOIN D_MEDIOS_PAGO_VEN_TBL VEN ON (VEN.UID_ACTIVIDAD = PAG.UID_ACTIVIDAD AND VEN.ID_MEDPAG_VEN = PAG.ID_MEDPAG_VEN)
+       LEFT JOIN D_MEDIOS_PAGO_TBL MED ON (MED.UID_ACTIVIDAD = VEN.UID_ACTIVIDAD AND MED.CODMEDPAG = VEN.CODMEDPAG)
+    where PAG.UID_ACTIVIDAD = #{activityUid,jdbcType=VARCHAR}
+      and PAG.ID_CLIE_ALBARAN = #{salesDocId,jdbcType=VARCHAR}
+    ORDER BY PAG.LINEA
+  </select>
+</mapper>
