@@ -33,7 +33,7 @@ import com.comerzzia.api.omnichannel.web.model.document.PrintDocumentRequest;
 import com.comerzzia.api.omnichannel.web.rest.salesdoc.SalesDocumentResource;
 import com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument.DocumentoVentaImpresionException;
 
-@Controller
+@Controller("salesDocumentResource")
 @Path("/salesdocument")
 public class DocumentoVentaImpresionController extends SalesDocumentResource {
 
@@ -55,12 +55,13 @@ public class DocumentoVentaImpresionController extends SalesDocumentResource {
                 @Context HttpServletResponse response,
                 @Valid @BeanParam PrintDocumentRequest peticionImpresion) throws ApiException {
 
-                String mimeSolicitado = normalizarMime(peticionImpresion.getMimeType(), request.getContentType());
-                boolean esCopia = Boolean.TRUE.equals(peticionImpresion.getCopy());
-                boolean enLinea = Boolean.TRUE.equals(peticionImpresion.getInline());
-                String nombreSalida = normalizarNombreSalida(peticionImpresion.getOutputDocumentName(), uidDocumento);
-                String plantilla = peticionImpresion.getPrintTemplate();
-                Map<String, String> parametrosPersonalizados = obtenerParametrosPersonalizados(peticionImpresion);
+                PrintDocumentRequest parametrosPeticion = peticionImpresion != null ? peticionImpresion : new PrintDocumentRequest();
+                String mimeSolicitado = normalizarMime(parametrosPeticion.getMimeType(), request != null ? request.getContentType() : null);
+                boolean esCopia = Boolean.TRUE.equals(parametrosPeticion.getCopy());
+                boolean enLinea = Boolean.TRUE.equals(parametrosPeticion.getInline());
+                String nombreSalida = normalizarNombreSalida(parametrosPeticion.getOutputDocumentName(), uidDocumento);
+                String plantilla = parametrosPeticion.getPrintTemplate();
+                Map<String, String> parametrosPersonalizados = obtenerParametrosPersonalizados(parametrosPeticion);
 
                 OpcionesImpresionDocumentoVenta opciones = new OpcionesImpresionDocumentoVenta(mimeSolicitado, esCopia, enLinea,
                                 nombreSalida, plantilla, parametrosPersonalizados);
