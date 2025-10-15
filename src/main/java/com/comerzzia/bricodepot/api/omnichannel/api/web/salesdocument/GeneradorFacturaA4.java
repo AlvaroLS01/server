@@ -61,7 +61,24 @@ public class GeneradorFacturaA4 {
 	private static final String PLANTILLA_ORIGINAL = "facturaA4_Original";
 	private static final String PLANTILLA_DEVOLUCION_PT = "facturaDevolucionA4_PT";
 
-	private static final List<String> PLANTILLAS_VALIDAS = Arrays.asList(PLANTILLA_ES, PLANTILLA_PT, PLANTILLA_CA, PLANTILLA_ORIGINAL, PLANTILLA_DEVOLUCION_PT);
+        private static final List<String> PLANTILLAS_VALIDAS = Arrays.asList(PLANTILLA_ES, PLANTILLA_PT, PLANTILLA_CA, PLANTILLA_ORIGINAL, PLANTILLA_DEVOLUCION_PT);
+
+        private static final List<String> METODOS_EXCLUIDOS = Arrays.asList(
+                        "subir",
+                        "guardar",
+                        "save",
+                        "registrar",
+                        "create",
+                        "update",
+                        "delete",
+                        "insert",
+                        "add",
+                        "alta",
+                        "modificar",
+                        "upload",
+                        "persist",
+                        "store"
+        );
 
 	private static final Map<String, String> ALIAS_PLANTILLAS;
 	static {
@@ -177,31 +194,43 @@ public class GeneradorFacturaA4 {
 		return Optional.empty();
 	}
 
-	private Optional<Object> intentarBuscarTicket(Object bean, String uidDocumento) {
-		Method[] metodos = bean.getClass().getMethods();
-		for (Method metodo : metodos) {
-			if (metodo.getParameterCount() != 1) {
-				continue;
-			}
-			if (!metodo.getParameterTypes()[0].equals(String.class)) {
-				continue;
-			}
-			String nombreMetodo = metodo.getName().toLowerCase(Locale.ROOT);
-			if (!(nombreMetodo.contains("ticket") || nombreMetodo.contains("document"))) {
-				continue;
-			}
-			try {
-				Object posibleTicket = metodo.invoke(bean, uidDocumento);
-				if (posibleTicket != null && posibleTicket.getClass().getName().contains("TicketVentaAbono")) {
-					return Optional.of(posibleTicket);
-				}
-			}
-			catch (IllegalAccessException | InvocationTargetException excepcion) {
-				LOGGER.trace("No se pudo invocar {} en {}", metodo.getName(), bean.getClass().getName(), excepcion);
-			}
-		}
-		return Optional.empty();
-	}
+        private Optional<Object> intentarBuscarTicket(Object bean, String uidDocumento) {
+                Method[] metodos = bean.getClass().getMethods();
+                for (Method metodo : metodos) {
+                        if (metodo.getParameterCount() != 1) {
+                                continue;
+                        }
+                        if (!metodo.getParameterTypes()[0].equals(String.class)) {
+                                continue;
+                        }
+                        String nombreMetodo = metodo.getName().toLowerCase(Locale.ROOT);
+                        if (debeOmitirseMetodo(nombreMetodo)) {
+                                continue;
+                        }
+                        if (!(nombreMetodo.contains("ticket") || nombreMetodo.contains("document"))) {
+                                continue;
+                        }
+                        try {
+                                Object posibleTicket = metodo.invoke(bean, uidDocumento);
+                                if (posibleTicket != null && posibleTicket.getClass().getName().contains("TicketVentaAbono")) {
+                                        return Optional.of(posibleTicket);
+                                }
+                        }
+                        catch (IllegalAccessException | InvocationTargetException excepcion) {
+                                LOGGER.trace("No se pudo invocar {} en {}", metodo.getName(), bean.getClass().getName(), excepcion);
+                        }
+                }
+                return Optional.empty();
+        }
+
+        private boolean debeOmitirseMetodo(String nombreMetodo) {
+                for (String patron : METODOS_EXCLUIDOS) {
+                        if (nombreMetodo.contains(patron)) {
+                                return true;
+                        }
+                }
+                return false;
+        }
 
 	private PlantillaFactura determinarPlantilla(Object ticketVenta, String plantillaSolicitada) {
 		if (plantillaSolicitada != null && !plantillaSolicitada.trim().isEmpty()) {
