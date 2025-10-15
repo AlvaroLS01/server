@@ -26,14 +26,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 
 import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.omnichannel.web.model.document.PrintDocumentRequest;
 import com.comerzzia.api.omnichannel.web.rest.salesdoc.SalesDocumentResource;
 import com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument.DocumentoVentaImpresionException;
 
-@Controller("salesDocumentResource")
 @Path("/salesdocument")
 public class DocumentoVentaImpresionController extends SalesDocumentResource {
 
