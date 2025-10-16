@@ -32,6 +32,7 @@ import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintService
 
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
@@ -51,6 +52,10 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotJasperPrintService.class);
 
     private static final String CLASSPATH_TEMPLATE_DIRECTORY = "informes/ventas/facturas/";
+
+    private static final String LEGACY_TICKET_CLASS =
+            "com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono";
+    private static final String LEGACY_TICKET_CLASS_RESOURCE = LEGACY_TICKET_CLASS.replace('.', '/');
 
     private static final Map<String, String> TEMPLATE_ALIASES;
     static {
@@ -82,11 +87,20 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         File templateFile = (File) docParameters.get(DocumentPrintService.TEMPLATE_FILE);
 
         try {
-            JasperReport jasperReport = (JasperReport) JRLoader.loadObject(templateFile);
-            return JasperFillManager.fillReport(jasperReport, docParameters, new JREmptyDataSource());
+            return fillReport(templateFile, docParameters);
         }
         catch (JRException exception) {
-            String message = String.format("Error al generar el informe Jasper '%s': %s", templateFile, exception.getMessage());
+            if (requiresLegacyTicketClassFix(exception) && recompileTemplate(templateFile)) {
+                try {
+                    return fillReport(templateFile, docParameters);
+                }
+                catch (JRException retryException) {
+                    exception = retryException;
+                }
+            }
+
+            String message = String.format("Error al generar el informe Jasper '%s': %s", templateFile,
+                    exception.getMessage());
             LOGGER.error("getJasperPrint() - {}", message, exception);
             throw new ApiException(message, exception);
         }
@@ -168,6 +182,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             candidates.add(template + "_" + countryId.toLowerCase(Locale.ROOT) + ".jasper");
         }
         candidates.add(template + ".jasper");
+        candidates.add(template + ".jrxml");
         return candidates;
     }
 
@@ -176,6 +191,13 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             Path directory = ensureTemplatesExtracted();
             Path templatePath = directory.resolve(fileName);
             if (Files.exists(templatePath)) {
+                if (fileName.toLowerCase(Locale.ROOT).endsWith(".jrxml")) {
+                    File compiled = compileTemplate(templatePath);
+                    if (compiled != null) {
+                        return compiled;
+                    }
+                    return null;
+                }
                 return templateCache.computeIfAbsent(fileName, key -> {
                     File file = templatePath.toFile();
                     if (templatesDirectoryIsTemporary) {
@@ -250,6 +272,74 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             LOGGER.debug("locateTemplatesDirectory() - No fue posible resolver el directorio de plantillas del classpath", exception);
         }
         return null;
+    }
+
+    private JasperPrint fillReport(File templateFile, Map<String, Object> docParameters) throws JRException {
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(templateFile);
+        return JasperFillManager.fillReport(jasperReport, docParameters, new JREmptyDataSource());
+    }
+
+    private boolean requiresLegacyTicketClassFix(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && (message.contains(LEGACY_TICKET_CLASS) || message.contains(LEGACY_TICKET_CLASS_RESOURCE))) {
+                return true;
+            }
+            if (current instanceof NoClassDefFoundError) {
+                String errorMessage = ((NoClassDefFoundError) current).getMessage();
+                if (errorMessage != null && errorMessage.contains(LEGACY_TICKET_CLASS_RESOURCE)) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean recompileTemplate(File templateFile) {
+        String lowerName = templateFile.getName().toLowerCase(Locale.ROOT);
+        if (!lowerName.endsWith(".jasper")) {
+            return false;
+        }
+
+        Path templatePath = templateFile.toPath();
+        String sourceName = templateFile.getName().substring(0, templateFile.getName().length() - ".jasper".length())
+                + ".jrxml";
+        Path sourcePath = templatePath.resolveSibling(sourceName);
+        if (!Files.exists(sourcePath)) {
+            LOGGER.warn("recompileTemplate() - No se encontró el fichero JRXML {} para recompilar {}", sourcePath, templatePath);
+            return false;
+        }
+
+        try {
+            JasperCompileManager.compileReportToFile(sourcePath.toString(), templatePath.toString());
+            LOGGER.info("recompileTemplate() - Recompilada la plantilla Jasper {} a partir de {}", templatePath, sourcePath);
+            return true;
+        }
+        catch (JRException exception) {
+            LOGGER.error("recompileTemplate() - Falló la recompilación de {}", templatePath, exception);
+            return false;
+        }
+    }
+
+    private File compileTemplate(Path jrxmlPath) throws ApiException {
+        String fileName = jrxmlPath.getFileName().toString();
+        Path jasperPath = jrxmlPath.resolveSibling(fileName.substring(0, fileName.length() - ".jrxml".length()) + ".jasper");
+        try {
+            JasperCompileManager.compileReportToFile(jrxmlPath.toString(), jasperPath.toString());
+            LOGGER.debug("compileTemplate() - Compilada la plantilla {} a partir de {}", jasperPath, jrxmlPath);
+            return templateCache.computeIfAbsent(jasperPath.getFileName().toString(), key -> {
+                File file = jasperPath.toFile();
+                if (templatesDirectoryIsTemporary) {
+                    file.deleteOnExit();
+                }
+                return file;
+            });
+        }
+        catch (JRException exception) {
+            throw new DocumentoVentaImpresionException("No se pudo compilar la plantilla " + fileName, exception);
+        }
     }
 
     private String normaliseTemplateName(String templateName) {

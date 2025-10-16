@@ -6,7 +6,7 @@
 	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
 		<defaultValueExpression><![CDATA[".//"]]></defaultValueExpression>
 	</parameter>
-	<parameter name="ticket" class="com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono"/>
+     <parameter name="ticket" class="com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono"/>
 	<field name="idPromocion" class="java.lang.Long">
 		<fieldDescription><![CDATA[idPromocion]]></fieldDescription>
 	</field>
