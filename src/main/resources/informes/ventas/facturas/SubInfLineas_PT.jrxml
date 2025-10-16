@@ -3,9 +3,10 @@
 	<property name="ireport.zoom" value="3.0"/>
 	<property name="ireport.x" value="411"/>
 	<property name="ireport.y" value="0"/>
-	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
-		<defaultValueExpression><![CDATA[".//"]]></defaultValueExpression>
-	</parameter>
+    <parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+            <defaultValueExpression><![CDATA[".//"]]></defaultValueExpression>
+    </parameter>
+    <parameter name="TAX_PERCENTAGES" class="java.util.Map"/>
 	<field name="cantidad" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[cantidad]]></fieldDescription>
 	</field>
@@ -30,9 +31,9 @@
 	<field name="precioTotalSinDto" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[precioTotalSinDto]]></fieldDescription>
 	</field>
-	<field name="codImp" class="java.lang.String">
-		<fieldDescription><![CDATA[codImp]]></fieldDescription>
-	</field>
+    <field name="codImp" class="java.lang.String">
+            <fieldDescription><![CDATA[codImpuesto]]></fieldDescription>
+    </field>
 	<field name="precioTotalConDto" class="java.math.BigDecimal"/>
 	<field name="precioTarifaOrigen" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[precioTarifaOrigen]]></fieldDescription>
@@ -205,13 +206,15 @@
 				</textElement>
 				<textFieldExpression><![CDATA[$F{importeConDto}.divide($F{cantidad},2)]]></textFieldExpression>
 			</textField>
-			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="true">
-				<reportElement uuid="d249be82-33cd-4111-89dd-5bc77874b740" x="522" y="0" width="22" height="13"/>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Tahoma" size="6"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{codImp} + "%"]]></textFieldExpression>
-			</textField>
+                        <textField isBlankWhenNull="true">
+                                <reportElement uuid="d249be82-33cd-4111-89dd-5bc77874b740" x="522" y="0" width="22" height="13"/>
+                                <textElement textAlignment="Center" verticalAlignment="Middle">
+                                        <font fontName="Tahoma" size="6"/>
+                                </textElement>
+                                <textFieldExpression><![CDATA[$P{TAX_PERCENTAGES} != null && $F{codImp} != null && $P{TAX_PERCENTAGES}.get($F{codImp}) != null
+        ? new java.text.DecimalFormat("#,##0.##").format((java.math.BigDecimal)$P{TAX_PERCENTAGES}.get($F{codImp})) + "%"
+        : ""]]></textFieldExpression>
+                        </textField>
 		</band>
 	</detail>
 </jasperReport>
