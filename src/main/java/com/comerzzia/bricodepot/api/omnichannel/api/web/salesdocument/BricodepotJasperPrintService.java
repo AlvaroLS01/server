@@ -1,8 +1,8 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -25,9 +25,17 @@ import org.springframework.stereotype.Service;
 
 import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.core.service.exception.BadRequestException;
+import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
+
+import net.sf.jasperreports.engine.JREmptyDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.util.JRLoader;
 
 /**
  * Custom {@link JasperPrintServiceImpl} implementation that mirrors the product
@@ -64,6 +72,25 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     private final PathMatchingResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
     private final Map<String, File> templateCache = new ConcurrentHashMap<>();
     private volatile Path extractedTemplatesDirectory;
+    private volatile boolean templatesDirectoryIsTemporary;
+
+    @Override
+    protected JasperPrint getJasperPrint(IDatosSesion datosSesion, PrintDocumentDTO printRequest) throws ApiException {
+        LOGGER.debug("getJasperPrint() - Generando documento con parametros: {}", printRequest);
+
+        Map<String, Object> docParameters = generateDocParameters(datosSesion, printRequest);
+        File templateFile = (File) docParameters.get(DocumentPrintService.TEMPLATE_FILE);
+
+        try {
+            JasperReport jasperReport = (JasperReport) JRLoader.loadObject(templateFile);
+            return JasperFillManager.fillReport(jasperReport, docParameters, new JREmptyDataSource());
+        }
+        catch (JRException exception) {
+            String message = String.format("Error al generar el informe Jasper '%s': %s", templateFile, exception.getMessage());
+            LOGGER.error("getJasperPrint() - {}", message, exception);
+            throw new ApiException(message, exception);
+        }
+    }
 
     @Override
     protected File getTemplate(PrintDocumentDTO printRequest, Map<String, Object> docParameters) throws ApiException {
@@ -151,7 +178,9 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             if (Files.exists(templatePath)) {
                 return templateCache.computeIfAbsent(fileName, key -> {
                     File file = templatePath.toFile();
-                    file.deleteOnExit();
+                    if (templatesDirectoryIsTemporary) {
+                        file.deleteOnExit();
+                    }
                     return file;
                 });
             }
@@ -172,11 +201,21 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             if (extractedTemplatesDirectory != null && Files.exists(extractedTemplatesDirectory)) {
                 return extractedTemplatesDirectory;
             }
+            Path classpathDirectory = locateTemplatesDirectory();
+            if (classpathDirectory != null) {
+                extractedTemplatesDirectory = classpathDirectory;
+                templatesDirectoryIsTemporary = false;
+                LOGGER.debug("ensureTemplatesExtracted() - Using Jasper templates directly from classpath directory {}", classpathDirectory);
+                return classpathDirectory;
+            }
+
             Path temporal = Files.createTempDirectory("bricodepot-jasper-templates");
             copyTemplatesFromClasspath(temporal, "*.jasper");
             copyTemplatesFromClasspath(temporal, "*.jrxml");
             copyTemplatesFromClasspath(temporal, "*.xml");
             extractedTemplatesDirectory = temporal;
+            templatesDirectoryIsTemporary = true;
+            LOGGER.debug("ensureTemplatesExtracted() - Copied Jasper templates from classpath to temporal directory {}", temporal);
             return temporal;
         }
     }
@@ -195,6 +234,22 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
                 throw new IOException("No se pudo copiar la plantilla " + resource.getFilename(), exception);
             }
         }
+    }
+
+    private Path locateTemplatesDirectory() {
+        try {
+            Resource resource = resourceResolver.getResource("classpath:" + CLASSPATH_TEMPLATE_DIRECTORY);
+            if (resource.exists()) {
+                File file = resource.getFile();
+                if (file.isDirectory()) {
+                    return file.toPath();
+                }
+            }
+        }
+        catch (IOException | IllegalStateException exception) {
+            LOGGER.debug("locateTemplatesDirectory() - No fue posible resolver el directorio de plantillas del classpath", exception);
+        }
+        return null;
     }
 
     private String normaliseTemplateName(String templateName) {
