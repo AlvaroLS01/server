@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,8 +27,6 @@ import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.core.service.exception.BadRequestException;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
-import com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono;
-import com.comerzzia.omnichannel.model.documents.sales.ticket.cabecera.SubtotalIvaTicket;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
 
@@ -107,37 +104,6 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             LOGGER.error("getJasperPrint() - {}", message, exception);
             throw new ApiException(message, exception);
         }
-    }
-
-    @Override
-    protected Map<String, Object> generateDocParameters(IDatosSesion datosSesion, PrintDocumentDTO printRequest)
-            throws ApiException {
-        Map<String, Object> docParameters = super.generateDocParameters(datosSesion, printRequest);
-        Map<String, BigDecimal> taxPercentages = resolveTaxPercentages(docParameters);
-        if (!taxPercentages.isEmpty()) {
-            docParameters.put("TAX_PERCENTAGES", taxPercentages);
-        }
-        return docParameters;
-    }
-
-    private Map<String, BigDecimal> resolveTaxPercentages(Map<String, Object> docParameters) {
-        Object ticketObject = docParameters.get("ticket");
-        if (!(ticketObject instanceof TicketVentaAbono)) {
-            return Collections.emptyMap();
-        }
-
-        TicketVentaAbono ticket = (TicketVentaAbono) ticketObject;
-        if (ticket.getCabecera() == null || ticket.getCabecera().getSubtotalesIva() == null) {
-            return Collections.emptyMap();
-        }
-
-        Map<String, BigDecimal> taxPercentages = new HashMap<>();
-        for (SubtotalIvaTicket subtotal : ticket.getCabecera().getSubtotalesIva()) {
-            if (subtotal != null && subtotal.getCodImpuesto() != null && subtotal.getPorcentaje() != null) {
-                taxPercentages.put(subtotal.getCodImpuesto(), subtotal.getPorcentaje());
-            }
-        }
-        return taxPercentages;
     }
 
     @Override
