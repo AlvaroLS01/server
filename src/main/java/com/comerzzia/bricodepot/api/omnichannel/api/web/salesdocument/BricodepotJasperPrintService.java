@@ -64,7 +64,6 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     private final PathMatchingResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
     private final Map<String, File> templateCache = new ConcurrentHashMap<>();
     private volatile Path extractedTemplatesDirectory;
-    private volatile boolean templatesDirectoryIsTemporary;
 
     @Override
     protected File getTemplate(PrintDocumentDTO printRequest, Map<String, Object> docParameters) throws ApiException {
@@ -152,9 +151,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             if (Files.exists(templatePath)) {
                 return templateCache.computeIfAbsent(fileName, key -> {
                     File file = templatePath.toFile();
-                    if (templatesDirectoryIsTemporary) {
-                        file.deleteOnExit();
-                    }
+                    file.deleteOnExit();
                     return file;
                 });
             }
@@ -175,21 +172,11 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             if (extractedTemplatesDirectory != null && Files.exists(extractedTemplatesDirectory)) {
                 return extractedTemplatesDirectory;
             }
-            Path classpathDirectory = locateTemplatesDirectory();
-            if (classpathDirectory != null) {
-                extractedTemplatesDirectory = classpathDirectory;
-                templatesDirectoryIsTemporary = false;
-                LOGGER.debug("ensureTemplatesExtracted() - Using Jasper templates directly from classpath directory {}", classpathDirectory);
-                return classpathDirectory;
-            }
-
             Path temporal = Files.createTempDirectory("bricodepot-jasper-templates");
             copyTemplatesFromClasspath(temporal, "*.jasper");
             copyTemplatesFromClasspath(temporal, "*.jrxml");
             copyTemplatesFromClasspath(temporal, "*.xml");
             extractedTemplatesDirectory = temporal;
-            templatesDirectoryIsTemporary = true;
-            LOGGER.debug("ensureTemplatesExtracted() - Copied Jasper templates from classpath to temporal directory {}", temporal);
             return temporal;
         }
     }
@@ -208,22 +195,6 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
                 throw new IOException("No se pudo copiar la plantilla " + resource.getFilename(), exception);
             }
         }
-    }
-
-    private Path locateTemplatesDirectory() {
-        try {
-            Resource resource = resourceResolver.getResource("classpath:" + CLASSPATH_TEMPLATE_DIRECTORY);
-            if (resource.exists()) {
-                File file = resource.getFile();
-                if (file.isDirectory()) {
-                    return file.toPath();
-                }
-            }
-        }
-        catch (IOException | IllegalStateException exception) {
-            LOGGER.debug("locateTemplatesDirectory() - No fue posible resolver el directorio de plantillas del classpath", exception);
-        }
-        return null;
     }
 
     private String normaliseTemplateName(String templateName) {
