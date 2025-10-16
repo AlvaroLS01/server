@@ -56,12 +56,14 @@ public class DocumentoVentaImpresionServicio {
                         return Optional.empty();
                 }
                 catch (ApiException excepcion) {
+                        LOGGER.error("imprimir() - Error generando el documento de venta '{}'", uidDocumento, excepcion);
                         throw new DocumentoVentaImpresionException("No fue posible generar el documento de venta", excepcion);
                 }
                 catch (DocumentoVentaImpresionException excepcion) {
                         throw excepcion;
                 }
                 catch (Exception excepcion) {
+                        LOGGER.error("imprimir() - Error inesperado generando el documento de venta '{}'", uidDocumento, excepcion);
                         throw new DocumentoVentaImpresionException("No fue posible generar el documento de venta", excepcion);
                 }
         }
