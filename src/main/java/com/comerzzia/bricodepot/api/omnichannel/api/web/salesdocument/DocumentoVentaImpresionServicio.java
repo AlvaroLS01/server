@@ -228,6 +228,11 @@ public class DocumentoVentaImpresionServicio {
         }
 
         private Path localizarRutaInformesPorDefecto() {
+                Path rutaConfigurada = localizarRutaConfiguradaManualmente();
+                if (rutaConfigurada != null) {
+                        return rutaConfigurada;
+                }
+
                 String[] posiblesHomes = new String[] {
                                 System.getProperty("comerzzia.home"),
                                 System.getProperty("COMERZZIA_HOME"),
@@ -247,6 +252,44 @@ public class DocumentoVentaImpresionServicio {
                 String homeUsuario = System.getProperty("user.home");
                 if (StringUtils.isNotBlank(homeUsuario)) {
                         return Paths.get(homeUsuario, ".comerzzia", "informes");
+                }
+
+                return null;
+        }
+
+        private Path localizarRutaConfiguradaManualmente() {
+                String[] propiedades = new String[] {
+                                System.getProperty("bricodepot.facturas.dir"),
+                                System.getProperty("bricodepot.informes.dir"),
+                                System.getenv("BRICODEPOT_FACTURAS_DIR"),
+                                System.getenv("BRICODEPOT_INFORMES_DIR")
+                };
+
+                for (String valor : propiedades) {
+                        if (StringUtils.isBlank(valor)) {
+                                continue;
+                        }
+                        String rutaNormalizada = valor.trim();
+                        if (rutaNormalizada.isEmpty()) {
+                                continue;
+                        }
+                        try {
+                                Path ruta = Paths.get(rutaNormalizada);
+                                if (ruta.toFile().exists() || ruta.getParent() != null) {
+                                        return ruta;
+                                }
+                        }
+                        catch (Exception excepcion) {
+                                LOGGER.warn("localizarRutaConfiguradaManualmente() - Ruta manual '{}' inválida", valor, excepcion);
+                        }
+                }
+
+                String userDir = System.getProperty("user.dir");
+                if (StringUtils.isNotBlank(userDir)) {
+                        Path rutaProyecto = Paths.get(userDir, "src", "main", "resources");
+                        if (Files.exists(rutaProyecto)) {
+                                return rutaProyecto;
+                        }
                 }
 
                 return null;
