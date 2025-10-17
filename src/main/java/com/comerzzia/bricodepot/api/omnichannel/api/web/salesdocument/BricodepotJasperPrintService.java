@@ -30,13 +30,16 @@ import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
 
+import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRAbstractBeanDataSource;
 import net.sf.jasperreports.engine.util.JRLoader;
+import net.sf.jasperreports.engine.util.JRPropertiesUtil;
 
 /**
  * Custom {@link JasperPrintServiceImpl} implementation that mirrors the product
@@ -72,6 +75,9 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         aliases.put("fr", "facturaA4");
         aliases.put("nc", "facturaA4");
         TEMPLATE_ALIASES = Collections.unmodifiableMap(aliases);
+
+        JRPropertiesUtil.getInstance(DefaultJasperReportsContext.getInstance())
+                .setProperty(JRAbstractBeanDataSource.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
     }
 
     private final PathMatchingResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
@@ -276,6 +282,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
 
     private JasperPrint fillReport(File templateFile, Map<String, Object> docParameters) throws JRException {
         JasperReport jasperReport = (JasperReport) JRLoader.loadObject(templateFile);
+        jasperReport.setProperty(JRAbstractBeanDataSource.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
         return JasperFillManager.fillReport(jasperReport, docParameters, new JREmptyDataSource());
     }
 
