@@ -37,7 +37,6 @@ import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.data.JRAbstractBeanDataSource;
 import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.engine.util.JRPropertiesUtil;
 
@@ -77,7 +76,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         TEMPLATE_ALIASES = Collections.unmodifiableMap(aliases);
 
         JRPropertiesUtil.getInstance(DefaultJasperReportsContext.getInstance())
-                .setProperty(JRAbstractBeanDataSource.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
+                .setProperty(JasperBeanEnhancer.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
     }
 
     private final PathMatchingResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
@@ -90,6 +89,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         LOGGER.debug("getJasperPrint() - Generando documento con parametros: {}", printRequest);
 
         Map<String, Object> docParameters = generateDocParameters(datosSesion, printRequest);
+        JasperBeanEnhancer.enhance(docParameters);
         File templateFile = (File) docParameters.get(DocumentPrintService.TEMPLATE_FILE);
 
         try {
@@ -282,7 +282,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
 
     private JasperPrint fillReport(File templateFile, Map<String, Object> docParameters) throws JRException {
         JasperReport jasperReport = (JasperReport) JRLoader.loadObject(templateFile);
-        jasperReport.setProperty(JRAbstractBeanDataSource.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
+        jasperReport.setProperty(JasperBeanEnhancer.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
         return JasperFillManager.fillReport(jasperReport, docParameters, new JREmptyDataSource());
     }
 
