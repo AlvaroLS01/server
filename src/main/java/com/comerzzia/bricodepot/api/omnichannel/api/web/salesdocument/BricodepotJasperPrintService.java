@@ -1,11 +1,10 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,9 +44,7 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.engine.util.JRPropertiesUtil;
 
-import org.apache.commons.beanutils.BeanIntrospector;
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.apache.commons.beanutils.IntrospectionContext;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 
 /**
@@ -367,9 +363,18 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
 
     private static boolean registerPropertyAliases() {
         try {
-            PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance().getPropertyUtils();
-            propertyUtils.addBeanIntrospector(
-                    new PropertyAliasIntrospector(Collections.singletonMap("codImp", "codImpuesto")));
+            BeanUtilsBean beanUtils = BeanUtilsBean.getInstance();
+            PropertyUtilsBean propertyUtils = beanUtils.getPropertyUtils();
+            AliasAwarePropertyUtilsBean aliasAware = propertyUtils instanceof AliasAwarePropertyUtilsBean
+                    ? (AliasAwarePropertyUtilsBean) propertyUtils
+                    : new AliasAwarePropertyUtilsBean();
+
+            aliasAware.addAlias("codImp", "codImpuesto");
+            aliasAware.addAlias("medioPago.desMedioPago", "desMedioPago");
+
+            if (propertyUtils != aliasAware) {
+                BeanUtilsBean.setInstance(new BeanUtilsBean(beanUtils.getConvertUtils(), aliasAware));
+            }
             return true;
         }
         catch (Exception exception) {
@@ -379,46 +384,82 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         }
     }
 
-    private static final class PropertyAliasIntrospector implements BeanIntrospector {
+    private static final class AliasAwarePropertyUtilsBean extends PropertyUtilsBean {
 
-        private final Map<String, String> aliases;
+        private final Map<String, String> aliases = new ConcurrentHashMap<>();
 
-        private PropertyAliasIntrospector(Map<String, String> aliases) {
-            this.aliases = aliases;
+        void addAlias(String alias, String targetProperty) {
+            if (StringUtils.isAnyBlank(alias, targetProperty)) {
+                return;
+            }
+            aliases.put(alias.trim(), targetProperty.trim());
+        }
+
+        private String resolveAlias(String name) {
+            if (name == null) {
+                return null;
+            }
+            String trimmed = name.trim();
+            String alias = aliases.get(trimmed);
+            return alias != null ? alias : trimmed;
         }
 
         @Override
-        public void introspect(IntrospectionContext context) throws IntrospectionException {
-            Class<?> targetClass = context.getTargetClass();
-            for (Entry<String, String> alias : aliases.entrySet()) {
-                String aliasName = alias.getKey();
-                String propertyName = alias.getValue();
-
-                if (context.hasProperty(aliasName)) {
-                    continue;
-                }
-
-                PropertyDescriptor descriptor = context.getPropertyDescriptor(propertyName);
-                if (descriptor == null) {
-                    descriptor = findDescriptor(targetClass, propertyName);
-                }
-
-                if (descriptor != null && descriptor.getReadMethod() != null) {
-                    PropertyDescriptor aliasDescriptor = new PropertyDescriptor(aliasName, descriptor.getReadMethod(),
-                            descriptor.getWriteMethod());
-                    context.addPropertyDescriptor(aliasDescriptor);
-                }
-            }
+        public Object getProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getProperty(bean, resolveAlias(name));
         }
 
-        private PropertyDescriptor findDescriptor(Class<?> beanClass, String propertyName)
-                throws IntrospectionException {
-            for (PropertyDescriptor descriptor : Introspector.getBeanInfo(beanClass).getPropertyDescriptors()) {
-                if (propertyName.equals(descriptor.getName())) {
-                    return descriptor;
-                }
-            }
-            return null;
+        @Override
+        public void setProperty(Object bean, String name, Object value)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            super.setProperty(bean, resolveAlias(name), value);
+        }
+
+        @Override
+        public Object getNestedProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getNestedProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Object getSimpleProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getSimpleProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Object getIndexedProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getIndexedProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Object getMappedProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getMappedProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public PropertyDescriptor getPropertyDescriptor(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getPropertyDescriptor(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Class<?> getPropertyType(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getPropertyType(bean, resolveAlias(name));
+        }
+
+        @Override
+        public boolean isReadable(Object bean, String name) {
+            return super.isReadable(bean, resolveAlias(name));
+        }
+
+        @Override
+        public boolean isWriteable(Object bean, String name) {
+            return super.isWriteable(bean, resolveAlias(name));
         }
     }
 
