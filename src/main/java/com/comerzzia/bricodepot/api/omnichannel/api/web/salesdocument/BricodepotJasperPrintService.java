@@ -1,8 +1,11 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
+import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -27,16 +30,22 @@ import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.core.service.exception.BadRequestException;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
+import com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono;
+import com.comerzzia.omnichannel.model.documents.sales.ticket.lineas.LineaTicket;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
 
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRPropertiesUtil;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
+
+import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.PropertyUtilsBean;
 
 /**
  * Custom {@link JasperPrintServiceImpl} implementation that mirrors the product
@@ -72,12 +81,22 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         aliases.put("fr", "facturaA4");
         aliases.put("nc", "facturaA4");
         TEMPLATE_ALIASES = Collections.unmodifiableMap(aliases);
+
+        registerPropertyAliases();
     }
 
     private final PathMatchingResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
     private final Map<String, File> templateCache = new ConcurrentHashMap<>();
     private volatile Path extractedTemplatesDirectory;
     private volatile boolean templatesDirectoryIsTemporary;
+
+    @Override
+    protected Map<String, Object> generateDocParameters(IDatosSesion datosSesion, PrintDocumentDTO printRequest)
+            throws ApiException {
+        Map<String, Object> docParameters = super.generateDocParameters(datosSesion, printRequest);
+        normaliseTicketBreakdowns(docParameters);
+        return docParameters;
+    }
 
     @Override
     protected JasperPrint getJasperPrint(IDatosSesion datosSesion, PrintDocumentDTO printRequest) throws ApiException {
@@ -276,7 +295,172 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
 
     private JasperPrint fillReport(File templateFile, Map<String, Object> docParameters) throws JRException {
         JasperReport jasperReport = (JasperReport) JRLoader.loadObject(templateFile);
+        jasperReport.setProperty(JRPropertiesUtil.PROPERTY_PREFIX + "javabean.use.field.description",
+                Boolean.TRUE.toString());
         return JasperFillManager.fillReport(jasperReport, docParameters, new JREmptyDataSource());
+    }
+
+    private void normaliseTicketBreakdowns(Map<String, Object> docParameters) {
+        if (docParameters == null || docParameters.isEmpty()) {
+            return;
+        }
+        sanitizeTicket(docParameters.get("ticket"));
+        sanitizeTicket(docParameters.get("document"));
+        sanitizeLineCollection(docParameters.get("lineas"));
+        sanitizeLineCollection(docParameters.get("lineasAgrupadas"));
+    }
+
+    private void sanitizeTicket(Object candidate) {
+        if (!(candidate instanceof TicketVentaAbono)) {
+            return;
+        }
+        TicketVentaAbono ticket = (TicketVentaAbono) candidate;
+        List<LineaTicket> lines = ticket.getLineas();
+        if (lines != null) {
+            lines.forEach(this::sanitizeBreakdownValue);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void sanitizeLineCollection(Object candidate) {
+        if (!(candidate instanceof List<?>)) {
+            return;
+        }
+        List<?> values = (List<?>) candidate;
+        if (values.isEmpty()) {
+            return;
+        }
+        for (Object value : values) {
+            if (value instanceof LineaTicket) {
+                sanitizeBreakdownValue((LineaTicket) value);
+            }
+        }
+    }
+
+    private void sanitizeBreakdownValue(LineaTicket line) {
+        if (line == null) {
+            return;
+        }
+        String desglose2 = line.getDesglose2();
+        if (StringUtils.isBlank(desglose2)) {
+            return;
+        }
+
+        String trimmed = desglose2.trim();
+        if ("*".equals(trimmed)) {
+            line.setDesglose2("");
+            return;
+        }
+
+        String normalised = trimmed.replace(',', '.');
+        try {
+            new BigDecimal(normalised);
+        }
+        catch (NumberFormatException exception) {
+            line.setDesglose2("");
+        }
+    }
+
+    private static boolean registerPropertyAliases() {
+        try {
+            BeanUtilsBean beanUtils = BeanUtilsBean.getInstance();
+            PropertyUtilsBean propertyUtils = beanUtils.getPropertyUtils();
+            AliasAwarePropertyUtilsBean aliasAware = propertyUtils instanceof AliasAwarePropertyUtilsBean
+                    ? (AliasAwarePropertyUtilsBean) propertyUtils
+                    : new AliasAwarePropertyUtilsBean();
+
+            aliasAware.addAlias("codImp", "codImpuesto");
+            aliasAware.addAlias("medioPago.desMedioPago", "desMedioPago");
+
+            if (propertyUtils != aliasAware) {
+                BeanUtilsBean.setInstance(new BeanUtilsBean(beanUtils.getConvertUtils(), aliasAware));
+            }
+            return true;
+        }
+        catch (Exception exception) {
+            LoggerFactory.getLogger(BricodepotJasperPrintService.class)
+                    .warn("registerPropertyAliases() - No fue posible registrar los alias de propiedades", exception);
+            return false;
+        }
+    }
+
+    private static final class AliasAwarePropertyUtilsBean extends PropertyUtilsBean {
+
+        private final Map<String, String> aliases = new ConcurrentHashMap<>();
+
+        void addAlias(String alias, String targetProperty) {
+            if (StringUtils.isAnyBlank(alias, targetProperty)) {
+                return;
+            }
+            aliases.put(alias.trim(), targetProperty.trim());
+        }
+
+        private String resolveAlias(String name) {
+            if (name == null) {
+                return null;
+            }
+            String trimmed = name.trim();
+            String alias = aliases.get(trimmed);
+            return alias != null ? alias : trimmed;
+        }
+
+        @Override
+        public Object getProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public void setProperty(Object bean, String name, Object value)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            super.setProperty(bean, resolveAlias(name), value);
+        }
+
+        @Override
+        public Object getNestedProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getNestedProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Object getSimpleProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getSimpleProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Object getIndexedProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getIndexedProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Object getMappedProperty(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getMappedProperty(bean, resolveAlias(name));
+        }
+
+        @Override
+        public PropertyDescriptor getPropertyDescriptor(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getPropertyDescriptor(bean, resolveAlias(name));
+        }
+
+        @Override
+        public Class<?> getPropertyType(Object bean, String name)
+                throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            return super.getPropertyType(bean, resolveAlias(name));
+        }
+
+        @Override
+        public boolean isReadable(Object bean, String name) {
+            return super.isReadable(bean, resolveAlias(name));
+        }
+
+        @Override
+        public boolean isWriteable(Object bean, String name) {
+            return super.isWriteable(bean, resolveAlias(name));
+        }
     }
 
     private boolean requiresLegacyTicketClassFix(Throwable throwable) {
