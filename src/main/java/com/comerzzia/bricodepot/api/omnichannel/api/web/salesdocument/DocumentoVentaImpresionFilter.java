@@ -1,9 +1,6 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +15,6 @@ import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.Provider;
 
 /**
@@ -85,47 +81,12 @@ public class DocumentoVentaImpresionFilter implements ContainerRequestFilter {
                 printTemplate,
                 customParams);
 
-        Optional<DocumentoVentaImpresionResultado> respuesta = servicioImpresion.imprimir(documentUid, opciones);
+        Optional<DocumentoVentaImpresionRespuesta> respuesta = servicioImpresion.imprimir(documentUid, opciones);
 
-        if (!respuesta.isPresent()) {
-            requestContext.abortWith(Response.status(Response.Status.NO_CONTENT).build());
-            return;
-        }
-
-        DocumentoVentaImpresionResultado documento = respuesta.get();
-        byte[] contenido = documento.getContenido();
-        ResponseBuilder responseBuilder = Response.ok(contenido);
-        responseBuilder.type(valueOrDefault(documento.getTipoMime(), MediaType.APPLICATION_OCTET_STREAM));
-        if (contenido != null) {
-            responseBuilder.header("Content-Length", contenido.length);
-        }
-        String contentDisposition = buildContentDisposition(documento);
-        if (contentDisposition != null) {
-            responseBuilder.header("Content-Disposition", contentDisposition);
-        }
+        Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON_TYPE);
+        respuesta.ifPresent(responseBuilder::entity);
 
         requestContext.abortWith(responseBuilder.build());
-    }
-
-    private String buildContentDisposition(DocumentoVentaImpresionResultado documento) {
-        String nombre = emptyToNull(documento.getNombreArchivo());
-        String tipo = documento.isEnLinea() ? "inline" : "attachment";
-        if (nombre == null) {
-            return tipo;
-        }
-        String sanitized = nombre.replace("\"", "").replace("\n", "").replace("\r", "");
-        StringBuilder builder = new StringBuilder(tipo).append("; filename=\"").append(sanitized).append("\"");
-        String encoded = encodeUtf8(sanitized);
-        builder.append("; filename*=UTF-8''").append(encoded);
-        return builder.toString();
-    }
-
-    private String encodeUtf8(String value) {
-        try {
-            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException("UTF-8 encoding not supported", e);
-        }
     }
 
     private Map<String, String> toSingleValueMap(javax.ws.rs.core.MultivaluedMap<String, String> parameters) {
