@@ -219,6 +219,36 @@ public class DocumentoVentaImpresionServicio {
                 catch (Exception excepcion) {
                         LOGGER.debug("localizarRutaInformes() - No se pudo obtener la ruta base de informes desde AppInfo", excepcion);
                 }
+                Path rutaPorDefecto = localizarRutaInformesPorDefecto();
+                if (rutaPorDefecto != null) {
+                        LOGGER.info("localizarRutaInformes() - Utilizando ruta por defecto '{}' para almacenar informes", rutaPorDefecto);
+                        return rutaPorDefecto.toString();
+                }
+                return null;
+        }
+
+        private Path localizarRutaInformesPorDefecto() {
+                String[] posiblesHomes = new String[] {
+                                System.getProperty("comerzzia.home"),
+                                System.getProperty("COMERZZIA_HOME"),
+                                System.getenv("COMERZZIA_HOME")
+                };
+                for (String home : posiblesHomes) {
+                        if (StringUtils.isBlank(home)) {
+                                continue;
+                        }
+                        Path candidato = Paths.get(home, "informes");
+                        if (home.contains("${")) {
+                                continue;
+                        }
+                        return candidato;
+                }
+
+                String homeUsuario = System.getProperty("user.home");
+                if (StringUtils.isNotBlank(homeUsuario)) {
+                        return Paths.get(homeUsuario, ".comerzzia", "informes");
+                }
+
                 return null;
         }
 }
