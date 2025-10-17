@@ -1,5 +1,8 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +34,6 @@ import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
 
-import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -39,6 +42,11 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.engine.util.JRPropertiesUtil;
+
+import org.apache.commons.beanutils.BeanIntrospector;
+import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.IntrospectionContext;
+import org.apache.commons.beanutils.PropertyUtilsBean;
 
 /**
  * Custom {@link JasperPrintServiceImpl} implementation that mirrors the product
@@ -75,8 +83,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         aliases.put("nc", "facturaA4");
         TEMPLATE_ALIASES = Collections.unmodifiableMap(aliases);
 
-        JRPropertiesUtil.getInstance(DefaultJasperReportsContext.getInstance())
-                .setProperty(JasperBeanEnhancer.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
+        registerPropertyAliases();
     }
 
     private final PathMatchingResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
@@ -89,7 +96,6 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         LOGGER.debug("getJasperPrint() - Generando documento con parametros: {}", printRequest);
 
         Map<String, Object> docParameters = generateDocParameters(datosSesion, printRequest);
-        JasperBeanEnhancer.enhance(docParameters);
         File templateFile = (File) docParameters.get(DocumentPrintService.TEMPLATE_FILE);
 
         try {
@@ -282,8 +288,66 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
 
     private JasperPrint fillReport(File templateFile, Map<String, Object> docParameters) throws JRException {
         JasperReport jasperReport = (JasperReport) JRLoader.loadObject(templateFile);
-        jasperReport.setProperty(JasperBeanEnhancer.PROPERTY_USE_FIELD_DESCRIPTION, Boolean.TRUE.toString());
+        jasperReport.setProperty(JRPropertiesUtil.PROPERTY_PREFIX + "javabean.use.field.description",
+                Boolean.TRUE.toString());
         return JasperFillManager.fillReport(jasperReport, docParameters, new JREmptyDataSource());
+    }
+
+    private static boolean registerPropertyAliases() {
+        try {
+            PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance().getPropertyUtils();
+            propertyUtils.addBeanIntrospector(
+                    new PropertyAliasIntrospector(Collections.singletonMap("codImp", "codImpuesto")));
+            return true;
+        }
+        catch (Exception exception) {
+            LoggerFactory.getLogger(BricodepotJasperPrintService.class)
+                    .warn("registerPropertyAliases() - No fue posible registrar los alias de propiedades", exception);
+            return false;
+        }
+    }
+
+    private static final class PropertyAliasIntrospector implements BeanIntrospector {
+
+        private final Map<String, String> aliases;
+
+        private PropertyAliasIntrospector(Map<String, String> aliases) {
+            this.aliases = aliases;
+        }
+
+        @Override
+        public void introspect(IntrospectionContext context) throws IntrospectionException {
+            Class<?> targetClass = context.getTargetClass();
+            for (Entry<String, String> alias : aliases.entrySet()) {
+                String aliasName = alias.getKey();
+                String propertyName = alias.getValue();
+
+                if (context.hasProperty(aliasName)) {
+                    continue;
+                }
+
+                PropertyDescriptor descriptor = context.getPropertyDescriptor(propertyName);
+                if (descriptor == null) {
+                    descriptor = findDescriptor(targetClass, propertyName);
+                }
+
+                if (descriptor != null && descriptor.getReadMethod() != null) {
+                    PropertyDescriptor aliasDescriptor = new PropertyDescriptor(aliasName, descriptor.getReadMethod(),
+                            descriptor.getWriteMethod());
+                    context.addPropertyDescriptor(aliasDescriptor);
+                }
+            }
+        }
+
+        private PropertyDescriptor findDescriptor(Class<?> beanClass, String propertyName)
+                throws IntrospectionException {
+            for (PropertyDescriptor descriptor : Introspector.getBeanInfo(beanClass).getPropertyDescriptors()) {
+                if (propertyName.equals(descriptor.getName())) {
+                    return descriptor;
+                }
+            }
+            return null;
+        }
     }
 
     private boolean requiresLegacyTicketClassFix(Throwable throwable) {
