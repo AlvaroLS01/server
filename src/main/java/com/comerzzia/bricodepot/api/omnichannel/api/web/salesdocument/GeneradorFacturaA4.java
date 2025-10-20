@@ -50,6 +50,8 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.JasperRunManager;
 import net.sf.jasperreports.engine.util.JRLoader;
 
+import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono;
+
 @Component
 public class GeneradorFacturaA4 {
 
@@ -100,9 +102,9 @@ public class GeneradorFacturaA4 {
 			return Optional.empty();
 		}
 
-		Object ticketVenta = posibleTicket.get();
-		PlantillaFactura plantilla = determinarPlantilla(ticketVenta, opciones.getPlantillaImpresion());
-		Map<String, Object> parametros = prepararParametros(ticketVenta, opciones.esCopia(), plantilla, convertirParametrosPersonalizados(opciones.getParametrosPersonalizados()));
+                Object ticketVenta = adaptarTicketParaPlantilla(posibleTicket.get());
+                PlantillaFactura plantilla = determinarPlantilla(ticketVenta, opciones.getPlantillaImpresion());
+                Map<String, Object> parametros = prepararParametros(ticketVenta, opciones.esCopia(), plantilla, convertirParametrosPersonalizados(opciones.getParametrosPersonalizados()));
 
 		String nombreFichero = calcularNombreFichero(opciones.getNombreDocumentoSalida(), ticketVenta, plantilla);
 		byte[] pdfGenerado = ejecutarJasper(plantilla, parametros);
@@ -241,10 +243,10 @@ public class GeneradorFacturaA4 {
 		return new PlantillaFactura(nombrePlantilla, version);
 	}
 
-	private Map<String, Object> prepararParametros(Object ticketVenta, boolean esCopia, PlantillaFactura plantilla, Map<String, Object> parametrosPersonalizados) {
-		Map<String, Object> parametros = new LinkedHashMap<>();
+        private Map<String, Object> prepararParametros(Object ticketVenta, boolean esCopia, PlantillaFactura plantilla, Map<String, Object> parametrosPersonalizados) {
+                Map<String, Object> parametros = new LinkedHashMap<>();
 
-		parametros.put("ticket", ticketVenta);
+                parametros.put("ticket", ticketVenta);
 		parametros.put("esDuplicado", esCopia);
 		parametros.put("reportVersion", plantilla.getVersion());
 
@@ -620,11 +622,11 @@ public class GeneradorFacturaA4 {
 		return actual;
 	}
 
-	private Object invocarGetter(Object origen, String propiedad) {
-		if (origen == null || propiedad == null) {
-			return null;
-		}
-		Class<?> tipo = origen.getClass();
+        private Object invocarGetter(Object origen, String propiedad) {
+                if (origen == null || propiedad == null) {
+                        return null;
+                }
+                Class<?> tipo = origen.getClass();
 		List<String> nombresMetodos = generarNombresMetodos(propiedad);
 		for (String nombre : nombresMetodos) {
 			try {
@@ -640,8 +642,20 @@ public class GeneradorFacturaA4 {
 
 	private List<String> generarNombresMetodos(String propiedad) {
 		String capitalizado = propiedad.substring(0, 1).toUpperCase(Locale.ROOT) + propiedad.substring(1);
-		return Arrays.asList(propiedad, "get" + capitalizado, "is" + capitalizado, "has" + capitalizado);
-	}
+                return Arrays.asList(propiedad, "get" + capitalizado, "is" + capitalizado, "has" + capitalizado);
+        }
+
+        private Object adaptarTicketParaPlantilla(Object posibleTicket) {
+                if (posibleTicket instanceof TicketVentaAbono) {
+                        return posibleTicket;
+                }
+                if (posibleTicket instanceof com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) {
+                        com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono ticketModelo =
+                                        (com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) posibleTicket;
+                        return TicketVentaAbono.fromModel(ticketModelo);
+                }
+                return posibleTicket;
+        }
 
 	private String normalizarNombrePlantilla(String plantillaSolicitada) {
 		if (plantillaSolicitada == null) {
