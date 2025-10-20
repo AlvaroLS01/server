@@ -30,7 +30,6 @@ import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.core.service.exception.BadRequestException;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
-import com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono;
 import com.comerzzia.omnichannel.model.documents.sales.ticket.lineas.LineaTicket;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
@@ -95,6 +94,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             throws ApiException {
         Map<String, Object> docParameters = super.generateDocParameters(datosSesion, printRequest);
         normaliseTicketBreakdowns(docParameters);
+        ensureLegacyTicketCompatibility(docParameters);
         return docParameters;
     }
 
@@ -311,10 +311,11 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     }
 
     private void sanitizeTicket(Object candidate) {
-        if (!(candidate instanceof TicketVentaAbono)) {
+        if (!(candidate instanceof com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono)) {
             return;
         }
-        TicketVentaAbono ticket = (TicketVentaAbono) candidate;
+        com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono ticket =
+                (com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) candidate;
         List<LineaTicket> lines = ticket.getLineas();
         if (lines != null) {
             lines.forEach(this::sanitizeBreakdownValue);
@@ -335,6 +336,40 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
                 sanitizeBreakdownValue((LineaTicket) value);
             }
         }
+    }
+
+    private void ensureLegacyTicketCompatibility(Map<String, Object> docParameters) {
+        if (docParameters == null || docParameters.isEmpty()) {
+            return;
+        }
+        docParameters.replaceAll((key, value) -> adaptToLegacyTicket(value));
+    }
+
+    private Object adaptToLegacyTicket(Object value) {
+        if (value instanceof com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono
+                && !(value instanceof com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono)) {
+            return com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono
+                    .fromModel((com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) value);
+        }
+        if (value instanceof List<?>) {
+            List<?> original = (List<?>) value;
+            if (original.isEmpty()) {
+                return value;
+            }
+            boolean modified = false;
+            List<Object> converted = new ArrayList<>(original.size());
+            for (Object element : original) {
+                Object adapted = adaptToLegacyTicket(element);
+                if (adapted != element) {
+                    modified = true;
+                }
+                converted.add(adapted);
+            }
+            if (modified) {
+                return converted;
+            }
+        }
+        return value;
     }
 
     private void sanitizeBreakdownValue(LineaTicket line) {
