@@ -94,6 +94,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     protected Map<String, Object> generateDocParameters(IDatosSesion datosSesion, PrintDocumentDTO printRequest)
             throws ApiException {
         Map<String, Object> docParameters = super.generateDocParameters(datosSesion, printRequest);
+        adaptLegacyTicketParameters(docParameters);
         normaliseTicketBreakdowns(docParameters);
         return docParameters;
     }
@@ -308,6 +309,41 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         sanitizeTicket(docParameters.get("document"));
         sanitizeLineCollection(docParameters.get("lineas"));
         sanitizeLineCollection(docParameters.get("lineasAgrupadas"));
+    }
+
+    private void adaptLegacyTicketParameters(Map<String, Object> docParameters) {
+        if (docParameters == null || docParameters.isEmpty()) {
+            return;
+        }
+
+        Object originalTicket = docParameters.get("ticket");
+        Object originalDocument = docParameters.get("document");
+
+        com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono legacyTicket = adaptTicket(
+                originalTicket);
+        if (legacyTicket != null) {
+            docParameters.put("ticket", legacyTicket);
+        }
+
+        boolean sameReference = originalTicket != null && originalTicket == originalDocument;
+        com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono legacyDocument = sameReference
+                ? legacyTicket
+                : adaptTicket(originalDocument);
+        if (legacyDocument != null) {
+            docParameters.put("document", legacyDocument);
+        }
+    }
+
+    private com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono adaptTicket(
+            Object candidate) {
+        if (candidate instanceof com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono) {
+            return (com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono) candidate;
+        }
+        if (candidate instanceof TicketVentaAbono) {
+            return com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono
+                    .fromModel((TicketVentaAbono) candidate);
+        }
+        return null;
     }
 
     private void sanitizeTicket(Object candidate) {
