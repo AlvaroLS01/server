@@ -97,9 +97,14 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     @Override
     protected Map<String, Object> generateDocParameters(IDatosSesion datosSesion, PrintDocumentDTO printRequest)
             throws ApiException {
+        IdentityHashMap<Object, Object> conversionCache = new IdentityHashMap<>();
+        if (printRequest != null) {
+            adaptCustomParameters(printRequest.getCustomParams(), conversionCache);
+        }
+
         Map<String, Object> docParameters = super.generateDocParameters(datosSesion, printRequest);
         normaliseTicketBreakdowns(docParameters);
-        ensureLegacyTicketCompatibility(docParameters);
+        ensureLegacyTicketCompatibility(docParameters, conversionCache);
         return docParameters;
     }
 
@@ -343,12 +348,33 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         }
     }
 
-    private void ensureLegacyTicketCompatibility(Map<String, Object> docParameters) {
+    private void ensureLegacyTicketCompatibility(Map<String, Object> docParameters,
+            IdentityHashMap<Object, Object> conversionCache) {
         if (docParameters == null || docParameters.isEmpty()) {
             return;
         }
-        IdentityHashMap<Object, Object> conversionCache = new IdentityHashMap<>();
-        docParameters.replaceAll((key, value) -> adaptToLegacyTicket(value, conversionCache));
+        adaptMapEntries(docParameters, conversionCache);
+    }
+
+    private void adaptCustomParameters(Map<String, Object> customParams,
+            IdentityHashMap<Object, Object> conversionCache) {
+        if (customParams == null || customParams.isEmpty()) {
+            return;
+        }
+        adaptMapEntries(customParams, conversionCache);
+    }
+
+    private void adaptMapEntries(Map<String, Object> values, IdentityHashMap<Object, Object> conversionCache) {
+        if (values == null || values.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            Object original = entry.getValue();
+            Object adapted = adaptToLegacyTicket(original, conversionCache);
+            if (adapted != original) {
+                entry.setValue(adapted);
+            }
+        }
     }
 
     private Object adaptToLegacyTicket(Object value, IdentityHashMap<Object, Object> conversionCache) {
@@ -372,6 +398,27 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
                     modified = true;
                 }
                 converted.add(adapted);
+            }
+            if (modified) {
+                return converted;
+            }
+            return value;
+        }
+
+        if (value instanceof Map<?, ?>) {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> original = (Map<Object, Object>) value;
+            if (original.isEmpty()) {
+                return value;
+            }
+            boolean modified = false;
+            Map<Object, Object> converted = new HashMap<>(original.size());
+            for (Map.Entry<Object, Object> entry : original.entrySet()) {
+                Object adaptedValue = adaptToLegacyTicket(entry.getValue(), conversionCache);
+                if (adaptedValue != entry.getValue()) {
+                    modified = true;
+                }
+                converted.put(entry.getKey(), adaptedValue);
             }
             if (modified) {
                 return converted;
