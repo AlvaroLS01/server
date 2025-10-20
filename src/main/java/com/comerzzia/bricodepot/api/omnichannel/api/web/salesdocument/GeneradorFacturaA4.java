@@ -44,6 +44,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import org.springframework.beans.BeanUtils;
 
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JasperReport;
@@ -646,15 +647,52 @@ public class GeneradorFacturaA4 {
         }
 
         private Object adaptarTicketParaPlantilla(Object posibleTicket) {
+                if (posibleTicket == null) {
+                        return null;
+                }
                 if (posibleTicket instanceof TicketVentaAbono) {
                         return posibleTicket;
                 }
                 if (posibleTicket instanceof com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) {
-                        com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono ticketModelo =
-                                        (com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) posibleTicket;
-                        return TicketVentaAbono.fromModel(ticketModelo);
+                        return clonarTicketVentaAbono(
+                                        (com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) posibleTicket);
                 }
                 return posibleTicket;
+        }
+
+        private TicketVentaAbono clonarTicketVentaAbono(
+                        com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono origen) {
+                TicketVentaAbono destino = new TicketVentaAbono();
+                try {
+                        BeanUtils.copyProperties(origen, destino);
+                }
+                catch (Exception excepcion) {
+                        LOGGER.warn("No fue posible adaptar el ticket de venta al formato legacy", excepcion);
+                        return destino;
+                }
+                copiarFormatUtil(origen, destino);
+                return destino;
+        }
+
+        private void copiarFormatUtil(Object origen, TicketVentaAbono destino) {
+                if (origen == null || destino == null) {
+                        return;
+                }
+                try {
+                        Method getter = origen.getClass().getMethod("getFormatUtil");
+                        Object valor = getter.invoke(origen);
+                        if (valor == null) {
+                                return;
+                        }
+                        Method setter = TicketVentaAbono.class.getMethod("setFormatUtil", valor.getClass());
+                        setter.invoke(destino, valor);
+                }
+                catch (NoSuchMethodException excepcion) {
+                        LOGGER.trace("El ticket de origen no expone utilidades de formato", excepcion);
+                }
+                catch (IllegalAccessException | InvocationTargetException excepcion) {
+                        LOGGER.trace("No se pudo copiar la utilidad de formato del ticket", excepcion);
+                }
         }
 
 	private String normalizarNombrePlantilla(String plantillaSolicitada) {
