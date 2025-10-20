@@ -89,6 +89,8 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     private final Map<String, File> templateCache = new ConcurrentHashMap<>();
     private volatile Path extractedTemplatesDirectory;
     private volatile boolean templatesDirectoryIsTemporary;
+    private volatile Class<?> legacyTicketClass;
+    private volatile boolean legacyTicketClassLookupPerformed;
 
     @Override
     protected Map<String, Object> generateDocParameters(IDatosSesion datosSesion, PrintDocumentDTO printRequest)
@@ -316,34 +318,77 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             return;
         }
 
-        Object originalTicket = docParameters.get("ticket");
-        Object originalDocument = docParameters.get("document");
-
-        com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono legacyTicket = adaptTicket(
-                originalTicket);
-        if (legacyTicket != null) {
-            docParameters.put("ticket", legacyTicket);
+        Class<?> legacyClass = resolveLegacyTicketClass();
+        if (legacyClass == null) {
+            return;
         }
 
-        boolean sameReference = originalTicket != null && originalTicket == originalDocument;
-        com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono legacyDocument = sameReference
-                ? legacyTicket
-                : adaptTicket(originalDocument);
-        if (legacyDocument != null) {
-            docParameters.put("document", legacyDocument);
+        Object originalTicket = docParameters.get("ticket");
+        Object adaptedTicket = adaptTicket(originalTicket, legacyClass);
+        if (adaptedTicket != null) {
+            docParameters.put("ticket", adaptedTicket);
+        }
+
+        Object originalDocument = docParameters.get("document");
+        if (originalDocument == null) {
+            return;
+        }
+
+        Object adaptedDocument = originalDocument == originalTicket ? adaptedTicket
+                : adaptTicket(originalDocument, legacyClass);
+        if (adaptedDocument != null) {
+            docParameters.put("document", adaptedDocument);
         }
     }
 
-    private com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono adaptTicket(
-            Object candidate) {
-        if (candidate instanceof com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono) {
-            return (com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono) candidate;
+    private Object adaptTicket(Object candidate, Class<?> legacyClass) {
+        if (candidate == null) {
+            return null;
         }
-        if (candidate instanceof TicketVentaAbono) {
-            return com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono
-                    .fromModel((TicketVentaAbono) candidate);
+        if (legacyClass.isInstance(candidate)) {
+            return candidate;
+        }
+        if (!(candidate instanceof TicketVentaAbono)) {
+            return null;
+        }
+
+        try {
+            Object legacyTicket = legacyClass.getDeclaredConstructor().newInstance();
+            BeanUtilsBean.getInstance().copyProperties(legacyTicket, candidate);
+            return legacyTicket;
+        }
+        catch (ReflectiveOperationException exception) {
+            LOGGER.warn("adaptTicket() - No se pudo adaptar el ticket {} al tipo legacy {}", candidate.getClass(),
+                    legacyClass.getName(), exception);
         }
         return null;
+    }
+
+    private Class<?> resolveLegacyTicketClass() {
+        Class<?> resolved = legacyTicketClass;
+        if (resolved != null || legacyTicketClassLookupPerformed) {
+            return resolved;
+        }
+
+        synchronized (this) {
+            if (legacyTicketClass != null || legacyTicketClassLookupPerformed) {
+                return legacyTicketClass;
+            }
+
+            try {
+                legacyTicketClass = Class.forName(LEGACY_TICKET_CLASS);
+                LOGGER.debug("resolveLegacyTicketClass() - Encontrada clase legacy {}", LEGACY_TICKET_CLASS);
+            }
+            catch (ClassNotFoundException exception) {
+                LOGGER.warn("resolveLegacyTicketClass() - No se encontró la clase legacy {} en el classpath", LEGACY_TICKET_CLASS,
+                        exception);
+            }
+            finally {
+                legacyTicketClassLookupPerformed = true;
+            }
+        }
+
+        return legacyTicketClass;
     }
 
     private void sanitizeTicket(Object candidate) {
