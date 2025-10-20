@@ -12,6 +12,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,7 +31,6 @@ import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.core.service.exception.BadRequestException;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
-import com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono;
 import com.comerzzia.omnichannel.model.documents.sales.ticket.lineas.LineaTicket;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
@@ -65,6 +65,10 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     private static final String LEGACY_TICKET_CLASS =
             "com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono";
     private static final String LEGACY_TICKET_CLASS_RESOURCE = LEGACY_TICKET_CLASS.replace('.', '/');
+    private static final String LEGACY_TICKET_PACKAGE =
+            "com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket";
+    private static final String MODERN_TICKET_PACKAGE =
+            "com.comerzzia.omnichannel.model.documents.sales.ticket";
 
     private static final Map<String, String> TEMPLATE_ALIASES;
     static {
@@ -95,6 +99,7 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
             throws ApiException {
         Map<String, Object> docParameters = super.generateDocParameters(datosSesion, printRequest);
         normaliseTicketBreakdowns(docParameters);
+        ensureLegacyTicketCompatibility(docParameters);
         return docParameters;
     }
 
@@ -311,10 +316,11 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
     }
 
     private void sanitizeTicket(Object candidate) {
-        if (!(candidate instanceof TicketVentaAbono)) {
+        if (!(candidate instanceof com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono)) {
             return;
         }
-        TicketVentaAbono ticket = (TicketVentaAbono) candidate;
+        com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono ticket =
+                (com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono) candidate;
         List<LineaTicket> lines = ticket.getLineas();
         if (lines != null) {
             lines.forEach(this::sanitizeBreakdownValue);
@@ -333,6 +339,114 @@ public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
         for (Object value : values) {
             if (value instanceof LineaTicket) {
                 sanitizeBreakdownValue((LineaTicket) value);
+            }
+        }
+    }
+
+    private void ensureLegacyTicketCompatibility(Map<String, Object> docParameters) {
+        if (docParameters == null || docParameters.isEmpty()) {
+            return;
+        }
+        IdentityHashMap<Object, Object> conversionCache = new IdentityHashMap<>();
+        docParameters.replaceAll((key, value) -> adaptToLegacyTicket(value, conversionCache));
+    }
+
+    private Object adaptToLegacyTicket(Object value, IdentityHashMap<Object, Object> conversionCache) {
+        if (value == null) {
+            return null;
+        }
+        Object cached = conversionCache.get(value);
+        if (cached != null) {
+            return cached;
+        }
+        if (value instanceof List<?>) {
+            List<?> original = (List<?>) value;
+            if (original.isEmpty()) {
+                return value;
+            }
+            boolean modified = false;
+            List<Object> converted = new ArrayList<>(original.size());
+            for (Object element : original) {
+                Object adapted = adaptToLegacyTicket(element, conversionCache);
+                if (adapted != element) {
+                    modified = true;
+                }
+                converted.add(adapted);
+            }
+            if (modified) {
+                return converted;
+            }
+            return value;
+        }
+
+        Class<?> legacyClass = resolveLegacyClass(value.getClass());
+        if (legacyClass == null || legacyClass.isInstance(value)) {
+            return value;
+        }
+
+        Object adapted = instantiateLegacy(legacyClass);
+        if (adapted == null) {
+            return value;
+        }
+        conversionCache.put(value, adapted);
+        copyPropertiesRecursively(value, adapted, conversionCache);
+        return adapted;
+    }
+
+    private Class<?> resolveLegacyClass(Class<?> sourceClass) {
+        if (sourceClass == null) {
+            return null;
+        }
+        String name = sourceClass.getName();
+        if (name.startsWith("java.")) {
+            return null;
+        }
+        if (name.startsWith(LEGACY_TICKET_PACKAGE)) {
+            return sourceClass;
+        }
+        if (!name.startsWith(MODERN_TICKET_PACKAGE)) {
+            return null;
+        }
+        String suffix = name.substring(MODERN_TICKET_PACKAGE.length());
+        String legacyName = LEGACY_TICKET_PACKAGE + suffix;
+        try {
+            return Class.forName(legacyName);
+        }
+        catch (ClassNotFoundException exception) {
+            LOGGER.debug("resolveLegacyClass() - No se encontró la clase legacy {}", legacyName);
+            return null;
+        }
+    }
+
+    private Object instantiateLegacy(Class<?> legacyClass) {
+        try {
+            return legacyClass.getDeclaredConstructor().newInstance();
+        }
+        catch (Exception exception) {
+            LOGGER.warn("instantiateLegacy() - No se pudo instanciar {}", legacyClass.getName(), exception);
+            return null;
+        }
+    }
+
+    private void copyPropertiesRecursively(Object source, Object target,
+            IdentityHashMap<Object, Object> conversionCache) {
+        PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance().getPropertyUtils();
+        PropertyDescriptor[] descriptors = propertyUtils.getPropertyDescriptors(source);
+        for (PropertyDescriptor descriptor : descriptors) {
+            String name = descriptor.getName();
+            if ("class".equals(name)) {
+                continue;
+            }
+            try {
+                if (!propertyUtils.isReadable(source, name) || !propertyUtils.isWriteable(target, name)) {
+                    continue;
+                }
+                Object propertyValue = propertyUtils.getSimpleProperty(source, name);
+                Object adaptedValue = adaptToLegacyTicket(propertyValue, conversionCache);
+                propertyUtils.setSimpleProperty(target, name, adaptedValue);
+            }
+            catch (Exception exception) {
+                LOGGER.debug("copyPropertiesRecursively() - No se pudo copiar la propiedad {}", name, exception);
             }
         }
     }
