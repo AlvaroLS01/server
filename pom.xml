@@ -15,15 +15,14 @@
 		<version>2.1.4.RELEASE</version>
 	</parent>
 
-        <properties>
-                <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-                <java.version>1.8</java.version>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.8</java.version>
 
-                <junit-version>4.12</junit-version>
-                <spring.version>5.1.6.RELEASE</spring.version>
-                <swagger-version>2.0.1</swagger-version>
-                <comerzzia.backoffice.version>4.8.1.230720</comerzzia.backoffice.version>
-        </properties>
+		<junit-version>4.12</junit-version>
+		<spring.version>5.1.6.RELEASE</spring.version>
+		<swagger-version>2.0.1</swagger-version>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -94,11 +93,11 @@
                  <artifactId>javax.ws.rs-api</artifactId>
                  <version>2.1.1</version>
          </dependency>
-                <!-- comerzzia dependencies -->
+		<!-- comerzzia dependencies -->
 
-                <dependency>
-                        <groupId>com.comerzzia.omnichannel</groupId>
-                        <artifactId>omnichannel-documentos</artifactId>
+		<dependency>
+			<groupId>com.comerzzia.omnichannel</groupId>
+			<artifactId>omnichannel-documentos</artifactId>
 			<version>4.8.1.230717</version>
 		</dependency>
          <dependency>
@@ -121,27 +120,7 @@
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
             <version>3.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.comerzzia.api.v2</groupId>
-            <artifactId>comerzzia-api-commons</artifactId>
-            <version>2.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.comerzzia</groupId>
-            <artifactId>comerzzia-backoffice-servicios</artifactId>
-            <version>${comerzzia.backoffice.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.comerzzia</groupId>
-            <artifactId>comerzzia-core-model</artifactId>
-            <version>${comerzzia.backoffice.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.comerzzia</groupId>
-            <artifactId>comerzzia-core-servicios</artifactId>
-            <version>${comerzzia.backoffice.version}</version>
-        </dependency>
+        </dependency>      
      </dependencies>
 
 	<build>
