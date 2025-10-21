@@ -2,6 +2,8 @@ package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
 import java.io.Serializable;
 
+import java.util.Base64;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DocumentoVentaImpresionRespuesta implements Serializable {
@@ -66,11 +68,22 @@ public class DocumentoVentaImpresionRespuesta implements Serializable {
 		this.enLinea = enLinea;
 	}
 
-	public String getDocumento() {
-		return documento;
-	}
+        public String getDocumento() {
+                return documento;
+        }
 
-	public void setDocumento(String documento) {
-		this.documento = documento;
-	}
+        public void setDocumento(String documento) {
+                this.documento = documento;
+        }
+
+        public static DocumentoVentaImpresionRespuesta from(DocumentoVentaImpresionResultado resultado) {
+                DocumentoVentaImpresionRespuesta respuesta = new DocumentoVentaImpresionRespuesta();
+                respuesta.setUidDocumento(resultado.getUidDocumento());
+                respuesta.setTipoMime(resultado.getTipoMime());
+                respuesta.setNombreArchivo(resultado.getNombreArchivo());
+                respuesta.setCopia(resultado.isCopia());
+                respuesta.setEnLinea(resultado.isEnLinea());
+                respuesta.setDocumento(Base64.getEncoder().encodeToString(resultado.getContenido()));
+                return respuesta;
+        }
 }

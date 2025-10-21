@@ -81,10 +81,10 @@ public class DocumentoVentaImpresionFilter implements ContainerRequestFilter {
                 printTemplate,
                 customParams);
 
-        Optional<DocumentoVentaImpresionRespuesta> respuesta = servicioImpresion.imprimir(documentUid, opciones);
+        Optional<DocumentoVentaImpresionResultado> resultado = servicioImpresion.imprimir(documentUid, opciones);
 
         Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON_TYPE);
-        respuesta.ifPresent(responseBuilder::entity);
+        resultado.map(DocumentoVentaImpresionRespuesta::from).ifPresent(responseBuilder::entity);
 
         requestContext.abortWith(responseBuilder.build());
     }
