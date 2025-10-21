@@ -29,9 +29,9 @@ import org.springframework.stereotype.Service;
 import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.core.service.exception.BadRequestException;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
+import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.LineaTicket;
+import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
-import com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono;
-import com.comerzzia.omnichannel.model.documents.sales.ticket.lineas.LineaTicket;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
 
@@ -47,6 +47,13 @@ import net.sf.jasperreports.engine.util.JRLoader;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 
+/**
+ * Custom {@link JasperPrintServiceImpl} implementation that mirrors the product
+ * behaviour but falls back to the Brico specific templates packaged within the
+ * application when they are not present in the default location defined in
+ * {@code AppInfo}. It also normalises template aliases so that custom template
+ * names such as {@code FT} resolve to the expected Jasper files.
+ */
 @Service
 @Primary
 public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
