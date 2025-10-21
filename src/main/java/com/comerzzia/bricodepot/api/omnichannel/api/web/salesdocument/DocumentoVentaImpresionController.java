@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/salesdocument")
 public class DocumentoVentaImpresionController {
 
-        private final DocumentoVentaImpresionServicio servicioImpresion;
+	private final DocumentoVentaImpresionServicio servicioImpresion;
 
 	@Autowired
 	public DocumentoVentaImpresionController(DocumentoVentaImpresionServicio servicioImpresion) {
@@ -39,10 +39,8 @@ public class DocumentoVentaImpresionController {
 
 		OpcionesImpresionDocumentoVenta opciones = new OpcionesImpresionDocumentoVenta(tipoMime, esCopia, enLinea, nombreDocumentoSalida, plantillaImpresion, parametrosPersonalizados);
 
-                Optional<DocumentoVentaImpresionResultado> resultado = servicioImpresion.imprimir(uidDocumento, opciones);
+		Optional<DocumentoVentaImpresionRespuesta> respuesta = servicioImpresion.imprimir(uidDocumento, opciones);
 
-                return resultado.map(DocumentoVentaImpresionRespuesta::from)
-                                .map(ResponseEntity::ok)
-                                .orElseGet(() -> ResponseEntity.ok().body(null));
-        }
+		return respuesta.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.ok().body(null));
+	}
 }
