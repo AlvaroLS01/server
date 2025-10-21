@@ -47,13 +47,6 @@ import net.sf.jasperreports.engine.util.JRLoader;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 
-/**
- * Custom {@link JasperPrintServiceImpl} implementation that mirrors the product
- * behaviour but falls back to the Brico specific templates packaged within the
- * application when they are not present in the default location defined in
- * {@code AppInfo}. It also normalises template aliases so that custom template
- * names such as {@code FT} resolve to the expected Jasper files.
- */
 @Service
 @Primary
 public class BricodepotJasperPrintService extends JasperPrintServiceImpl {
