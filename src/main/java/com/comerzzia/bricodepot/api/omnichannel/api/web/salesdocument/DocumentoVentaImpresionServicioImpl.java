@@ -4,7 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import javax.xml.bind.JAXBContext;
@@ -14,7 +17,9 @@ import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -40,16 +45,22 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
     private final DocumentService documentService;
     private final GeneradorFacturaA4 generadorFacturaA4;
     private final ComerzziaDatosSesion datosSesionRequest;
+    private final ApplicationContext applicationContext;
     private volatile JAXBContext contextoTicket;
     private final Object contextoTicketLock = new Object();
     private volatile boolean contextoTicketInicializacionFallida;
+    private volatile Object servicioTickets;
+    private volatile boolean servicioTicketsBusquedaFallida;
+    private final Object servicioTicketsLock = new Object();
 
     public DocumentoVentaImpresionServicioImpl(DocumentService documentService,
             GeneradorFacturaA4 generadorFacturaA4,
-            @Qualifier("datosSesionRequest") ComerzziaDatosSesion datosSesionRequest) {
+            @Qualifier("datosSesionRequest") ComerzziaDatosSesion datosSesionRequest,
+            ApplicationContext applicationContext) {
         this.documentService = documentService;
         this.generadorFacturaA4 = generadorFacturaA4;
         this.datosSesionRequest = datosSesionRequest;
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -85,8 +96,8 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
                 return resultado;
             }
 
-            LOGGER.debug("Intentando generar la factura {} localizando el ticket mediante servicios internos", uidDocumento);
-            return generarRespuestaDesdeServicios(uidDocumento, opciones);
+            LOGGER.debug("Intentando generar la factura {} localizando el ticket desde el repositorio", uidDocumento);
+            return generarRespuestaDesdeRepositorio(uidDocumento, uidActividad, datosSesion, opciones);
         } finally {
             try {
                 establecerUidActividad(datosSesion, uidActividadOriginal);
@@ -142,19 +153,6 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         return Optional.of(convertirARespuesta(resultado));
     }
 
-    private Optional<DocumentoVentaImpresionRespuesta> generarRespuestaDesdeServicios(String uidDocumento,
-            OpcionesImpresionDocumentoVenta opciones) {
-        GeneradorFacturaA4.FacturaGenerada factura = generarFacturaDesdeServicios(uidDocumento, opciones)
-                .orElse(null);
-        if (factura == null) {
-            LOGGER.warn("No se pudo localizar un ticket interpretable para el documento {}", uidDocumento);
-            return Optional.empty();
-        }
-
-        DocumentoVentaImpresionResultado resultado = construirResultado(uidDocumento, opciones, factura);
-        return Optional.of(convertirARespuesta(resultado));
-    }
-
     private Optional<GeneradorFacturaA4.FacturaGenerada> generarFactura(Object ticket,
             OpcionesImpresionDocumentoVenta opciones) {
         try {
@@ -164,13 +162,276 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         }
     }
 
-    private Optional<GeneradorFacturaA4.FacturaGenerada> generarFacturaDesdeServicios(String uidDocumento,
-            OpcionesImpresionDocumentoVenta opciones) {
-        try {
-            return generadorFacturaA4.generarFactura(uidDocumento, opciones);
-        } catch (IOException excepcion) {
-            throw new DocumentoVentaImpresionException("Error al generar el informe Jasper del documento", excepcion);
+    private Optional<DocumentoVentaImpresionRespuesta> generarRespuestaDesdeRepositorio(String uidDocumento,
+            String uidActividad, IDatosSesion datosSesion, OpcionesImpresionDocumentoVenta opciones) {
+        Object ticket = localizarTicket(uidDocumento, uidActividad, datosSesion);
+        if (ticket == null) {
+            LOGGER.warn("No se pudo localizar un ticket interpretable para el documento {}", uidDocumento);
+            return Optional.empty();
         }
+
+        GeneradorFacturaA4.FacturaGenerada factura = generarFactura(ticket, opciones).orElse(null);
+        if (factura == null) {
+            LOGGER.warn("No se pudo generar la factura para el documento {}", uidDocumento);
+            return Optional.empty();
+        }
+
+        DocumentoVentaImpresionResultado resultado = construirResultado(uidDocumento, opciones, factura);
+        return Optional.of(convertirARespuesta(resultado));
+    }
+
+    private Object localizarTicket(String uidDocumento, String uidActividad, IDatosSesion datosSesion) {
+        byte[] contenido = recuperarContenidoTicket(uidDocumento, uidActividad, datosSesion);
+        if (contenido == null || contenido.length == 0) {
+            return null;
+        }
+        return convertirTicket(contenido);
+    }
+
+    private byte[] recuperarContenidoTicket(String uidDocumento, String uidActividad, IDatosSesion datosSesion) {
+        Object servicio = obtenerServicioTickets();
+        if (servicio == null) {
+            return null;
+        }
+
+        Object ticketBean = consultarTicket(servicio, datosSesion, uidDocumento, uidActividad);
+        if (ticketBean == null) {
+            LOGGER.warn("El servicio de tickets no devolvió información para el documento {}", uidDocumento);
+            return null;
+        }
+
+        byte[] contenido = extraerContenidoTicket(ticketBean);
+        if (contenido == null || contenido.length == 0) {
+            LOGGER.warn("El ticket recuperado para el documento {} no contiene datos", uidDocumento);
+        }
+        return contenido;
+    }
+
+    private Object obtenerServicioTickets() {
+        if (servicioTickets != null || servicioTicketsBusquedaFallida) {
+            return servicioTickets;
+        }
+        synchronized (servicioTicketsLock) {
+            if (servicioTickets != null || servicioTicketsBusquedaFallida) {
+                return servicioTickets;
+            }
+            Object localizado = localizarBeanTicketService();
+            if (localizado == null) {
+                localizado = localizarServicioTicketsEstatico();
+            }
+            if (localizado == null) {
+                servicioTicketsBusquedaFallida = true;
+                LOGGER.warn("No se pudo localizar un servicio TicketService/ServicioTicketsImpl para recuperar tickets");
+                return null;
+            }
+            servicioTickets = localizado;
+            return servicioTickets;
+        }
+    }
+
+    private Object localizarBeanTicketService() {
+        if (applicationContext == null) {
+            return null;
+        }
+        try {
+            Class<?> tipoServicio = Class.forName("com.comerzzia.core.servicios.ventas.tickets.TicketService");
+            return applicationContext.getBean(tipoServicio);
+        } catch (ClassNotFoundException excepcion) {
+            LOGGER.debug("No se encontró la clase TicketService en el classpath", excepcion);
+            return null;
+        } catch (BeansException excepcion) {
+            LOGGER.debug("No se pudo obtener el bean TicketService del contexto", excepcion);
+            return null;
+        }
+    }
+
+    private Object localizarServicioTicketsEstatico() {
+        try {
+            Class<?> clase = Class.forName("com.comerzzia.core.servicios.ventas.tickets.ServicioTicketsImpl");
+            Method metodo = clase.getMethod("get");
+            return metodo.invoke(null);
+        } catch (ClassNotFoundException excepcion) {
+            LOGGER.debug("ServicioTicketsImpl no está disponible en el classpath", excepcion);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException excepcion) {
+            LOGGER.warn("No se pudo inicializar ServicioTicketsImpl para recuperar tickets", excepcion);
+        }
+        return null;
+    }
+
+    private Object consultarTicket(Object servicio, IDatosSesion datosSesion, String uidDocumento, String uidActividad) {
+        if (servicio == null) {
+            return null;
+        }
+
+        List<Object[]> intentos = new ArrayList<>();
+        if (datosSesion != null) {
+            intentos.add(new Object[] { datosSesion, uidDocumento });
+            intentos.add(new Object[] { uidDocumento, datosSesion });
+        }
+        if (StringUtils.hasText(uidActividad)) {
+            intentos.add(new Object[] { uidDocumento, uidActividad });
+            intentos.add(new Object[] { uidActividad, uidDocumento });
+            if (datosSesion != null) {
+                intentos.add(new Object[] { datosSesion, uidActividad });
+                intentos.add(new Object[] { uidActividad, datosSesion });
+                intentos.add(new Object[] { datosSesion, uidDocumento, uidActividad });
+                intentos.add(new Object[] { uidDocumento, datosSesion, uidActividad });
+                intentos.add(new Object[] { uidDocumento, uidActividad, datosSesion });
+                intentos.add(new Object[] { uidActividad, uidDocumento, datosSesion });
+            }
+        }
+        intentos.add(new Object[] { uidDocumento });
+
+        for (Object[] parametros : intentos) {
+            Object ticket = intentarInvocar(servicio, "consultarTicketUid", parametros);
+            if (ticket != null) {
+                return ticket;
+            }
+        }
+
+        LOGGER.warn("El servicio {} no dispone de un método compatible para consultar tickets por uid", servicio.getClass().getName());
+        return null;
+    }
+
+    private Object intentarInvocar(Object destino, String metodo, Object[] parametros) {
+        Method candidato = localizarMetodoCompatible(destino.getClass(), metodo, parametros);
+        if (candidato == null) {
+            return null;
+        }
+        try {
+            return candidato.invoke(destino, parametros);
+        } catch (IllegalAccessException | InvocationTargetException excepcion) {
+            LOGGER.debug("No se pudo invocar {} en {}", metodo, destino.getClass().getName(), excepcion);
+            return null;
+        }
+    }
+
+    private Method localizarMetodoCompatible(Class<?> tipo, String nombre, Object[] argumentos) {
+        for (Method metodo : tipo.getMethods()) {
+            if (!metodo.getName().equals(nombre)) {
+                continue;
+            }
+            Class<?>[] parametros = metodo.getParameterTypes();
+            if (parametros.length != argumentos.length) {
+                continue;
+            }
+            boolean compatible = true;
+            for (int i = 0; i < parametros.length; i++) {
+                Object argumento = argumentos[i];
+                Class<?> tipoParametro = parametros[i];
+                if (argumento == null) {
+                    if (tipoParametro.isPrimitive()) {
+                        compatible = false;
+                        break;
+                    }
+                    continue;
+                }
+                if (!esAsignable(tipoParametro, argumento)) {
+                    compatible = false;
+                    break;
+                }
+            }
+            if (compatible) {
+                return metodo;
+            }
+        }
+        return null;
+    }
+
+    private boolean esAsignable(Class<?> parametro, Object argumento) {
+        if (parametro.isInstance(argumento)) {
+            return true;
+        }
+        if (parametro.isPrimitive()) {
+            Class<?> envoltorio = obtenerWrapper(parametro);
+            return envoltorio != null && envoltorio.isInstance(argumento);
+        }
+        return parametro.isAssignableFrom(argumento.getClass());
+    }
+
+    private Class<?> obtenerWrapper(Class<?> tipoPrimitivo) {
+        if (tipoPrimitivo == boolean.class) {
+            return Boolean.class;
+        }
+        if (tipoPrimitivo == byte.class) {
+            return Byte.class;
+        }
+        if (tipoPrimitivo == char.class) {
+            return Character.class;
+        }
+        if (tipoPrimitivo == double.class) {
+            return Double.class;
+        }
+        if (tipoPrimitivo == float.class) {
+            return Float.class;
+        }
+        if (tipoPrimitivo == int.class) {
+            return Integer.class;
+        }
+        if (tipoPrimitivo == long.class) {
+            return Long.class;
+        }
+        if (tipoPrimitivo == short.class) {
+            return Short.class;
+        }
+        return null;
+    }
+
+    private byte[] extraerContenidoTicket(Object ticketBean) {
+        if (ticketBean == null) {
+            return null;
+        }
+
+        byte[] contenido = intentarObtenerContenido(ticketBean, "getTicket");
+        if (contenido != null) {
+            return contenido;
+        }
+        contenido = intentarObtenerContenido(ticketBean, "getXml");
+        if (contenido != null) {
+            return contenido;
+        }
+
+        for (Method metodo : ticketBean.getClass().getMethods()) {
+            if (metodo.getParameterCount() != 0) {
+                continue;
+            }
+            try {
+                Object valor = metodo.invoke(ticketBean);
+                byte[] bytes = convertirABytes(valor);
+                if (bytes != null) {
+                    return bytes;
+                }
+            } catch (IllegalAccessException | InvocationTargetException excepcion) {
+                LOGGER.debug("No se pudo invocar {} en {}", metodo.getName(), ticketBean.getClass().getName(), excepcion);
+            }
+        }
+        return null;
+    }
+
+    private byte[] intentarObtenerContenido(Object origen, String nombreMetodo) {
+        try {
+            Method metodo = origen.getClass().getMethod(nombreMetodo);
+            Object valor = metodo.invoke(origen);
+            return convertirABytes(valor);
+        } catch (NoSuchMethodException excepcion) {
+            return null;
+        } catch (IllegalAccessException | InvocationTargetException excepcion) {
+            LOGGER.debug("No se pudo invocar {} en {}", nombreMetodo, origen.getClass().getName(), excepcion);
+            return null;
+        }
+    }
+
+    private byte[] convertirABytes(Object valor) {
+        if (valor == null) {
+            return null;
+        }
+        if (valor instanceof byte[]) {
+            return (byte[]) valor;
+        }
+        if (valor instanceof String) {
+            return ((String) valor).getBytes(StandardCharsets.UTF_8);
+        }
+        return null;
     }
 
     private DocumentoVentaImpresionResultado construirResultado(String uidDocumento,
