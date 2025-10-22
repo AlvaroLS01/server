@@ -31,6 +31,8 @@ public class DocumentoVentaImpresionFilter implements ContainerRequestFilter {
     private static final String PARAM_INLINE = "inline";
     private static final String PARAM_OUTPUT_NAME = "outputDocumentName";
     private static final String PARAM_PRINT_TEMPLATE = "printTemplate";
+    private static final String PARAM_ACTIVITY_UID = "uidActividad";
+    private static final String PARAM_ACTIVITY_UID_ALIAS = "activityUid";
     private static final String DEFAULT_MIME_TYPE = "application/pdf";
 
     private final DocumentoVentaImpresionServicio servicioImpresion;
@@ -70,6 +72,10 @@ public class DocumentoVentaImpresionFilter implements ContainerRequestFilter {
         boolean inline = parseBoolean(rawParams.remove(PARAM_INLINE));
         String outputDocumentName = emptyToNull(rawParams.remove(PARAM_OUTPUT_NAME));
         String printTemplate = emptyToNull(rawParams.remove(PARAM_PRINT_TEMPLATE));
+        String activityUid = emptyToNull(rawParams.remove(PARAM_ACTIVITY_UID));
+        if (activityUid == null) {
+            activityUid = emptyToNull(rawParams.remove(PARAM_ACTIVITY_UID_ALIAS));
+        }
 
         Map<String, String> customParams = rawParams.isEmpty() ? Collections.emptyMap() : new HashMap<>(rawParams);
 
@@ -79,6 +85,7 @@ public class DocumentoVentaImpresionFilter implements ContainerRequestFilter {
                 inline,
                 outputDocumentName,
                 printTemplate,
+                activityUid,
                 customParams);
 
         Optional<DocumentoVentaImpresionRespuesta> respuesta = servicioImpresion.imprimir(documentUid, opciones);
