@@ -103,12 +103,11 @@
            <groupId>com.comerzzia.api.omnichannel</groupId>
            <artifactId>comerzzia-api-omnichannel-web</artifactId>
            <version>2.0-SNAPSHOT</version>
-           <exclusions>
-           	<exclusion>
-				<groupId>com.comerzzia.omnichannel</groupId>
-				<artifactId>comerzzia-omnichannel-services</artifactId>                 	
-           	</exclusion>
-           </exclusions>
+         </dependency>
+         <dependency>
+                <groupId>com.comerzzia.omnichannel</groupId>
+                <artifactId>comerzzia-omnichannel-services</artifactId>
+                <version>4.8-SNAPSHOT</version>
          </dependency>
          <dependency>
             <groupId>net.sf.jasperreports</groupId>
