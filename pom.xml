@@ -99,17 +99,27 @@
 			<artifactId>omnichannel-documentos</artifactId>
 			<version>4.8.1.230717</version>
 		</dependency>
-         <dependency>
+        <dependency>
            <groupId>com.comerzzia.api.omnichannel</groupId>
            <artifactId>comerzzia-api-omnichannel-web</artifactId>
            <version>2.0-SNAPSHOT</version>
            <exclusions>
-           	<exclusion>
-				<groupId>com.comerzzia.omnichannel</groupId>
-				<artifactId>comerzzia-omnichannel-services</artifactId>                 	
-           	</exclusion>
+                <exclusion>
+                                <groupId>com.comerzzia.omnichannel</groupId>
+                                <artifactId>comerzzia-omnichannel-services</artifactId>
+                </exclusion>
            </exclusions>
-         </dependency>
+        </dependency>
+        <dependency>
+            <groupId>com.comerzzia.omnichannel</groupId>
+            <artifactId>comerzzia-omnichannel-services</artifactId>
+            <version>4.8-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.comerzzia.api.v2.core</groupId>
+            <artifactId>comerzzia-api-core-services</artifactId>
+            <version>2.0-SNAPSHOT</version>
+        </dependency>
          <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
