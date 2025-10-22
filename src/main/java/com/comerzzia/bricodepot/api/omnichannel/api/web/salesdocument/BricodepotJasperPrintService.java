@@ -26,11 +26,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
-import com.comerzzia.core.servicios.api.errorhandlers.ApiException;
+import com.comerzzia.api.core.service.exception.ApiException;
+import com.comerzzia.api.core.service.exception.BadRequestException;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.LineaTicket;
 import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono;
-
+import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
+import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
+import com.comerzzia.omnichannel.service.documentprint.jasper.JasperPrintServiceImpl;
 
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
