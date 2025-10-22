@@ -33,11 +33,16 @@ public class DocumentoVentaImpresionController {
 		Map<String, String> parametrosPersonalizados = new HashMap<>(parametrosPeticion);
 		parametrosPersonalizados.remove("mimeType");
 		parametrosPersonalizados.remove("copy");
-		parametrosPersonalizados.remove("inline");
-		parametrosPersonalizados.remove("outputDocumentName");
-		parametrosPersonalizados.remove("printTemplate");
+                parametrosPersonalizados.remove("inline");
+                parametrosPersonalizados.remove("outputDocumentName");
+                parametrosPersonalizados.remove("printTemplate");
+                String uidActividad = parametrosPersonalizados.remove("uidActividad");
+                if (uidActividad == null) {
+                        uidActividad = parametrosPersonalizados.remove("activityUid");
+                }
 
-		OpcionesImpresionDocumentoVenta opciones = new OpcionesImpresionDocumentoVenta(tipoMime, esCopia, enLinea, nombreDocumentoSalida, plantillaImpresion, parametrosPersonalizados);
+                OpcionesImpresionDocumentoVenta opciones = new OpcionesImpresionDocumentoVenta(tipoMime, esCopia, enLinea,
+                                nombreDocumentoSalida, plantillaImpresion, uidActividad, parametrosPersonalizados);
 
 		Optional<DocumentoVentaImpresionRespuesta> respuesta = servicioImpresion.imprimir(uidDocumento, opciones);
 

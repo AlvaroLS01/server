@@ -97,21 +97,29 @@ public class GeneradorFacturaA4 {
 		this.rutaInformesConfigurada = localizarRutaInformes();
 	}
 
-	Optional<FacturaGenerada> generarFactura(String uidDocumento, OpcionesImpresionDocumentoVenta opciones) throws IOException {
-		Optional<Object> posibleTicket = localizarTicketVenta(uidDocumento);
-		if (!posibleTicket.isPresent()) {
-			return Optional.empty();
-		}
+        Optional<FacturaGenerada> generarFactura(String uidDocumento, OpcionesImpresionDocumentoVenta opciones) throws IOException {
+                Optional<Object> posibleTicket = localizarTicketVenta(uidDocumento);
+                if (!posibleTicket.isPresent()) {
+                        return Optional.empty();
+                }
 
-		Object ticketVenta = posibleTicket.get();
-		PlantillaFactura plantilla = determinarPlantilla(ticketVenta, opciones.getPlantillaImpresion());
-		Map<String, Object> parametros = prepararParametros(ticketVenta, opciones.esCopia(), plantilla, convertirParametrosPersonalizados(opciones.getParametrosPersonalizados()));
+                return generarFactura(posibleTicket.get(), opciones);
+        }
 
-		String nombreFichero = calcularNombreFichero(opciones.getNombreDocumentoSalida(), ticketVenta, plantilla);
-		byte[] pdfGenerado = ejecutarJasper(plantilla, parametros);
+        Optional<FacturaGenerada> generarFactura(Object ticketVenta, OpcionesImpresionDocumentoVenta opciones) throws IOException {
+                if (ticketVenta == null) {
+                        return Optional.empty();
+                }
 
-		return Optional.of(new FacturaGenerada(pdfGenerado, nombreFichero));
-	}
+                PlantillaFactura plantilla = determinarPlantilla(ticketVenta, opciones.getPlantillaImpresion());
+                Map<String, Object> parametros = prepararParametros(ticketVenta, opciones.esCopia(), plantilla,
+                                convertirParametrosPersonalizados(opciones.getParametrosPersonalizados()));
+
+                String nombreFichero = calcularNombreFichero(opciones.getNombreDocumentoSalida(), ticketVenta, plantilla);
+                byte[] pdfGenerado = ejecutarJasper(plantilla, parametros);
+
+                return Optional.of(new FacturaGenerada(pdfGenerado, nombreFichero));
+        }
 
 	public static final class FacturaGenerada {
 
