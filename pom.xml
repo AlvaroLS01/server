@@ -117,11 +117,16 @@
 			<artifactId>comerzzia-api-commons</artifactId>
 			<version>2.0-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>com.comerzzia.omnichannel</groupId>
-			<artifactId>comerzzia-basket-calculator-services</artifactId>
-			<version>4.8-SNAPSHOT</version>
-		</dependency>
+                <dependency>
+                        <groupId>com.comerzzia.omnichannel</groupId>
+                        <artifactId>comerzzia-basket-calculator-services</artifactId>
+                        <version>4.8-SNAPSHOT</version>
+                </dependency>
+                <dependency>
+                        <groupId>com.comerzzia.bricodepot</groupId>
+                        <artifactId>comerzzia-custom-backoffice-services</artifactId>
+                        <version>25-SNAPSHOT</version>
+                </dependency>
 		<dependency>
 			<groupId>com.comerzzia.omnichannel</groupId>
 			<artifactId>comerzzia-omnichannel-services</artifactId>
