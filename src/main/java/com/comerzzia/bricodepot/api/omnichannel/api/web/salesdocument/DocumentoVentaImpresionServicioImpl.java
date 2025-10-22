@@ -40,7 +40,9 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
     private final DocumentService documentService;
     private final GeneradorFacturaA4 generadorFacturaA4;
     private final ComerzziaDatosSesion datosSesionRequest;
-    private final JAXBContext contextoTicket;
+    private volatile JAXBContext contextoTicket;
+    private final Object contextoTicketLock = new Object();
+    private volatile boolean contextoTicketInicializacionFallida;
 
     public DocumentoVentaImpresionServicioImpl(DocumentService documentService,
             GeneradorFacturaA4 generadorFacturaA4,
@@ -48,12 +50,6 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         this.documentService = documentService;
         this.generadorFacturaA4 = generadorFacturaA4;
         this.datosSesionRequest = datosSesionRequest;
-        try {
-            this.contextoTicket = JAXBContext.newInstance(CONTEXTO_JAXB_TICKET);
-        } catch (JAXBException excepcion) {
-            throw new IllegalStateException("No se pudo inicializar el contexto JAXB para los tickets de venta",
-                    excepcion);
-        }
     }
 
     @Override
@@ -77,26 +73,14 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         try {
             establecerUidActividad(datosSesion, uidActividad);
             DocumentEntity documento = obtenerDocumento(datosSesion, uidDocumento);
-            if (documento == null) {
-                LOGGER.warn("No se encontró el documento {} para la actividad {}", uidDocumento, uidActividad);
-                return Optional.empty();
+            Optional<DocumentoVentaImpresionRespuesta> resultado = generarRespuestaDesdeDocumento(uidDocumento, uidActividad,
+                    opciones, documento);
+            if (resultado.isPresent()) {
+                return resultado;
             }
 
-            Object ticket = convertirTicket(documento.getDocumentContent());
-            if (ticket == null) {
-                LOGGER.warn("El documento {} no contiene información de ticket interpretable", uidDocumento);
-                return Optional.empty();
-            }
-
-            GeneradorFacturaA4.FacturaGenerada factura = generarFactura(ticket, opciones)
-                    .orElse(null);
-            if (factura == null) {
-                LOGGER.warn("No se pudo generar la factura para el documento {}", uidDocumento);
-                return Optional.empty();
-            }
-
-            DocumentoVentaImpresionResultado resultado = construirResultado(uidDocumento, opciones, factura);
-            return Optional.of(convertirARespuesta(resultado));
+            LOGGER.debug("Intentando generar la factura {} localizando el ticket mediante servicios internos", uidDocumento);
+            return generarRespuestaDesdeServicios(uidDocumento, opciones);
         } finally {
             try {
                 establecerUidActividad(datosSesion, uidActividadOriginal);
@@ -128,10 +112,56 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         }
     }
 
+    private Optional<DocumentoVentaImpresionRespuesta> generarRespuestaDesdeDocumento(String uidDocumento,
+            String uidActividad, OpcionesImpresionDocumentoVenta opciones, DocumentEntity documento) {
+        if (documento == null) {
+            LOGGER.warn("No se encontró el documento {} para la actividad {}", uidDocumento, uidActividad);
+            return Optional.empty();
+        }
+
+        Object ticket = convertirTicket(documento.getDocumentContent());
+        if (ticket == null) {
+            LOGGER.warn("El documento {} no contiene información de ticket interpretable", uidDocumento);
+            return Optional.empty();
+        }
+
+        GeneradorFacturaA4.FacturaGenerada factura = generarFactura(ticket, opciones)
+                .orElse(null);
+        if (factura == null) {
+            LOGGER.warn("No se pudo generar la factura para el documento {}", uidDocumento);
+            return Optional.empty();
+        }
+
+        DocumentoVentaImpresionResultado resultado = construirResultado(uidDocumento, opciones, factura);
+        return Optional.of(convertirARespuesta(resultado));
+    }
+
+    private Optional<DocumentoVentaImpresionRespuesta> generarRespuestaDesdeServicios(String uidDocumento,
+            OpcionesImpresionDocumentoVenta opciones) {
+        GeneradorFacturaA4.FacturaGenerada factura = generarFacturaDesdeServicios(uidDocumento, opciones)
+                .orElse(null);
+        if (factura == null) {
+            LOGGER.warn("No se pudo localizar un ticket interpretable para el documento {}", uidDocumento);
+            return Optional.empty();
+        }
+
+        DocumentoVentaImpresionResultado resultado = construirResultado(uidDocumento, opciones, factura);
+        return Optional.of(convertirARespuesta(resultado));
+    }
+
     private Optional<GeneradorFacturaA4.FacturaGenerada> generarFactura(Object ticket,
             OpcionesImpresionDocumentoVenta opciones) {
         try {
             return generadorFacturaA4.generarFactura(ticket, opciones);
+        } catch (IOException excepcion) {
+            throw new DocumentoVentaImpresionException("Error al generar el informe Jasper del documento", excepcion);
+        }
+    }
+
+    private Optional<GeneradorFacturaA4.FacturaGenerada> generarFacturaDesdeServicios(String uidDocumento,
+            OpcionesImpresionDocumentoVenta opciones) {
+        try {
+            return generadorFacturaA4.generarFactura(uidDocumento, opciones);
         } catch (IOException excepcion) {
             throw new DocumentoVentaImpresionException("Error al generar el informe Jasper del documento", excepcion);
         }
@@ -159,8 +189,13 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         if (contenidoDocumento == null || contenidoDocumento.length == 0) {
             return null;
         }
+        JAXBContext contexto = obtenerContextoTicket();
+        if (contexto == null) {
+            LOGGER.warn("No existe un contexto JAXB disponible para interpretar tickets de venta");
+            return null;
+        }
         try {
-            Unmarshaller conversor = contextoTicket.createUnmarshaller();
+            Unmarshaller conversor = contexto.createUnmarshaller();
             Object resultado = conversor.unmarshal(new ByteArrayInputStream(contenidoDocumento));
             if (resultado instanceof JAXBElement) {
                 return ((JAXBElement<?>) resultado).getValue();
@@ -169,6 +204,22 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         } catch (JAXBException excepcion) {
             throw new DocumentoVentaImpresionException("No fue posible interpretar el contenido del documento", excepcion);
         }
+    }
+
+    private JAXBContext obtenerContextoTicket() {
+        if (contextoTicket == null && !contextoTicketInicializacionFallida) {
+            synchronized (contextoTicketLock) {
+                if (contextoTicket == null && !contextoTicketInicializacionFallida) {
+                    try {
+                        contextoTicket = JAXBContext.newInstance(CONTEXTO_JAXB_TICKET);
+                    } catch (JAXBException excepcion) {
+                        contextoTicketInicializacionFallida = true;
+                        LOGGER.warn("No se pudo inicializar el contexto JAXB para los tickets de venta", excepcion);
+                    }
+                }
+            }
+        }
+        return contextoTicket;
     }
 
     private String obtenerUidActividad(IDatosSesion datosSesion) {
