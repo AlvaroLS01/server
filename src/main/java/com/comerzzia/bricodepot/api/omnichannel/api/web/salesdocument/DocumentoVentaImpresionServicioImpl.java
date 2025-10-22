@@ -61,14 +61,20 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         if (opciones == null) {
             throw new DocumentoVentaImpresionException("Las opciones de impresión no pueden ser nulas");
         }
-        String uidActividad = opciones.getUidActividad();
-        if (!StringUtils.hasText(uidActividad)) {
-            throw new DocumentoVentaImpresionException(
-                    "Es obligatorio indicar el uid de actividad para imprimir el documento " + uidDocumento);
-        }
-
         IDatosSesion datosSesion = prepararDatosSesion();
         String uidActividadOriginal = obtenerUidActividad(datosSesion);
+        String uidActividad = StringUtils.hasText(opciones.getUidActividad()) ? opciones.getUidActividad()
+                : uidActividadOriginal;
+        if (!StringUtils.hasText(uidActividad)) {
+            throw new DocumentoVentaImpresionException(
+                    "No se pudo determinar el uid de actividad de la sesión para imprimir el documento "
+                            + uidDocumento);
+        }
+
+        if (!StringUtils.hasText(opciones.getUidActividad()) && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Utilizando el uid de actividad {} obtenido del contexto de sesión para imprimir {}",
+                    uidActividad, uidDocumento);
+        }
 
         try {
             establecerUidActividad(datosSesion, uidActividad);
