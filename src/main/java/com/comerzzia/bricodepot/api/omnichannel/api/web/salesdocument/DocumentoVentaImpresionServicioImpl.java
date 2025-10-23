@@ -1,10 +1,19 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import com.comerzzia.api.core.service.exception.ApiException;
@@ -30,14 +41,47 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentoVentaImpresionServicioImpl.class);
     private static final String MIME_PDF = "application/pdf";
+    private static final String DIRECTORIO_DOCTEMPLATES = "doctemplates";
+    private static final String CLASSPATH_PLANTILLAS_FACTURAS = "classpath*:informes/ventas/facturas/*.jasper";
+    private static final Map<String, String> ALIAS_PLANTILLAS;
+    private static final Map<String, String> ARCHIVOS_ALIAS;
+
+    static {
+        Map<String, String> alias = new HashMap<>();
+        alias.put("facturaa4", "facturaA4");
+        alias.put("facturaa4_original", "facturaA4_Original");
+        alias.put("facturaa4_pt", "facturaA4_PT");
+        alias.put("facturaa4_ca", "facturaA4_CA");
+        alias.put("facturadevoluciona4_pt", "facturaDevolucionA4_PT");
+        alias.put("facturadevoluciona4_pt_old", "facturaDevolucionA4_PT");
+        alias.put("factura", "facturaA4");
+        alias.put("fs", "facturaA4");
+        alias.put("ft", "facturaA4");
+        alias.put("fr", "facturaA4");
+        alias.put("nc", "facturaA4");
+        ALIAS_PLANTILLAS = Collections.unmodifiableMap(alias);
+
+        Map<String, String> archivosAlias = new HashMap<>();
+        archivosAlias.put("FT.jasper", "facturaA4.jasper");
+        archivosAlias.put("FS.jasper", "facturaA4.jasper");
+        archivosAlias.put("FR.jasper", "facturaA4.jasper");
+        archivosAlias.put("NC.jasper", "facturaA4.jasper");
+        ARCHIVOS_ALIAS = Collections.unmodifiableMap(archivosAlias);
+    }
 
     private final SaleDocumentService saleDocumentService;
     private final ComerzziaDatosSesion datosSesionRequest;
+    private final PathMatchingResourcePatternResolver resourceResolver;
+
+    private final Object plantillasLock = new Object();
+    private volatile boolean plantillasPreparadas;
+    private volatile Path directorioInformes;
 
     public DocumentoVentaImpresionServicioImpl(SaleDocumentService saleDocumentService,
             @Qualifier("datosSesionRequest") ComerzziaDatosSesion datosSesionRequest) {
         this.saleDocumentService = saleDocumentService;
         this.datosSesionRequest = datosSesionRequest;
+        this.resourceResolver = new PathMatchingResourcePatternResolver();
     }
 
     @Override
@@ -57,6 +101,8 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         if (requiereActualizarSesion) {
             aplicarUidActividad(datosSesion, uidActividadImpresion, false);
         }
+
+        prepararPlantillasDeImpresion();
 
         try (ByteArrayOutputStream salida = new ByteArrayOutputStream()) {
             PrintDocumentDTO configuracionImpresion = construirPeticionImpresion(uidDocumento, parametros);
@@ -160,7 +206,7 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         printRequest.setOutputDocumentName(nombreSalida);
 
         if (StringUtils.isNotBlank(opciones.getPlantillaImpresion())) {
-            printRequest.setPrintTemplate(opciones.getPlantillaImpresion().trim());
+            printRequest.setPrintTemplate(normalizarPlantilla(opciones.getPlantillaImpresion()));
         }
 
         Map<String, Object> parametros = printRequest.getCustomParams();
@@ -202,5 +248,152 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
             return nombre + ".pdf";
         }
         return nombre;
+    }
+
+    private String normalizarPlantilla(String plantillaSolicitada) {
+        String valor = StringUtils.trimToNull(plantillaSolicitada);
+        if (valor == null) {
+            return null;
+        }
+        String alias = ALIAS_PLANTILLAS.get(valor.toLowerCase(Locale.ROOT));
+        return alias != null ? alias : valor;
+    }
+
+    private void prepararPlantillasDeImpresion() {
+        if (plantillasPreparadas) {
+            return;
+        }
+        synchronized (plantillasLock) {
+            if (plantillasPreparadas) {
+                return;
+            }
+            try {
+                Path baseInformes = inicializarDirectorioInformes();
+                Path directorioPlantillas = baseInformes.resolve(DIRECTORIO_DOCTEMPLATES);
+                Files.createDirectories(directorioPlantillas);
+                copiarPlantillasDesdeClasspath(directorioPlantillas);
+                crearAliasDePlantillas(directorioPlantillas);
+                plantillasPreparadas = true;
+                LOGGER.debug("prepararPlantillasDeImpresion() - Plantillas disponibles en {}", directorioPlantillas);
+            } catch (IOException excepcion) {
+                throw new DocumentoVentaImpresionException("No se pudieron preparar las plantillas de impresión", excepcion);
+            }
+        }
+    }
+
+    private Path inicializarDirectorioInformes() throws IOException {
+        if (directorioInformes != null) {
+            return directorioInformes;
+        }
+
+        Object informacionInformes = obtenerInformesInfo();
+        Path rutaExistente = obtenerRutaInformesConfigurada(informacionInformes);
+
+        if (rutaExistente == null) {
+            rutaExistente = crearRutaInformesPredeterminada();
+            establecerRutaInformes(informacionInformes, rutaExistente);
+        }
+
+        directorioInformes = rutaExistente;
+        return directorioInformes;
+    }
+
+    private Object obtenerInformesInfo() {
+        try {
+            Class<?> claseAppInfo = Class.forName("com.comerzzia.core.util.config.AppInfo");
+            Method metodoInformes = claseAppInfo.getMethod("getInformesInfo");
+            return metodoInformes.invoke(null);
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException excepcion) {
+            LOGGER.debug("obtenerInformesInfo() - No se pudo acceder a AppInfo", excepcion);
+            return null;
+        }
+    }
+
+    private Path obtenerRutaInformesConfigurada(Object informacionInformes) {
+        if (informacionInformes == null) {
+            return null;
+        }
+        try {
+            Method metodoRuta = informacionInformes.getClass().getMethod("getRutaBase");
+            Object ruta = metodoRuta.invoke(informacionInformes);
+            String textoRuta = ruta != null ? ruta.toString().trim() : null;
+            if (StringUtils.isBlank(textoRuta) || "null".equalsIgnoreCase(textoRuta)) {
+                return null;
+            }
+            try {
+                Path rutaNormalizada = Paths.get(textoRuta);
+                Files.createDirectories(rutaNormalizada);
+                return rutaNormalizada;
+            } catch (InvalidPathException excepcion) {
+                LOGGER.warn("obtenerRutaInformesConfigurada() - Ruta de informes inválida {}", textoRuta, excepcion);
+                return null;
+            }
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException excepcion) {
+            LOGGER.debug("obtenerRutaInformesConfigurada() - No se pudo recuperar la ruta configurada", excepcion);
+            return null;
+        }
+    }
+
+    private Path crearRutaInformesPredeterminada() throws IOException {
+        Path rutaBase = null;
+        String comerzziaHome = System.getProperty("comerzzia.home");
+        if (StringUtils.isNotBlank(comerzziaHome)) {
+            rutaBase = Paths.get(comerzziaHome, "informes");
+        } else {
+            String rutaUsuario = System.getProperty("user.home");
+            if (StringUtils.isNotBlank(rutaUsuario)) {
+                rutaBase = Paths.get(rutaUsuario, ".comerzzia", "informes");
+            }
+        }
+        if (rutaBase == null) {
+            rutaBase = Files.createTempDirectory("comerzzia-informes");
+        }
+        Files.createDirectories(rutaBase);
+        return rutaBase;
+    }
+
+    private void establecerRutaInformes(Object informacionInformes, Path rutaBase) {
+        if (informacionInformes == null || rutaBase == null) {
+            return;
+        }
+        try {
+            Method metodo = informacionInformes.getClass().getMethod("setRutaBase", String.class);
+            metodo.invoke(informacionInformes, rutaBase.toString());
+        } catch (NoSuchMethodException excepcion) {
+            LOGGER.trace("establecerRutaInformes() - La configuración de informes no expone setRutaBase", excepcion);
+        } catch (IllegalAccessException | InvocationTargetException excepcion) {
+            LOGGER.warn("establecerRutaInformes() - No se pudo actualizar la ruta de informes", excepcion);
+        }
+    }
+
+    private void copiarPlantillasDesdeClasspath(Path directorioPlantillas) throws IOException {
+        Resource[] recursos = resourceResolver.getResources(CLASSPATH_PLANTILLAS_FACTURAS);
+        for (Resource recurso : recursos) {
+            if (!recurso.isReadable()) {
+                continue;
+            }
+            String nombreFichero = recurso.getFilename();
+            if (StringUtils.isBlank(nombreFichero)) {
+                continue;
+            }
+            Path destino = directorioPlantillas.resolve(nombreFichero);
+            if (Files.exists(destino)) {
+                continue;
+            }
+            try (InputStream entrada = recurso.getInputStream()) {
+                Files.copy(entrada, destino, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+    }
+
+    private void crearAliasDePlantillas(Path directorioPlantillas) throws IOException {
+        for (Map.Entry<String, String> alias : ARCHIVOS_ALIAS.entrySet()) {
+            Path origen = directorioPlantillas.resolve(alias.getValue());
+            Path destino = directorioPlantillas.resolve(alias.getKey());
+            if (!Files.exists(origen) || Files.exists(destino)) {
+                continue;
+            }
+            Files.copy(origen, destino, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }
