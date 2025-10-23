@@ -66,7 +66,9 @@ public class GeneradorFacturaA4 {
 
 	private static final List<String> PLANTILLAS_VALIDAS = Arrays.asList(PLANTILLA_ES, PLANTILLA_PT, PLANTILLA_CA, PLANTILLA_ORIGINAL, PLANTILLA_DEVOLUCION_PT);
 
-	private static final Map<String, String> ALIAS_PLANTILLAS;
+        private static final Map<String, String> ALIAS_PLANTILLAS;
+        private static final List<String> CLASES_TICKET_ADMITIDAS = Arrays.asList("TicketVentaAbono",
+                        "VentaTicketAbono");
 	static {
 		Map<String, String> alias = new HashMap<>();
 		alias.put("facturaa4", PLANTILLA_ES);
@@ -188,11 +190,11 @@ public class GeneradorFacturaA4 {
 		return Optional.empty();
 	}
 
-	private Optional<Object> intentarBuscarTicket(Object bean, String uidDocumento) {
-		Method[] metodos = bean.getClass().getMethods();
-		for (Method metodo : metodos) {
-			if (metodo.getParameterCount() != 1) {
-				continue;
+        private Optional<Object> intentarBuscarTicket(Object bean, String uidDocumento) {
+                Method[] metodos = bean.getClass().getMethods();
+                for (Method metodo : metodos) {
+                        if (metodo.getParameterCount() != 1) {
+                                continue;
 			}
 			if (!metodo.getParameterTypes()[0].equals(String.class)) {
 				continue;
@@ -201,18 +203,26 @@ public class GeneradorFacturaA4 {
 			if (!(nombreMetodo.contains("ticket") || nombreMetodo.contains("document"))) {
 				continue;
 			}
-			try {
-				Object posibleTicket = metodo.invoke(bean, uidDocumento);
-				if (posibleTicket != null && posibleTicket.getClass().getName().contains("TicketVentaAbono")) {
-					return Optional.of(posibleTicket);
-				}
-			}
-			catch (IllegalAccessException | InvocationTargetException excepcion) {
-				LOGGER.trace("No se pudo invocar {} en {}", metodo.getName(), bean.getClass().getName(), excepcion);
-			}
-		}
-		return Optional.empty();
-	}
+                        try {
+                                Object posibleTicket = metodo.invoke(bean, uidDocumento);
+                                if (esTicketVenta(posibleTicket)) {
+                                        return Optional.of(posibleTicket);
+                                }
+                        }
+                        catch (IllegalAccessException | InvocationTargetException excepcion) {
+                                LOGGER.trace("No se pudo invocar {} en {}", metodo.getName(), bean.getClass().getName(), excepcion);
+                        }
+                }
+                return Optional.empty();
+        }
+
+        private boolean esTicketVenta(Object posibleTicket) {
+                if (posibleTicket == null) {
+                        return false;
+                }
+                String nombreClase = posibleTicket.getClass().getName();
+                return CLASES_TICKET_ADMITIDAS.stream().anyMatch(nombreClase::contains);
+        }
 
 	private PlantillaFactura determinarPlantilla(Object ticketVenta, String plantillaSolicitada) {
 		if (plantillaSolicitada != null && !plantillaSolicitada.trim().isEmpty()) {
