@@ -1,16 +1,10 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Base64;
 import java.util.Optional;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +17,7 @@ import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.domain.entity.document.DocumentEntity;
 import com.comerzzia.omnichannel.service.document.DocumentService;
 
+
 /**
  * Default implementation of {@link DocumentoVentaImpresionServicio} that reads
  * the ticket information of a sales document and renders it using the custom
@@ -33,27 +28,21 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentoVentaImpresionServicioImpl.class);
 
-    private static final String CONTEXTO_JAXB_TICKET =
-            "com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket";
     private static final String MIME_PDF = "application/pdf";
 
     private final DocumentService documentService;
     private final GeneradorFacturaA4 generadorFacturaA4;
     private final ComerzziaDatosSesion datosSesionRequest;
-    private final JAXBContext contextoTicket;
+    private final DocumentoVentaConvertidor convertidorDocumento;
 
     public DocumentoVentaImpresionServicioImpl(DocumentService documentService,
             GeneradorFacturaA4 generadorFacturaA4,
-            @Qualifier("datosSesionRequest") ComerzziaDatosSesion datosSesionRequest) {
+            @Qualifier("datosSesionRequest") ComerzziaDatosSesion datosSesionRequest,
+            DocumentoVentaConvertidor convertidorDocumento) {
         this.documentService = documentService;
         this.generadorFacturaA4 = generadorFacturaA4;
         this.datosSesionRequest = datosSesionRequest;
-        try {
-            this.contextoTicket = JAXBContext.newInstance(CONTEXTO_JAXB_TICKET);
-        } catch (JAXBException excepcion) {
-            throw new IllegalStateException("No se pudo inicializar el contexto JAXB para los tickets de venta",
-                    excepcion);
-        }
+        this.convertidorDocumento = convertidorDocumento;
     }
 
     @Override
@@ -82,7 +71,7 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
                 return Optional.empty();
             }
 
-            Object ticket = convertirTicket(documento.getDocumentContent());
+            Object ticket = convertirTicket(datosSesion, documento);
             if (ticket == null) {
                 LOGGER.warn("El documento {} no contiene información de ticket interpretable", uidDocumento);
                 return Optional.empty();
@@ -155,19 +144,14 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         return respuesta;
     }
 
-    private Object convertirTicket(byte[] contenidoDocumento) {
-        if (contenidoDocumento == null || contenidoDocumento.length == 0) {
-            return null;
-        }
+    private Object convertirTicket(IDatosSesion datosSesion, DocumentEntity documento) {
         try {
-            Unmarshaller conversor = contextoTicket.createUnmarshaller();
-            Object resultado = conversor.unmarshal(new ByteArrayInputStream(contenidoDocumento));
-            if (resultado instanceof JAXBElement) {
-                return ((JAXBElement<?>) resultado).getValue();
-            }
-            return resultado;
-        } catch (JAXBException excepcion) {
-            throw new DocumentoVentaImpresionException("No fue posible interpretar el contenido del documento", excepcion);
+            return convertidorDocumento.convertir(datosSesion, documento);
+        } catch (DocumentoVentaImpresionException excepcion) {
+            throw excepcion;
+        } catch (RuntimeException excepcion) {
+            throw new DocumentoVentaImpresionException("No fue posible interpretar el contenido del documento",
+                    excepcion);
         }
     }
 
