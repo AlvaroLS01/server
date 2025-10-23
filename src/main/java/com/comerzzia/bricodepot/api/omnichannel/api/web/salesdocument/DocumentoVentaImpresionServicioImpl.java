@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -54,20 +55,18 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         if (opciones == null) {
             throw new DocumentoVentaImpresionException("Las opciones de impresión no pueden ser nulas");
         }
-        String uidActividad = opciones.getUidActividad();
-        if (!StringUtils.hasText(uidActividad)) {
-            throw new DocumentoVentaImpresionException(
-                    "Es obligatorio indicar el uid de actividad para imprimir el documento " + uidDocumento);
-        }
-
         IDatosSesion datosSesion = prepararDatosSesion();
         String uidActividadOriginal = obtenerUidActividad(datosSesion);
+        String uidActividadImpresion = determinarUidActividad(uidDocumento, opciones, uidActividadOriginal);
+        boolean actualizarSesion = !Objects.equals(uidActividadOriginal, uidActividadImpresion);
 
         try {
-            establecerUidActividad(datosSesion, uidActividad);
+            if (actualizarSesion) {
+                establecerUidActividad(datosSesion, uidActividadImpresion);
+            }
             DocumentEntity documento = obtenerDocumento(datosSesion, uidDocumento);
             if (documento == null) {
-                LOGGER.warn("No se encontró el documento {} para la actividad {}", uidDocumento, uidActividad);
+                LOGGER.warn("No se encontró el documento {} para la actividad {}", uidDocumento, uidActividadImpresion);
                 return Optional.empty();
             }
 
@@ -87,10 +86,12 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
             DocumentoVentaImpresionResultado resultado = construirResultado(uidDocumento, opciones, factura);
             return Optional.of(convertirARespuesta(resultado));
         } finally {
-            try {
-                establecerUidActividad(datosSesion, uidActividadOriginal);
-            } catch (DocumentoVentaImpresionException excepcion) {
-                LOGGER.debug("No se pudo restaurar el uid de actividad original tras la impresión", excepcion);
+            if (actualizarSesion) {
+                try {
+                    establecerUidActividad(datosSesion, uidActividadOriginal);
+                } catch (DocumentoVentaImpresionException excepcion) {
+                    LOGGER.debug("No se pudo restaurar el uid de actividad original tras la impresión", excepcion);
+                }
             }
         }
     }
@@ -131,6 +132,18 @@ public class DocumentoVentaImpresionServicioImpl implements DocumentoVentaImpres
         String mimeType = StringUtils.hasText(opciones.getTipoMime()) ? opciones.getTipoMime() : MIME_PDF;
         return new DocumentoVentaImpresionResultado(uidDocumento, opciones.esCopia(), opciones.esEnLinea(), mimeType,
                 factura.getNombreFichero(), factura.getContenidoPdf());
+    }
+
+    private String determinarUidActividad(String uidDocumento, OpcionesImpresionDocumentoVenta opciones,
+            String uidActividadSesion) {
+        if (StringUtils.hasText(opciones.getUidActividad())) {
+            return opciones.getUidActividad();
+        }
+        if (StringUtils.hasText(uidActividadSesion)) {
+            return uidActividadSesion;
+        }
+        throw new DocumentoVentaImpresionException(
+                "No se pudo determinar el uid de actividad para imprimir el documento " + uidDocumento);
     }
 
     private DocumentoVentaImpresionRespuesta convertirARespuesta(DocumentoVentaImpresionResultado resultado) {
