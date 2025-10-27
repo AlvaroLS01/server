@@ -30,9 +30,9 @@
 	<field name="precioTotalSinDto" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[precioTotalSinDto]]></fieldDescription>
 	</field>
-	<field name="codImp" class="java.lang.String">
-		<fieldDescription><![CDATA[codImp]]></fieldDescription>
-	</field>
+        <field name="codImpuesto" class="java.lang.String">
+                <fieldDescription><![CDATA[codImpuesto]]></fieldDescription>
+        </field>
 	<field name="precioTotalConDto" class="java.math.BigDecimal"/>
 	<field name="precioTarifaOrigen" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[precioTarifaOrigen]]></fieldDescription>
@@ -210,7 +210,7 @@
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font fontName="Tahoma" size="6"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{codImp} + "%"]]></textFieldExpression>
+                        <textFieldExpression><![CDATA[$F{codImpuesto} + "%"]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

@@ -1,25 +1,36 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
-import java.util.Optional;
+import java.time.Duration;
+import java.time.Instant;
 
-/**
- * Service contract used to generate the printable representation of a sales
- * document.
- */
-public interface DocumentoVentaImpresionServicio {
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-    /**
-     * Generates the printable representation for the provided sales document
-     * identifier.
-     *
-     * @param uidDocumento the document identifier received in the API request
-     * @param opciones     user supplied print options such as the desired mime
-     *                     type, the target template or the activity UID to use as
-     *                     context
-     * @return the response to be sent back to the API consumer or an empty
-     *         optional when the document cannot be printed
-     */
-    Optional<DocumentoVentaImpresionRespuesta> imprimir(String uidDocumento,
-            OpcionesImpresionDocumentoVenta opciones);
+@Service
+public class DocumentoVentaImpresionServicio {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentoVentaImpresionServicio.class);
+
+    public void registrarInicioImpresion(String documentUid) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("registrarInicioImpresion() - Starting print generation for document '{}'", documentUid);
+        }
+    }
+
+    public void registrarFinImpresion(String documentUid, int statusCode, Instant startInstant) {
+        if (!LOGGER.isDebugEnabled()) {
+            return;
+        }
+
+        long elapsedMillis = -1L;
+        if (startInstant != null) {
+            elapsedMillis = Duration.between(startInstant, Instant.now()).toMillis();
+        }
+
+        String durationPart = elapsedMillis >= 0 ? " in " + elapsedMillis + " ms" : StringUtils.EMPTY;
+        LOGGER.debug("registrarFinImpresion() - Completed print generation for document '{}' with status {}{}", documentUid,
+                statusCode, durationPart);
+    }
 }
-

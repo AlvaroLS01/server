@@ -7,7 +7,7 @@
 		<defaultValueExpression><![CDATA[".//"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="LOGO" class="java.io.InputStream"/>
-	<parameter name="ticket" class="com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono"/>
+        <parameter name="ticket" class="com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono"/>
 	<parameter name="DEVOLUCION" class="java.lang.Boolean"/>
 	<parameter name="QR_ESPAÑA" class="java.io.InputStream"/>
 	<parameter name="esDuplicado" class="java.lang.Boolean"/>
@@ -530,7 +530,15 @@
 				<textElement>
 					<font fontName="Tahoma" size="9"/>
 				</textElement>
-				<textFieldExpression><![CDATA[new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(($P{ticket}.getCabecera().getFecha())))]]></textFieldExpression>
+                                <textFieldExpression><![CDATA[
+        $P{ticket}.getCabecera().getFecha() == null
+                ? ""
+                : new java.text.SimpleDateFormat("dd/MM/yyyy").format(
+                        $P{ticket}.getCabecera().getFecha() instanceof java.util.Date
+                                ? (java.util.Date) $P{ticket}.getCabecera().getFecha()
+                                : new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse($P{ticket}.getCabecera().getFecha().toString())
+                )
+        ]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement uuid="f2a7c3a5-19f5-4847-882b-93af96b90f1b" x="121" y="173" width="192" height="11">

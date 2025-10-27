@@ -102,7 +102,7 @@
 		                "$ref": "#/components/schemas/LoginData"
 		              },
 		              "example": { 
-				          "uidActividad" : "40f314f4-8a6e-4c38-82f6-a95a5c8dd0af",
+				          "uidActividad" : "NON-FOOD",
 				          "username" : "administrador",
 				          "password" : "cmz"
 				      }  

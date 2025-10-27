@@ -1,39 +1,25 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.PreMatching;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.PathSegment;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
-/**
- * Jersey request filter that intercepts the standard omnichannel sales document
- * printing endpoint so that the Brico custom implementation is used instead of
- * the default one delivered with the product.
- */
-@Provider
-@PreMatching
-public class DocumentoVentaImpresionFilter implements ContainerRequestFilter {
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
-    private static final String PARAM_MIME_TYPE = "mimeType";
-    private static final String PARAM_COPY = "copy";
-    private static final String PARAM_INLINE = "inline";
-    private static final String PARAM_OUTPUT_NAME = "outputDocumentName";
-    private static final String PARAM_PRINT_TEMPLATE = "printTemplate";
-    private static final String PARAM_ACTIVITY_UID = "uidActividad";
-    private static final String PARAM_ACTIVITY_UID_ALIAS = "activityUid";
-    private static final String DEFAULT_MIME_TYPE = "application/pdf";
+@Provider
+public class DocumentoVentaImpresionFilter implements ContainerRequestFilter, ContainerResponseFilter {
+
+    private static final String DOCUMENT_UID_PARAM = "documentUid";
+    private static final String START_TIME_ATTRIBUTE = DocumentoVentaImpresionFilter.class.getName() + ".start";
 
     private final DocumentoVentaImpresionServicio servicioImpresion;
 
@@ -43,88 +29,58 @@ public class DocumentoVentaImpresionFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        if (!HttpMethod.GET.equals(requestContext.getMethod())) {
+        if (!isSalesDocumentPrintRequest(requestContext)) {
             return;
         }
 
-        List<PathSegment> segments = requestContext.getUriInfo().getPathSegments();
-        if (segments.size() != 3) {
+        requestContext.setProperty(START_TIME_ATTRIBUTE, Instant.now());
+        servicioImpresion.registrarInicioImpresion(resolveDocumentUid(requestContext));
+    }
+
+    @Override
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
+        if (!isSalesDocumentPrintRequest(requestContext)) {
             return;
         }
 
-        if (!"salesdocument".equalsIgnoreCase(segments.get(0).getPath())) {
-            return;
-        }
-
-        if (!"print".equalsIgnoreCase(segments.get(2).getPath())) {
-            return;
-        }
-
-        String documentUid = segments.get(1).getPath();
-        if (documentUid == null || documentUid.trim().isEmpty()) {
-            throw new WebApplicationException("Document uid is required", Response.Status.BAD_REQUEST);
-        }
-
-        Map<String, String> rawParams = toSingleValueMap(requestContext.getUriInfo().getQueryParameters());
-
-        String mimeType = valueOrDefault(rawParams.remove(PARAM_MIME_TYPE), DEFAULT_MIME_TYPE);
-        boolean copy = parseBoolean(rawParams.remove(PARAM_COPY));
-        boolean inline = parseBoolean(rawParams.remove(PARAM_INLINE));
-        String outputDocumentName = emptyToNull(rawParams.remove(PARAM_OUTPUT_NAME));
-        String printTemplate = emptyToNull(rawParams.remove(PARAM_PRINT_TEMPLATE));
-        String activityUid = emptyToNull(rawParams.remove(PARAM_ACTIVITY_UID));
-        if (activityUid == null) {
-            activityUid = emptyToNull(rawParams.remove(PARAM_ACTIVITY_UID_ALIAS));
-        }
-
-        Map<String, String> customParams = rawParams.isEmpty() ? Collections.emptyMap() : new HashMap<>(rawParams);
-
-        OpcionesImpresionDocumentoVenta opciones = new OpcionesImpresionDocumentoVenta(
-                mimeType,
-                copy,
-                inline,
-                outputDocumentName,
-                printTemplate,
-                activityUid,
-                customParams);
-
-        Optional<DocumentoVentaImpresionRespuesta> respuesta = servicioImpresion.imprimir(documentUid, opciones);
-
-        Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON_TYPE);
-        respuesta.ifPresent(responseBuilder::entity);
-
-        requestContext.abortWith(responseBuilder.build());
+        Object value = requestContext.getProperty(START_TIME_ATTRIBUTE);
+        Instant startInstant = value instanceof Instant ? (Instant) value : null;
+        servicioImpresion.registrarFinImpresion(resolveDocumentUid(requestContext), responseContext.getStatus(), startInstant);
     }
 
-    private Map<String, String> toSingleValueMap(javax.ws.rs.core.MultivaluedMap<String, String> parameters) {
-        Map<String, String> singleValueMap = new HashMap<>();
-        parameters.forEach((key, values) -> {
-            if (!values.isEmpty()) {
-                singleValueMap.put(key, values.get(0));
-            } else {
-                singleValueMap.put(key, null);
-            }
-        });
-        return singleValueMap;
-    }
-
-    private String valueOrDefault(String value, String defaultValue) {
-        if (value == null) {
-            return defaultValue;
+    private boolean isSalesDocumentPrintRequest(ContainerRequestContext requestContext) {
+        if (requestContext == null || requestContext.getUriInfo() == null) {
+            return false;
         }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? defaultValue : trimmed;
+        String path = requestContext.getUriInfo().getPath();
+        return path != null && path.startsWith("salesdocument/") && path.endsWith("/print");
     }
 
-    private boolean parseBoolean(String value) {
-        return value != null && Boolean.parseBoolean(value.trim());
-    }
-
-    private String emptyToNull(String value) {
-        if (value == null) {
+    private String resolveDocumentUid(ContainerRequestContext requestContext) {
+        if (requestContext == null || requestContext.getUriInfo() == null) {
             return null;
         }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+
+        MultivaluedMap<String, String> pathParameters = requestContext.getUriInfo().getPathParameters();
+        if (pathParameters == null) {
+            return null;
+        }
+
+        List<String> values = pathParameters.get(DOCUMENT_UID_PARAM);
+        if (!CollectionUtils.isEmpty(values)) {
+            return values.get(0);
+        }
+
+        // Fallback in case the parameter name is not exposed for some reason
+        for (Map.Entry<String, List<String>> entry : pathParameters.entrySet()) {
+            if (!CollectionUtils.isEmpty(entry.getValue())) {
+                String candidate = entry.getValue().get(0);
+                if (StringUtils.hasText(candidate)) {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
     }
 }
