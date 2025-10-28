@@ -474,7 +474,7 @@
 				<textElement>
 					<font fontName="Tahoma" size="9"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$P{ticket}.getCabecera().getCajero()]]></textFieldExpression>
+                                <textFieldExpression><![CDATA[$P{ticket}.getCabecera().getCajero() != null ? $P{ticket}.getCabecera().getCajero().getDesusuario() : ""]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
 				<reportElement uuid="dde4f37d-2d3e-4f9a-980e-13c0d0519c56" x="60" y="264" width="161" height="11"/>
@@ -531,13 +531,9 @@
 					<font fontName="Tahoma" size="9"/>
 				</textElement>
                                 <textFieldExpression><![CDATA[
-        $P{ticket}.getCabecera().getFecha() == null
-                ? ""
-                : new java.text.SimpleDateFormat("dd/MM/yyyy").format(
-                        $P{ticket}.getCabecera().getFecha() instanceof java.util.Date
-                                ? (java.util.Date) $P{ticket}.getCabecera().getFecha()
-                                : new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse($P{ticket}.getCabecera().getFecha().toString())
-                )
+        com.comerzzia.bricodepot.api.omnichannel.api.services.documentprint.JasperDateUtils.formatDayMonthYear(
+                $P{ticket}.getCabecera().getFecha()
+        )
         ]]></textFieldExpression>
 			</textField>
 			<textField>

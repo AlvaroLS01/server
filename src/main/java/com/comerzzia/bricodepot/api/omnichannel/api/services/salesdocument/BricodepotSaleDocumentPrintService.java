@@ -7,5 +7,5 @@ import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
 
 public interface BricodepotSaleDocumentPrintService {
 
-    BricodepotPrintedDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException;
+	BricodepotPrintedDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException;
 }

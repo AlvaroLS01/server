@@ -40,72 +40,62 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 public class BricodepotSalesDocumentResource extends SalesDocumentResource {
 
-    private static final String APPLICATION_PDF = "application/pdf";
+	private static final String APPLICATION_PDF = "application/pdf";
 
-    private final BricodepotSaleDocumentPrintService saleDocumentPrintService;
+	private final BricodepotSaleDocumentPrintService saleDocumentPrintService;
 
-    @Autowired
-    public BricodepotSalesDocumentResource(BricodepotSaleDocumentPrintService saleDocumentPrintService) {
-        this.saleDocumentPrintService = saleDocumentPrintService;
-    }
+	@Autowired
+	public BricodepotSalesDocumentResource(BricodepotSaleDocumentPrintService saleDocumentPrintService) {
+		this.saleDocumentPrintService = saleDocumentPrintService;
+	}
 
-    @Override
-    @GET
-    @Path("/{documentUid}/print")
-    @Operation(summary = "Print sales document by uid",
-               description = "Print sales document by uid returning a base64 encoded payload",
-               responses = {
-                       @ApiResponse(description = "The print output", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = BricodepotPrintDocumentResponse.class))),
-                       @ApiResponse(responseCode = "400", description = "Invalid input values"),
-                       @ApiResponse(responseCode = "404", description = "Record not found")
-               })
-    public Response printSaleDocumentByUid(@PathParam("documentUid") String documentUid,
-                                           @Context HttpServletRequest request,
-                                           @Context HttpServletResponse response,
-                                           @Valid @BeanParam PrintDocumentRequest printDocumentRequest) throws ApiException {
+	@Override
+	@GET
+	@Path("/{documentUid}/print")
+	@Operation(summary = "Print sales document by uid", description = "Print sales document by uid returning a base64 encoded payload", responses = {
+	        @ApiResponse(description = "The print output", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = BricodepotPrintDocumentResponse.class))),
+	        @ApiResponse(responseCode = "400", description = "Invalid input values"), @ApiResponse(responseCode = "404", description = "Record not found") })
+	public Response printSaleDocumentByUid(@PathParam("documentUid") String documentUid, @Context HttpServletRequest request, @Context HttpServletResponse response,
+	        @Valid @BeanParam PrintDocumentRequest printDocumentRequest) throws ApiException {
 
-        PrintDocumentRequest effectiveRequest = printDocumentRequest != null ? printDocumentRequest : new PrintDocumentRequest();
+		PrintDocumentRequest effectiveRequest = printDocumentRequest != null ? printDocumentRequest : new PrintDocumentRequest();
 
-        if (StringUtils.isBlank(effectiveRequest.getMimeType())) {
-            effectiveRequest.setMimeType(APPLICATION_PDF);
-        }
+		if (StringUtils.isBlank(effectiveRequest.getMimeType())) {
+			effectiveRequest.setMimeType(APPLICATION_PDF);
+		}
 
-        if (StringUtils.isBlank(effectiveRequest.getOutputDocumentName())) {
-            effectiveRequest.setOutputDocumentName(documentUid);
-        }
+		if (StringUtils.isBlank(effectiveRequest.getOutputDocumentName())) {
+			effectiveRequest.setOutputDocumentName(documentUid);
+		}
 
-        if (effectiveRequest.getInline() == null) {
-            effectiveRequest.setInline(Boolean.FALSE);
-        }
+		if (effectiveRequest.getInline() == null) {
+			effectiveRequest.setInline(Boolean.FALSE);
+		}
 
-        PrintDocumentDTO printDocumentDTO = super.modelMapper.map(effectiveRequest, PrintDocumentDTO.class);
+		PrintDocumentDTO printDocumentDTO = super.modelMapper.map(effectiveRequest, PrintDocumentDTO.class);
 
-        Map<String, String> requestCustomParams = effectiveRequest.getCustomParams();
-        if (requestCustomParams != null && !requestCustomParams.isEmpty()) {
-            printDocumentDTO.getCustomParams().putAll(requestCustomParams);
-        }
+		Map<String, String> requestCustomParams = effectiveRequest.getCustomParams();
+		if (requestCustomParams != null && !requestCustomParams.isEmpty()) {
+			printDocumentDTO.getCustomParams().putAll(requestCustomParams);
+		}
 
-        ComerzziaDatosSesion datosSesion = super.datosSesionRequest;
-        BricodepotPrintedDocument printedDocument = saleDocumentPrintService.printDocument(datosSesion.getDatosSesionBean(), documentUid, printDocumentDTO);
+		ComerzziaDatosSesion datosSesion = super.datosSesionRequest;
+		BricodepotPrintedDocument printedDocument = saleDocumentPrintService.printDocument(datosSesion.getDatosSesionBean(), documentUid, printDocumentDTO);
 
-        String base64Content = Base64.getEncoder().encodeToString(printedDocument.getContent());
+		String base64Content = Base64.getEncoder().encodeToString(printedDocument.getContent());
 
-        String responseFileName = printedDocument.getFileName();
-        if (StringUtils.isBlank(responseFileName)) {
-            responseFileName = documentUid;
-        }
+		String responseFileName = printedDocument.getFileName();
+		if (StringUtils.isBlank(responseFileName)) {
+			responseFileName = documentUid;
+		}
 
-        if (StringUtils.equals(effectiveRequest.getMimeType(), APPLICATION_PDF) && !StringUtils.endsWithIgnoreCase(responseFileName, ".pdf")) {
-            responseFileName = responseFileName + ".pdf";
-        }
+		if (StringUtils.equals(effectiveRequest.getMimeType(), APPLICATION_PDF) && !StringUtils.endsWithIgnoreCase(responseFileName, ".pdf")) {
+			responseFileName = responseFileName + ".pdf";
+		}
 
-        BricodepotPrintDocumentResponse responseBody = new BricodepotPrintDocumentResponse(
-                printedDocument.getDocumentUid(),
-                responseFileName,
-                printedDocument.getMimeType(),
-                base64Content,
-                printedDocument.getContentLength());
+		BricodepotPrintDocumentResponse responseBody = new BricodepotPrintDocumentResponse(printedDocument.getDocumentUid(), responseFileName, printedDocument.getMimeType(), base64Content,
+		        printedDocument.getContentLength());
 
-        return Response.ok(responseBody, MediaType.APPLICATION_JSON).build();
-    }
+		return Response.ok(responseBody, MediaType.APPLICATION_JSON).build();
+	}
 }

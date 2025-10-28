@@ -9,55 +9,57 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
- * Clase que contiene una referencia el contexto de spring de la aplicacion Se
- * ejecuta como post-construct de Spring el metodo setApplicationContext y de
- * esa forma se asigna. Se encuentra deprecado porque la opcion correcta es
- * inyectar el ApplicationContext de Spring
- *
+ * Clase que contiene una referencia el contexto de spring de la aplicacion Se ejecuta como post-construct de Spring el
+ * metodo setApplicationContext y de esa forma se asigna. Se encuentra deprecado porque la opcion correcta es inyectar
+ * el ApplicationContext de Spring
  */
 @Component
 @Lazy(false)
 public class ContextHolder implements ApplicationContextAware {
-    protected static final Logger log = Logger.getLogger(ContextHolder.class);
 
-    private static ApplicationContext applicationContext;
+	protected static final Logger log = Logger.getLogger(ContextHolder.class);
 
-    public static ApplicationContext get() {
-        if (applicationContext == null) {
-            throw new IllegalStateException("No se ha inicializado el contexto de Spring");
-        }
+	private static ApplicationContext applicationContext;
 
-        return applicationContext;
-    }
+	public static ApplicationContext get() {
+		if (applicationContext == null) {
+			throw new IllegalStateException("No se ha inicializado el contexto de Spring");
+		}
 
-    protected ContextHolder() {
-    }
+		return applicationContext;
+	}
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        log.info("********************** comerzzia Spring context info ****************************");
-        log.info("\t Id: " + applicationContext.getId());
-        log.info("\t Application: " + applicationContext.getApplicationName());
-        log.info("\t Name: " + applicationContext.getDisplayName());
-        log.info("*********************************************************************************");
-        ContextHolder.applicationContext = applicationContext;
-    }
+	protected ContextHolder() {
+	}
 
-    @SuppressWarnings("unchecked")
-    public static <T> T getBean(String name) throws ClassNotFoundException {
-        if (name.contains(".")) {
-            Class<?> clazz = Class.forName(name);
-            try {
-                return (T) get().getBean(clazz);
-            } catch (NoSuchBeanDefinitionException e) {
-                try {
-                    return (T) clazz.newInstance();
-                } catch (InstantiationException | IllegalAccessException e1) {
-                    throw new RuntimeException(e1);
-                }
-            }
-        } else {
-            return (T) get().getBean(name);
-        }
-    }
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		log.info("********************** comerzzia Spring context info ****************************");
+		log.info("\t Id: " + applicationContext.getId());
+		log.info("\t Application: " + applicationContext.getApplicationName());
+		log.info("\t Name: " + applicationContext.getDisplayName());
+		log.info("*********************************************************************************");
+		ContextHolder.applicationContext = applicationContext;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> T getBean(String name) throws ClassNotFoundException {
+		if (name.contains(".")) {
+			Class<?> clazz = Class.forName(name);
+			try {
+				return (T) get().getBean(clazz);
+			}
+			catch (NoSuchBeanDefinitionException e) {
+				try {
+					return (T) clazz.newInstance();
+				}
+				catch (InstantiationException | IllegalAccessException e1) {
+					throw new RuntimeException(e1);
+				}
+			}
+		}
+		else {
+			return (T) get().getBean(name);
+		}
+	}
 }

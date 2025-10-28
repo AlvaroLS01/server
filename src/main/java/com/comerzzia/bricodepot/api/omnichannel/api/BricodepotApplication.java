@@ -12,11 +12,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 // Esta configuracion elimina el control de errores por defecto de spring mvc
-// que provocaba que por ejemplo un 401 (Unauthorized) se devolvia como un 404. 
-// Esto se debe a que una aplicacion web tendria que redirigir a la pagina que 
+// que provocaba que por ejemplo un 401 (Unauthorized) se devolvia como un 404.
+// Esto se debe a que una aplicacion web tendria que redirigir a la pagina que
 // controlara esa situacion. Esto no procede en una aplicacion que solo maneja REST
-@EnableAutoConfiguration(exclude = {ErrorMvcAutoConfiguration.class})
-@ImportResource({"classpath*:comerzzia-*context.xml"})
+@EnableAutoConfiguration(exclude = { ErrorMvcAutoConfiguration.class })
+@ImportResource({ "classpath*:comerzzia-*context.xml" })
 @SpringBootApplication
 @EnableCaching
 @EnableScheduling
@@ -24,13 +24,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 public class BricodepotApplication extends SpringBootServletInitializer {
 
-        public static void main(String[] args) {
-                SpringApplication.run(BricodepotApplication.class, args);
-        }
+	public static void main(String[] args) {
+		SpringApplication.run(BricodepotApplication.class, args);
+	}
 
-        @Override
-        protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-                return application.sources(BricodepotApplication.class);
-        }
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(BricodepotApplication.class);
+	}
 
 }

@@ -16,39 +16,40 @@ import com.comerzzia.core.util.config.AppInfo;
 @Configuration
 public class BricodepotInformesConfiguration {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotInformesConfiguration.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotInformesConfiguration.class);
 
-    private static final String INFORMES_CLASSPATH_DIRECTORY = "informes";
+	private static final String INFORMES_CLASSPATH_DIRECTORY = "informes";
 
-    @PostConstruct
-    public void configureReportsBasePath() {
-        if (StringUtils.isNotBlank(AppInfo.getInformesInfo().getRutaBase())) {
-            LOGGER.debug("configureReportsBasePath() - Report base path already configured: {}", AppInfo.getInformesInfo().getRutaBase());
-            return;
-        }
+	@PostConstruct
+	public void configureReportsBasePath() {
+		if (StringUtils.isNotBlank(AppInfo.getInformesInfo().getRutaBase())) {
+			LOGGER.debug("configureReportsBasePath() - Report base path already configured: {}", AppInfo.getInformesInfo().getRutaBase());
+			return;
+		}
 
-        URL resource = Thread.currentThread().getContextClassLoader().getResource(INFORMES_CLASSPATH_DIRECTORY);
-        if (resource == null) {
-            LOGGER.warn("configureReportsBasePath() - Unable to locate reports directory '{}' on the classpath", INFORMES_CLASSPATH_DIRECTORY);
-            return;
-        }
+		URL resource = Thread.currentThread().getContextClassLoader().getResource(INFORMES_CLASSPATH_DIRECTORY);
+		if (resource == null) {
+			LOGGER.warn("configureReportsBasePath() - Unable to locate reports directory '{}' on the classpath", INFORMES_CLASSPATH_DIRECTORY);
+			return;
+		}
 
-        try {
-            File informesDirectory = new File(resource.toURI());
-            if (!informesDirectory.exists()) {
-                LOGGER.warn("configureReportsBasePath() - Reports directory '{}' does not exist", informesDirectory);
-                return;
-            }
+		try {
+			File informesDirectory = new File(resource.toURI());
+			if (!informesDirectory.exists()) {
+				LOGGER.warn("configureReportsBasePath() - Reports directory '{}' does not exist", informesDirectory);
+				return;
+			}
 
-            String absolutePath = informesDirectory.getAbsolutePath();
-            if (!absolutePath.endsWith(File.separator)) {
-                absolutePath = absolutePath + File.separator;
-            }
+			String absolutePath = informesDirectory.getAbsolutePath();
+			if (!absolutePath.endsWith(File.separator)) {
+				absolutePath = absolutePath + File.separator;
+			}
 
-            AppInfo.getInformesInfo().setRutaBase(absolutePath, AppInfo.getRutaTrabajo());
-            LOGGER.info("configureReportsBasePath() - Configured reports base path to '{}'", absolutePath);
-        } catch (URISyntaxException exception) {
-            LOGGER.warn("configureReportsBasePath() - Unable to configure reports base path", exception);
-        }
-    }
+			AppInfo.getInformesInfo().setRutaBase(absolutePath, AppInfo.getRutaTrabajo());
+			LOGGER.info("configureReportsBasePath() - Configured reports base path to '{}'", absolutePath);
+		}
+		catch (URISyntaxException exception) {
+			LOGGER.warn("configureReportsBasePath() - Unable to configure reports base path", exception);
+		}
+	}
 }

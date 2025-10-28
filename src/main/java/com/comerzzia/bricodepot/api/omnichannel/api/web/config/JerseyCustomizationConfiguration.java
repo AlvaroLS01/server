@@ -9,9 +9,8 @@ import com.comerzzia.bricodepot.api.omnichannel.api.web.salesdocument.DocumentoV
 @Configuration
 public class JerseyCustomizationConfiguration {
 
-    @Bean
-    public DocumentoVentaImpresionFilter documentoVentaImpresionFilter(
-            DocumentoVentaImpresionServicio servicioImpresion) {
-        return new DocumentoVentaImpresionFilter(servicioImpresion);
-    }
+	@Bean
+	public DocumentoVentaImpresionFilter documentoVentaImpresionFilter(DocumentoVentaImpresionServicio servicioImpresion) {
+		return new DocumentoVentaImpresionFilter(servicioImpresion);
+	}
 }

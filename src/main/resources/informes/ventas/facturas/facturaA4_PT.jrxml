@@ -518,13 +518,9 @@
 					<font fontName="Tahoma" size="9"/>
 				</textElement>
                                 <textFieldExpression><![CDATA[
-        $P{ticket}.getCabecera().getFecha() == null
-                ? ""
-                : new java.text.SimpleDateFormat("dd/MM/yyyy").format(
-                        $P{ticket}.getCabecera().getFecha() instanceof java.util.Date
-                                ? (java.util.Date) $P{ticket}.getCabecera().getFecha()
-                                : new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse($P{ticket}.getCabecera().getFecha().toString())
-                )
+        com.comerzzia.bricodepot.api.omnichannel.api.services.documentprint.JasperDateUtils.formatDayMonthYear(
+                $P{ticket}.getCabecera().getFecha()
+        )
         ]]></textFieldExpression>
 			</textField>
 			<staticText>
@@ -602,7 +598,7 @@
 				<textElement>
 					<font fontName="Tahoma" size="9"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$P{ticket}.getCabecera().getCajero()]]></textFieldExpression>
+                                <textFieldExpression><![CDATA[$P{ticket}.getCabecera().getCajero() != null ? $P{ticket}.getCabecera().getCajero().getDesusuario() : ""]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement uuid="7a081966-3c4b-434e-8aa3-5523d03ec731" x="8" y="251" width="52" height="11"/>

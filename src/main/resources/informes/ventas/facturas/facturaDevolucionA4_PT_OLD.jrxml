@@ -7,7 +7,7 @@
 		<defaultValueExpression><![CDATA[".//"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="LOGO" class="java.io.InputStream"/>
-	<parameter name="ticket" class="com.comerzzia.pos.services.ticket.ITicket"/>
+    <parameter name="ticket" class="com.comerzzia.omnichannel.model.documents.sales.ticket.TicketVentaAbono"/>
 	<parameter name="QR_PORTUGAL" class="java.io.InputStream"/>
 	<queryString>
 		<![CDATA[]]>
@@ -254,14 +254,22 @@
 				<textElement textAlignment="Left">
 					<font fontName="Tahoma" size="9"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$P{ticket}.getCabecera().getFechaAsLocale()]]></textFieldExpression>
+                            <textFieldExpression><![CDATA[
+                com.comerzzia.bricodepot.api.omnichannel.api.services.documentprint.JasperDateUtils.formatDayMonthYear(
+                        $P{ticket}.getCabecera().getFecha()
+                )
+                ]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
 				<reportElement uuid="e22d368d-0b86-4350-992a-c4d9aa819bac" x="91" y="39" width="127" height="11"/>
 				<textElement textAlignment="Left">
 					<font fontName="Tahoma" size="9"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$P{ticket}.getCabecera().getFechaAsLocale()]]></textFieldExpression>
+                            <textFieldExpression><![CDATA[
+                com.comerzzia.bricodepot.api.omnichannel.api.services.documentprint.JasperDateUtils.formatDayMonthYear(
+                        $P{ticket}.getCabecera().getFecha()
+                )
+                ]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement uuid="e58fe4c0-4a50-4ef2-904b-3a5968bf9195" x="257" y="228" width="40" height="16"/>
@@ -365,7 +373,7 @@ Neto]]></text>
 				<textElement textAlignment="Left">
 					<font fontName="Tahoma" size="9" isBold="false"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$P{ticket}.getIdTicket()]]></textFieldExpression>
+                            <textFieldExpression><![CDATA[$P{ticket}.getCabecera().getIdTicket()]]></textFieldExpression>
 			</textField>
 			<componentElement>
 				<reportElement uuid="3b046719-e05a-492c-9aa3-f9b39561cb91" x="383" y="7" width="152" height="30"/>

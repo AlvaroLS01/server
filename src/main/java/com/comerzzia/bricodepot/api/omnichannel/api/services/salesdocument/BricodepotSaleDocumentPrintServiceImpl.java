@@ -43,347 +43,369 @@ import com.google.zxing.qrcode.QRCodeWriter;
 @Service
 public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDocumentPrintService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
-    private static final String PARAM_FISCAL_DATA_ATCUD = "fiscalData_ACTUD";
-    private static final String PARAM_FISCAL_DATA_QR = "fiscalData_QR";
-    private static final String PARAM_QR_PORTUGAL = "QR_PORTUGAL";
-    private static final String TAG_FISCAL_DATA = "fiscal_data";
-    private static final String TAG_PROPERTY = "property";
-    private static final String TAG_NAME = "name";
-    private static final String TAG_VALUE = "value";
-    private static final String ATCUD = "ATCUD";
-    private static final String QR = "QR";
-    private static final int QR_IMAGE_SIZE = 200;
+	private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
+	private static final String PARAM_FISCAL_DATA_ATCUD = "fiscalData_ACTUD";
+	private static final String PARAM_FISCAL_DATA_QR = "fiscalData_QR";
+	private static final String PARAM_QR_PORTUGAL = "QR_PORTUGAL";
+	private static final String PARAM_DUPLICATE_FLAG = "esDuplicado";
+	private static final String TAG_FISCAL_DATA = "fiscal_data";
+	private static final String TAG_PROPERTY = "property";
+	private static final String TAG_NAME = "name";
+	private static final String TAG_VALUE = "value";
+	private static final String ATCUD = "ATCUD";
+	private static final String QR = "QR";
+	private static final int QR_IMAGE_SIZE = 200;
 
-    private final SaleDocumentService saleDocumentService;
-    private final DocumentService documentService;
+	private final SaleDocumentService saleDocumentService;
+	private final DocumentService documentService;
 
-    @Autowired
-    public BricodepotSaleDocumentPrintServiceImpl(SaleDocumentService saleDocumentService,
-                                                  DocumentService documentService) {
-        this.saleDocumentService = saleDocumentService;
-        this.documentService = documentService;
-    }
+	@Autowired
+	public BricodepotSaleDocumentPrintServiceImpl(SaleDocumentService saleDocumentService, DocumentService documentService) {
+		this.saleDocumentService = saleDocumentService;
+		this.documentService = documentService;
+	}
 
-    @Override
-    public BricodepotPrintedDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
-        LOGGER.debug("printDocument() - Generating sales document '{}' with mime type '{}'", documentUid, printRequest.getMimeType());
+	@Override
+	public BricodepotPrintedDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
+		LOGGER.debug("printDocument() - Generating sales document '{}' with mime type '{}'", documentUid, printRequest.getMimeType());
 
-        populateFiscalData(datosSesion, documentUid, printRequest);
+		populateFiscalData(datosSesion, documentUid, printRequest);
+		applyDuplicateFlag(printRequest);
 
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            saleDocumentService.printDocument(outputStream, datosSesion, documentUid, printRequest);
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			saleDocumentService.printDocument(outputStream, datosSesion, documentUid, printRequest);
 
-            String outputDocumentName = printRequest.getOutputDocumentName();
-            if (!StringUtils.hasText(outputDocumentName)) {
-                outputDocumentName = documentUid;
-            }
+			String outputDocumentName = printRequest.getOutputDocumentName();
+			if (!StringUtils.hasText(outputDocumentName)) {
+				outputDocumentName = documentUid;
+			}
 
-            return new BricodepotPrintedDocument(documentUid, outputDocumentName, printRequest.getMimeType(), outputStream.toByteArray());
-        } catch (Exception exception) {
-            LOGGER.error("printDocument() - Error generating sales document '{}'", documentUid, exception);
-            if (exception instanceof ApiException) {
-                throw (ApiException) exception;
-            }
-            throw new ApiException(exception.getMessage(), exception);
-        }
-    }
+			return new BricodepotPrintedDocument(documentUid, outputDocumentName, printRequest.getMimeType(), outputStream.toByteArray());
+		}
+		catch (Exception exception) {
+			LOGGER.error("printDocument() - Error generating sales document '{}'", documentUid, exception);
+			if (exception instanceof ApiException) {
+				throw (ApiException) exception;
+			}
+			throw new ApiException(exception.getMessage(), exception);
+		}
+	}
 
-    private void populateFiscalData(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) {
-        if (printRequest == null) {
-            return;
-        }
+	private void populateFiscalData(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) {
+		if (printRequest == null) {
+			return;
+		}
 
-        try {
-            DocumentEntity documentEntity = documentService.findById(datosSesion, documentUid);
-            if (documentEntity == null) {
-                LOGGER.debug("populateFiscalData() - Document '{}' not found, skipping fiscal data extraction", documentUid);
-                return;
-            }
+		try {
+			DocumentEntity documentEntity = documentService.findById(datosSesion, documentUid);
+			if (documentEntity == null) {
+				LOGGER.debug("populateFiscalData() - Document '{}' not found, skipping fiscal data extraction", documentUid);
+				return;
+			}
 
-            byte[] content = documentEntity.getDocumentContent();
-            if (content == null || content.length == 0) {
-                LOGGER.debug("populateFiscalData() - Document '{}' has no content, skipping fiscal data extraction", documentUid);
-                return;
-            }
+			byte[] content = documentEntity.getDocumentContent();
+			if (content == null || content.length == 0) {
+				LOGGER.debug("populateFiscalData() - Document '{}' has no content, skipping fiscal data extraction", documentUid);
+				return;
+			}
 
-            Map<String, Object> customParams = printRequest.getCustomParams();
-            FiscalDocumentData fiscalData = extractFiscalData(content);
+			Map<String, Object> customParams = printRequest.getCustomParams();
+			FiscalDocumentData fiscalData = extractFiscalData(content);
 
-            if (!customParams.containsKey(PARAM_FISCAL_DATA_ATCUD) && StringUtils.hasText(fiscalData.getAtcud())) {
-                customParams.put(PARAM_FISCAL_DATA_ATCUD, fiscalData.getAtcud());
-            }
+			if (!customParams.containsKey(PARAM_FISCAL_DATA_ATCUD) && StringUtils.hasText(fiscalData.getAtcud())) {
+				customParams.put(PARAM_FISCAL_DATA_ATCUD, fiscalData.getAtcud());
+			}
 
-            if (!customParams.containsKey(PARAM_FISCAL_DATA_QR) && StringUtils.hasText(fiscalData.getQr())) {
-                customParams.put(PARAM_FISCAL_DATA_QR, fiscalData.getQr());
+			if (!customParams.containsKey(PARAM_FISCAL_DATA_QR) && StringUtils.hasText(fiscalData.getQr())) {
+				customParams.put(PARAM_FISCAL_DATA_QR, fiscalData.getQr());
 
-                InputStream qrStream = createQrImage(fiscalData.getQr());
-                if (qrStream != null && !customParams.containsKey(PARAM_QR_PORTUGAL)) {
-                    customParams.put(PARAM_QR_PORTUGAL, qrStream);
-                }
-            }
-        } catch (Exception exception) {
-            LOGGER.warn("populateFiscalData() - Unable to extract fiscal data for document '{}'", documentUid, exception);
-        }
-    }
+				InputStream qrStream = createQrImage(fiscalData.getQr());
+				if (qrStream != null && !customParams.containsKey(PARAM_QR_PORTUGAL)) {
+					customParams.put(PARAM_QR_PORTUGAL, qrStream);
+				}
+			}
+		}
+		catch (Exception exception) {
+			LOGGER.warn("populateFiscalData() - Unable to extract fiscal data for document '{}'", documentUid, exception);
+		}
+	}
 
-    private FiscalDocumentData extractFiscalData(byte[] content) {
-        if (content == null || content.length == 0) {
-            return FiscalDocumentData.empty();
-        }
+	private void applyDuplicateFlag(PrintDocumentDTO printRequest) {
+		if (printRequest == null || !Boolean.TRUE.equals(printRequest.getCopy())) {
+			return;
+		}
 
-        try {
-            if (isLikelyJson(content)) {
-                return parseFiscalDataFromJson(content);
-            }
+		Map<String, Object> customParams = printRequest.getCustomParams();
+		if (!customParams.containsKey(PARAM_DUPLICATE_FLAG)) {
+			customParams.put(PARAM_DUPLICATE_FLAG, Boolean.TRUE);
+			LOGGER.debug("applyDuplicateFlag() - Flagging document copy request with parameter '{}'", PARAM_DUPLICATE_FLAG);
+		}
+	}
 
-            return parseFiscalDataFromXml(content);
-        } catch (Exception exception) {
-            LOGGER.debug("extractFiscalData() - Unable to parse fiscal data as structured content", exception);
-            return FiscalDocumentData.empty();
-        }
-    }
+	private FiscalDocumentData extractFiscalData(byte[] content) {
+		if (content == null || content.length == 0) {
+			return FiscalDocumentData.empty();
+		}
 
-    private boolean isLikelyJson(byte[] content) {
-        for (byte candidate : content) {
-            if (candidate <= ' ') {
-                continue;
-            }
-            return candidate == '{' || candidate == '[';
-        }
-        return false;
-    }
+		try {
+			if (isLikelyJson(content)) {
+				return parseFiscalDataFromJson(content);
+			}
 
-    private FiscalDocumentData parseFiscalDataFromXml(byte[] xmlContent) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setXIncludeAware(false);
-        factory.setExpandEntityReferences(false);
+			return parseFiscalDataFromXml(content);
+		}
+		catch (Exception exception) {
+			LOGGER.debug("extractFiscalData() - Unable to parse fiscal data as structured content", exception);
+			return FiscalDocumentData.empty();
+		}
+	}
 
-        DocumentBuilder builder = factory.newDocumentBuilder();
+	private boolean isLikelyJson(byte[] content) {
+		for (byte candidate : content) {
+			if (candidate <= ' ') {
+				continue;
+			}
+			return candidate == '{' || candidate == '[';
+		}
+		return false;
+	}
 
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(xmlContent)) {
-            Document document = builder.parse(inputStream);
-            Element root = document.getDocumentElement();
-            if (root == null) {
-                return FiscalDocumentData.empty();
-            }
+	private FiscalDocumentData parseFiscalDataFromXml(byte[] xmlContent) throws Exception {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+		factory.setXIncludeAware(false);
+		factory.setExpandEntityReferences(false);
 
-            NodeList fiscalNodes = root.getElementsByTagName(TAG_FISCAL_DATA);
-            if (fiscalNodes == null || fiscalNodes.getLength() == 0) {
-                return FiscalDocumentData.empty();
-            }
+		DocumentBuilder builder = factory.newDocumentBuilder();
 
-            FiscalDocumentData result = new FiscalDocumentData();
-            for (int index = 0; index < fiscalNodes.getLength(); index++) {
-                Node node = fiscalNodes.item(index);
-                if (node instanceof Element) {
-                    populateFromFiscalElement((Element) node, result);
-                }
-            }
-            return result;
-        }
-    }
+		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(xmlContent)) {
+			Document document = builder.parse(inputStream);
+			Element root = document.getDocumentElement();
+			if (root == null) {
+				return FiscalDocumentData.empty();
+			}
 
-    private void populateFromFiscalElement(Element fiscalDataElement, FiscalDocumentData result) {
-        if (fiscalDataElement == null) {
-            return;
-        }
+			NodeList fiscalNodes = root.getElementsByTagName(TAG_FISCAL_DATA);
+			if (fiscalNodes == null || fiscalNodes.getLength() == 0) {
+				return FiscalDocumentData.empty();
+			}
 
-        NodeList propertyNodes = fiscalDataElement.getElementsByTagName(TAG_PROPERTY);
-        if (propertyNodes == null || propertyNodes.getLength() == 0) {
-            return;
-        }
+			FiscalDocumentData result = new FiscalDocumentData();
+			for (int index = 0; index < fiscalNodes.getLength(); index++) {
+				Node node = fiscalNodes.item(index);
+				if (node instanceof Element) {
+					populateFromFiscalElement((Element) node, result);
+				}
+			}
+			return result;
+		}
+	}
 
-        for (int i = 0; i < propertyNodes.getLength(); i++) {
-            Node node = propertyNodes.item(i);
-            if (!(node instanceof Element)) {
-                continue;
-            }
+	private void populateFromFiscalElement(Element fiscalDataElement, FiscalDocumentData result) {
+		if (fiscalDataElement == null) {
+			return;
+		}
 
-            Element propertyElement = (Element) node;
-            String name = getChildTextContent(propertyElement, TAG_NAME);
-            String value = getChildTextContent(propertyElement, TAG_VALUE);
-            applyFiscalProperty(result, name, value);
-        }
-    }
+		NodeList propertyNodes = fiscalDataElement.getElementsByTagName(TAG_PROPERTY);
+		if (propertyNodes == null || propertyNodes.getLength() == 0) {
+			return;
+		}
 
-    private String getChildTextContent(Element parent, String tagName) {
-        if (parent == null) {
-            return null;
-        }
+		for (int i = 0; i < propertyNodes.getLength(); i++) {
+			Node node = propertyNodes.item(i);
+			if (!(node instanceof Element)) {
+				continue;
+			}
 
-        NodeList nodes = parent.getElementsByTagName(tagName);
-        if (nodes == null || nodes.getLength() == 0) {
-            return null;
-        }
+			Element propertyElement = (Element) node;
+			String name = getChildTextContent(propertyElement, TAG_NAME);
+			String value = getChildTextContent(propertyElement, TAG_VALUE);
+			applyFiscalProperty(result, name, value);
+		}
+	}
 
-        Node node = nodes.item(0);
-        if (node == null) {
-            return null;
-        }
+	private String getChildTextContent(Element parent, String tagName) {
+		if (parent == null) {
+			return null;
+		}
 
-        String text = node.getTextContent();
-        return StringUtils.hasText(text) ? text.trim() : null;
-    }
+		NodeList nodes = parent.getElementsByTagName(tagName);
+		if (nodes == null || nodes.getLength() == 0) {
+			return null;
+		}
 
-    private FiscalDocumentData parseFiscalDataFromJson(byte[] jsonContent) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(jsonContent);
+		Node node = nodes.item(0);
+		if (node == null) {
+			return null;
+		}
 
-        FiscalDocumentData result = new FiscalDocumentData();
-        traverseJson(rootNode, result);
-        return result;
-    }
+		String text = node.getTextContent();
+		return StringUtils.hasText(text) ? text.trim() : null;
+	}
 
-    private void traverseJson(JsonNode node, FiscalDocumentData result) {
-        if (node == null) {
-            return;
-        }
+	private FiscalDocumentData parseFiscalDataFromJson(byte[] jsonContent) throws IOException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		JsonNode rootNode = objectMapper.readTree(jsonContent);
 
-        if (node.isObject()) {
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> entry = fields.next();
-                String key = entry.getKey();
-                JsonNode value = entry.getValue();
+		FiscalDocumentData result = new FiscalDocumentData();
+		traverseJson(rootNode, result);
+		return result;
+	}
 
-                if (key != null && (TAG_FISCAL_DATA.equalsIgnoreCase(key) || "fiscalData".equalsIgnoreCase(key))) {
-                    parseFiscalJsonNode(value, result);
-                }
+	private void traverseJson(JsonNode node, FiscalDocumentData result) {
+		if (node == null) {
+			return;
+		}
 
-                traverseJson(value, result);
-            }
-        } else if (node.isArray()) {
-            for (JsonNode child : node) {
-                traverseJson(child, result);
-            }
-        }
-    }
+		if (node.isObject()) {
+			Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+			while (fields.hasNext()) {
+				Map.Entry<String, JsonNode> entry = fields.next();
+				String key = entry.getKey();
+				JsonNode value = entry.getValue();
 
-    private void parseFiscalJsonNode(JsonNode fiscalNode, FiscalDocumentData result) {
-        if (fiscalNode == null) {
-            return;
-        }
+				if (key != null && (TAG_FISCAL_DATA.equalsIgnoreCase(key) || "fiscalData".equalsIgnoreCase(key))) {
+					parseFiscalJsonNode(value, result);
+				}
 
-        if (fiscalNode.isObject()) {
-            if (fiscalNode.has(ATCUD)) {
-                applyFiscalProperty(result, ATCUD, getJsonText(fiscalNode.get(ATCUD)));
-            }
-            if (fiscalNode.has(QR)) {
-                applyFiscalProperty(result, QR, getJsonText(fiscalNode.get(QR)));
-            }
+				traverseJson(value, result);
+			}
+		}
+		else if (node.isArray()) {
+			for (JsonNode child : node) {
+				traverseJson(child, result);
+			}
+		}
+	}
 
-            if (fiscalNode.has("properties")) {
-                parseFiscalJsonProperties(fiscalNode.get("properties"), result);
-            }
-            if (fiscalNode.has("property")) {
-                parseFiscalJsonProperties(fiscalNode.get("property"), result);
-            }
-        } else if (fiscalNode.isArray()) {
-            parseFiscalJsonProperties(fiscalNode, result);
-        }
-    }
+	private void parseFiscalJsonNode(JsonNode fiscalNode, FiscalDocumentData result) {
+		if (fiscalNode == null) {
+			return;
+		}
 
-    private void parseFiscalJsonProperties(JsonNode propertiesNode, FiscalDocumentData result) {
-        if (propertiesNode == null) {
-            return;
-        }
+		if (fiscalNode.isObject()) {
+			if (fiscalNode.has(ATCUD)) {
+				applyFiscalProperty(result, ATCUD, getJsonText(fiscalNode.get(ATCUD)));
+			}
+			if (fiscalNode.has(QR)) {
+				applyFiscalProperty(result, QR, getJsonText(fiscalNode.get(QR)));
+			}
 
-        for (JsonNode propertyNode : propertiesNode) {
-            if (propertyNode == null) {
-                continue;
-            }
+			if (fiscalNode.has("properties")) {
+				parseFiscalJsonProperties(fiscalNode.get("properties"), result);
+			}
+			if (fiscalNode.has("property")) {
+				parseFiscalJsonProperties(fiscalNode.get("property"), result);
+			}
+		}
+		else if (fiscalNode.isArray()) {
+			parseFiscalJsonProperties(fiscalNode, result);
+		}
+	}
 
-            if (propertyNode.isObject()) {
-                String name = getJsonText(propertyNode.get(TAG_NAME));
-                String value = getJsonText(propertyNode.get(TAG_VALUE));
-                if (!StringUtils.hasText(value)) {
-                    value = getJsonText(propertyNode.get("valor"));
-                }
-                applyFiscalProperty(result, name, value);
-            } else {
-                parseFiscalJsonNode(propertyNode, result);
-            }
-        }
-    }
+	private void parseFiscalJsonProperties(JsonNode propertiesNode, FiscalDocumentData result) {
+		if (propertiesNode == null) {
+			return;
+		}
 
-    private String getJsonText(JsonNode node) {
-        if (node == null) {
-            return null;
-        }
+		for (JsonNode propertyNode : propertiesNode) {
+			if (propertyNode == null) {
+				continue;
+			}
 
-        if (node.isValueNode()) {
-            String text = node.asText();
-            return StringUtils.hasText(text) ? text.trim() : null;
-        }
+			if (propertyNode.isObject()) {
+				String name = getJsonText(propertyNode.get(TAG_NAME));
+				String value = getJsonText(propertyNode.get(TAG_VALUE));
+				if (!StringUtils.hasText(value)) {
+					value = getJsonText(propertyNode.get("valor"));
+				}
+				applyFiscalProperty(result, name, value);
+			}
+			else {
+				parseFiscalJsonNode(propertyNode, result);
+			}
+		}
+	}
 
-        return null;
-    }
+	private String getJsonText(JsonNode node) {
+		if (node == null) {
+			return null;
+		}
 
-    private void applyFiscalProperty(FiscalDocumentData result, String name, String value) {
-        if (!StringUtils.hasText(name) || !StringUtils.hasText(value) || result == null) {
-            return;
-        }
+		if (node.isValueNode()) {
+			String text = node.asText();
+			return StringUtils.hasText(text) ? text.trim() : null;
+		}
 
-        if (ATCUD.equalsIgnoreCase(name) && !StringUtils.hasText(result.getAtcud())) {
-            result.setAtcud(value.trim());
-        } else if (QR.equalsIgnoreCase(name) && !StringUtils.hasText(result.getQr())) {
-            result.setQr(value.trim());
-        }
-    }
+		return null;
+	}
 
-    private InputStream createQrImage(String base64Value) {
-        if (!StringUtils.hasText(base64Value)) {
-            return null;
-        }
+	private void applyFiscalProperty(FiscalDocumentData result, String name, String value) {
+		if (!StringUtils.hasText(name) || !StringUtils.hasText(value) || result == null) {
+			return;
+		}
 
-        try {
-            byte[] decoded = Base64.getDecoder().decode(base64Value.trim());
-            String qrText = new String(decoded, StandardCharsets.UTF_8);
-            if (!StringUtils.hasText(qrText)) {
-                return null;
-            }
+		if (ATCUD.equalsIgnoreCase(name) && !StringUtils.hasText(result.getAtcud())) {
+			result.setAtcud(value.trim());
+		}
+		else if (QR.equalsIgnoreCase(name) && !StringUtils.hasText(result.getQr())) {
+			result.setQr(value.trim());
+		}
+	}
 
-            QRCodeWriter writer = new QRCodeWriter();
-            BitMatrix bitMatrix = writer.encode(qrText, BarcodeFormat.QR_CODE, QR_IMAGE_SIZE, QR_IMAGE_SIZE);
-            BufferedImage qrImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
+	private InputStream createQrImage(String base64Value) {
+		if (!StringUtils.hasText(base64Value)) {
+			return null;
+		}
 
-            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                ImageIO.write(qrImage, "jpeg", outputStream);
-                return new ByteArrayInputStream(outputStream.toByteArray());
-            }
-        } catch (IllegalArgumentException | IOException | WriterException exception) {
-            LOGGER.warn("createQrImage() - Unable to generate QR image from fiscal data", exception);
-        }
+		try {
+			byte[] decoded = Base64.getDecoder().decode(base64Value.trim());
+			String qrText = new String(decoded, StandardCharsets.UTF_8);
+			if (!StringUtils.hasText(qrText)) {
+				return null;
+			}
 
-        return null;
-    }
+			QRCodeWriter writer = new QRCodeWriter();
+			BitMatrix bitMatrix = writer.encode(qrText, BarcodeFormat.QR_CODE, QR_IMAGE_SIZE, QR_IMAGE_SIZE);
+			BufferedImage qrImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
 
-    private static final class FiscalDocumentData {
-        private String atcud;
-        private String qr;
+			try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+				ImageIO.write(qrImage, "jpeg", outputStream);
+				return new ByteArrayInputStream(outputStream.toByteArray());
+			}
+		}
+		catch (IllegalArgumentException | IOException | WriterException exception) {
+			LOGGER.warn("createQrImage() - Unable to generate QR image from fiscal data", exception);
+		}
 
-        static FiscalDocumentData empty() {
-            return new FiscalDocumentData();
-        }
+		return null;
+	}
 
-        String getAtcud() {
-            return atcud;
-        }
+	private static final class FiscalDocumentData {
 
-        void setAtcud(String atcud) {
-            this.atcud = atcud;
-        }
+		private String atcud;
+		private String qr;
 
-        String getQr() {
-            return qr;
-        }
+		static FiscalDocumentData empty() {
+			return new FiscalDocumentData();
+		}
 
-        void setQr(String qr) {
-            this.qr = qr;
-        }
-    }
+		String getAtcud() {
+			return atcud;
+		}
+
+		void setAtcud(String atcud) {
+			this.atcud = atcud;
+		}
+
+		String getQr() {
+			return qr;
+		}
+
+		void setQr(String qr) {
+			this.qr = qr;
+		}
+	}
 }
