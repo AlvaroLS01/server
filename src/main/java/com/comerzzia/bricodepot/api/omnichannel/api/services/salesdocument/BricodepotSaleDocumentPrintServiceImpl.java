@@ -26,7 +26,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.comerzzia.api.core.service.exception.ApiException;
-import com.comerzzia.bricodepot.api.omnichannel.api.domain.salesdocument.BricodepotPrintedDocument;
+import com.comerzzia.bricodepot.api.omnichannel.api.domain.salesdocument.BricodepotPrintableDocument;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
 import com.comerzzia.omnichannel.domain.entity.document.DocumentEntity;
@@ -66,7 +66,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	}
 
 	@Override
-	public BricodepotPrintedDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
+        public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
 		LOGGER.debug("printDocument() - Generating sales document '{}' with mime type '{}'", documentUid, printRequest.getMimeType());
 
 		populateFiscalData(datosSesion, documentUid, printRequest);
@@ -80,7 +80,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				outputDocumentName = documentUid;
 			}
 
-			return new BricodepotPrintedDocument(documentUid, outputDocumentName, printRequest.getMimeType(), outputStream.toByteArray());
+                        return new BricodepotPrintableDocument(documentUid, outputDocumentName, printRequest.getMimeType(), outputStream.toByteArray());
 		}
 		catch (Exception exception) {
 			LOGGER.error("printDocument() - Error generating sales document '{}'", documentUid, exception);

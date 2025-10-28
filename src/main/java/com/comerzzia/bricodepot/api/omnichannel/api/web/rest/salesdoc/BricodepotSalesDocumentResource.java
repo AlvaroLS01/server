@@ -1,6 +1,5 @@
 package com.comerzzia.bricodepot.api.omnichannel.api.web.rest.salesdoc;
 
-import java.util.Base64;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,8 +22,7 @@ import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.api.core.service.util.ComerzziaDatosSesion;
 import com.comerzzia.api.omnichannel.web.model.document.PrintDocumentRequest;
 import com.comerzzia.api.omnichannel.web.rest.salesdoc.SalesDocumentResource;
-import com.comerzzia.bricodepot.api.omnichannel.api.domain.salesdocument.BricodepotPrintedDocument;
-import com.comerzzia.bricodepot.api.omnichannel.api.model.salesdocument.BricodepotPrintDocumentResponse;
+import com.comerzzia.bricodepot.api.omnichannel.api.domain.salesdocument.BricodepotPrintableDocument;
 import com.comerzzia.bricodepot.api.omnichannel.api.services.salesdocument.BricodepotSaleDocumentPrintService;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
 
@@ -53,7 +51,7 @@ public class BricodepotSalesDocumentResource extends SalesDocumentResource {
 	@GET
 	@Path("/{documentUid}/print")
 	@Operation(summary = "Print sales document by uid", description = "Print sales document by uid returning a base64 encoded payload", responses = {
-	        @ApiResponse(description = "The print output", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = BricodepotPrintDocumentResponse.class))),
+                @ApiResponse(description = "The print output", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = BricodepotPrintableDocument.Response.class))),
 	        @ApiResponse(responseCode = "400", description = "Invalid input values"), @ApiResponse(responseCode = "404", description = "Record not found") })
 	public Response printSaleDocumentByUid(@PathParam("documentUid") String documentUid, @Context HttpServletRequest request, @Context HttpServletResponse response,
 	        @Valid @BeanParam PrintDocumentRequest printDocumentRequest) throws ApiException {
@@ -80,22 +78,10 @@ public class BricodepotSalesDocumentResource extends SalesDocumentResource {
 		}
 
 		ComerzziaDatosSesion datosSesion = super.datosSesionRequest;
-		BricodepotPrintedDocument printedDocument = saleDocumentPrintService.printDocument(datosSesion.getDatosSesionBean(), documentUid, printDocumentDTO);
+                BricodepotPrintableDocument printableDocument = saleDocumentPrintService.printDocument(datosSesion.getDatosSesionBean(), documentUid, printDocumentDTO);
 
-		String base64Content = Base64.getEncoder().encodeToString(printedDocument.getContent());
+                BricodepotPrintableDocument.Response responseBody = printableDocument.toResponse(effectiveRequest.getMimeType());
 
-		String responseFileName = printedDocument.getFileName();
-		if (StringUtils.isBlank(responseFileName)) {
-			responseFileName = documentUid;
-		}
-
-		if (StringUtils.equals(effectiveRequest.getMimeType(), APPLICATION_PDF) && !StringUtils.endsWithIgnoreCase(responseFileName, ".pdf")) {
-			responseFileName = responseFileName + ".pdf";
-		}
-
-		BricodepotPrintDocumentResponse responseBody = new BricodepotPrintDocumentResponse(printedDocument.getDocumentUid(), responseFileName, printedDocument.getMimeType(), base64Content,
-		        printedDocument.getContentLength());
-
-		return Response.ok(responseBody, MediaType.APPLICATION_JSON).build();
-	}
+                return Response.ok(responseBody, MediaType.APPLICATION_JSON).build();
+        }
 }
