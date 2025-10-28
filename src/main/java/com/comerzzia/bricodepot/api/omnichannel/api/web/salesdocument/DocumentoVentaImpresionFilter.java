@@ -12,9 +12,11 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+@Component
 @Provider
 public class DocumentoVentaImpresionFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
