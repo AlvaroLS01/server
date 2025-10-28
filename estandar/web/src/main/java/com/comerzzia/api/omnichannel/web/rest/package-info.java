@@ -1,1 +1,0 @@
-package com.comerzzia.api.omnichannel.web.rest;

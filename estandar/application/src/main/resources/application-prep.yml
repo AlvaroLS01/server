@@ -1,6 +1,0 @@
-logging:
-    level:
-        ROOT: INFO        
-        com.comerzzia.api: DEBUG
-        org.mybatis: DEBUG
-        org.springframework : INFO
