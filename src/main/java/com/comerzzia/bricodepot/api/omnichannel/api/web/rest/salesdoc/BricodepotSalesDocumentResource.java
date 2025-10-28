@@ -51,7 +51,7 @@ public class BricodepotSalesDocumentResource extends SalesDocumentResource {
 	@GET
 	@Path("/{documentUid}/print")
 	@Operation(summary = "Print sales document by uid", description = "Print sales document by uid returning a base64 encoded payload", responses = {
-                @ApiResponse(description = "The print output", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = BricodepotPrintableDocument.Response.class))),
+	        @ApiResponse(description = "The print output", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = BricodepotPrintableDocument.Response.class))),
 	        @ApiResponse(responseCode = "400", description = "Invalid input values"), @ApiResponse(responseCode = "404", description = "Record not found") })
 	public Response printSaleDocumentByUid(@PathParam("documentUid") String documentUid, @Context HttpServletRequest request, @Context HttpServletResponse response,
 	        @Valid @BeanParam PrintDocumentRequest printDocumentRequest) throws ApiException {
@@ -78,10 +78,10 @@ public class BricodepotSalesDocumentResource extends SalesDocumentResource {
 		}
 
 		ComerzziaDatosSesion datosSesion = super.datosSesionRequest;
-                BricodepotPrintableDocument printableDocument = saleDocumentPrintService.printDocument(datosSesion.getDatosSesionBean(), documentUid, printDocumentDTO);
+		BricodepotPrintableDocument printableDocument = saleDocumentPrintService.printDocument(datosSesion.getDatosSesionBean(), documentUid, printDocumentDTO);
 
-                BricodepotPrintableDocument.Response responseBody = printableDocument.toResponse(effectiveRequest.getMimeType());
+		BricodepotPrintableDocument.Response responseBody = printableDocument.toResponse(effectiveRequest.getMimeType());
 
-                return Response.ok(responseBody, MediaType.APPLICATION_JSON).build();
-        }
+		return Response.ok(responseBody, MediaType.APPLICATION_JSON).build();
+	}
 }

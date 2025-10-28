@@ -66,7 +66,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	}
 
 	@Override
-        public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
+	public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
 		LOGGER.debug("printDocument() - Generating sales document '{}' with mime type '{}'", documentUid, printRequest.getMimeType());
 
 		populateFiscalData(datosSesion, documentUid, printRequest);
@@ -80,7 +80,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				outputDocumentName = documentUid;
 			}
 
-                        return new BricodepotPrintableDocument(documentUid, outputDocumentName, printRequest.getMimeType(), outputStream.toByteArray());
+			return new BricodepotPrintableDocument(documentUid, outputDocumentName, printRequest.getMimeType(), outputStream.toByteArray());
 		}
 		catch (Exception exception) {
 			LOGGER.error("printDocument() - Error generating sales document '{}'", documentUid, exception);

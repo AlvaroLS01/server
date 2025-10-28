@@ -5,58 +5,67 @@ import java.util.Base64;
 
 import org.apache.commons.lang3.StringUtils;
 
-/**
- * Immutable value object that represents the binary document generated for a
- * sales document print request. The class encapsulates the previous domain and
- * API payload structures, keeping the conversion rules in a single, concise
- * place.
- */
-public record BricodepotPrintableDocument(String documentUid, String fileName, String mimeType, byte[] content) {
+public class BricodepotPrintableDocument {
 
-        private static final String APPLICATION_PDF = "application/pdf";
+	private static final String APPLICATION_PDF = "application/pdf";
 
-        public BricodepotPrintableDocument {
-                content = content != null ? Arrays.copyOf(content, content.length) : new byte[0];
-        }
+	private final String documentUid, fileName, mimeType;
+	private final byte[] content;
 
-        @Override
-        public byte[] content() {
-                return Arrays.copyOf(content, content.length);
-        }
+	public BricodepotPrintableDocument(String documentUid, String fileName, String mimeType, byte[] content) {
+		this.documentUid = documentUid;
+		this.fileName = fileName;
+		this.mimeType = mimeType;
+		this.content = content != null ? Arrays.copyOf(content, content.length) : new byte[0];
+	}
 
-        public int contentLength() {
-                return content.length;
-        }
+	public byte[] getContent() {
+		return Arrays.copyOf(content, content.length);
+	}
 
-        /**
-         * Builds the response DTO expected by the REST layer while applying common
-         * adjustments (file name fallbacks, extension inference, base64 conversion).
-         *
-         * @param requestedMimeType mime type requested by the consumer (may be blank)
-         * @return an immutable response view for the current printable document
-         */
-        public Response toResponse(String requestedMimeType) {
-                String effectiveMimeType = StringUtils.defaultIfBlank(mimeType, requestedMimeType);
-                String normalizedFileName = buildResponseFileName(effectiveMimeType);
-                String base64Content = Base64.getEncoder().encodeToString(content);
+	public Response toResponse(String requestedMimeType) {
+		String effectiveMimeType = StringUtils.defaultIfBlank(mimeType, requestedMimeType);
+		String normalizedFileName = StringUtils.defaultIfBlank(fileName, documentUid);
 
-                return new Response(documentUid, normalizedFileName, effectiveMimeType, base64Content, contentLength());
-        }
+		if (StringUtils.equalsIgnoreCase(APPLICATION_PDF, effectiveMimeType) && !StringUtils.endsWithIgnoreCase(normalizedFileName, ".pdf")) {
+			normalizedFileName = normalizedFileName + ".pdf";
+		}
 
-        private String buildResponseFileName(String effectiveMimeType) {
-                String result = StringUtils.defaultIfBlank(fileName, documentUid);
+		String base64Content = Base64.getEncoder().encodeToString(content);
+		return new Response(documentUid, normalizedFileName, effectiveMimeType, base64Content, content.length);
+	}
 
-                if (StringUtils.equalsIgnoreCase(APPLICATION_PDF, effectiveMimeType)
-                                && !StringUtils.endsWithIgnoreCase(result, ".pdf")) {
-                        return result + ".pdf";
-                }
+	public static class Response {
 
-                return result;
-        }
+		private final String documentUid, fileName, mimeType, base64Content;
+		private final int contentLength;
 
-        /**
-         * Response projection sent back to API consumers.
-         */
-        public record Response(String documentUid, String fileName, String mimeType, String base64Content, int contentLength) {
-        }
+		public Response(String documentUid, String fileName, String mimeType, String base64Content, int contentLength) {
+			this.documentUid = documentUid;
+			this.fileName = fileName;
+			this.mimeType = mimeType;
+			this.base64Content = base64Content;
+			this.contentLength = contentLength;
+		}
+
+		public String getDocumentUid() {
+			return documentUid;
+		}
+
+		public String getFileName() {
+			return fileName;
+		}
+
+		public String getMimeType() {
+			return mimeType;
+		}
+
+		public String getBase64Content() {
+			return base64Content;
+		}
+
+		public int getContentLength() {
+			return contentLength;
+		}
+	}
 }
