@@ -6,8 +6,8 @@
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
-      <field name="medioPago" class="java.lang.String">
-             <fieldDescription><![CDATA[desMedioPago]]></fieldDescription>
+	<field name="medioPago" class="java.lang.String">
+		<fieldDescription><![CDATA[medioPago.desMedioPago]]></fieldDescription>
 	</field>
 	<field name="importe" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[importe]]></fieldDescription>
