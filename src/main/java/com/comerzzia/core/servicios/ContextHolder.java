@@ -34,11 +34,11 @@ public class ContextHolder implements ApplicationContextAware {
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-                log.info("setApplicationContext() - ********************** comerzzia Spring context info ****************************");
-                log.info("setApplicationContext() - \t Id: " + applicationContext.getId());
-                log.info("setApplicationContext() - \t Application: " + applicationContext.getApplicationName());
-                log.info("setApplicationContext() - \t Name: " + applicationContext.getDisplayName());
-                log.info("setApplicationContext() - *********************************************************************************");
+		log.info("setApplicationContext() - ********************** comerzzia Spring context info ****************************");
+		log.info("setApplicationContext() - \t Id: " + applicationContext.getId());
+		log.info("setApplicationContext() - \t Application: " + applicationContext.getApplicationName());
+		log.info("setApplicationContext() - \t Name: " + applicationContext.getDisplayName());
+		log.info("setApplicationContext() - *********************************************************************************");
 		ContextHolder.applicationContext = applicationContext;
 	}
 

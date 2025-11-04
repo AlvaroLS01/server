@@ -107,7 +107,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
 		if (printRequest == null)
 			throw new ApiException("Solicitud de impresión nula");
-                log.debug("printDocument() - Generando documento de venta '" + documentUid + "' con tipo MIME '" + printRequest.getMimeType() + "'");
+		log.debug("printDocument() - Generando documento de venta '" + documentUid + "' con tipo MIME '" + printRequest.getMimeType() + "'");
 
 		Map<String, Object> params = ensureParamsMap(printRequest);
 
@@ -126,7 +126,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 			return new BricodepotPrintableDocument(documentUid, outputName, printRequest.getMimeType(), out.toByteArray());
 		}
 		catch (Exception e) {
-                        log.error("printDocument() - Error al generar el documento '" + documentUid + "'", e);
+			log.error("printDocument() - Error al generar el documento '" + documentUid + "'", e);
 			if (e instanceof ApiException)
 				throw (ApiException) e;
 			throw new ApiException(e.getMessage(), e);
@@ -573,7 +573,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 			}
 		}
 		catch (IllegalArgumentException | IOException | WriterException e) {
-                        log.warn("createQrImage() - No se pudo generar la imagen QR", e);
+			log.warn("createQrImage() - No se pudo generar la imagen QR", e);
 		}
 		return null;
 	}

@@ -13,22 +13,22 @@ public class DocumentoVentaImpresionServicio {
 	private static Logger log = Logger.getLogger(DocumentoVentaImpresionServicio.class);
 
 	public void registrarInicioImpresion(String documentUid) {
-            if (log.isDebugEnabled()) {
-                    log.debug("registrarInicioImpresion() - Inicio de generación de impresión para el documento '" + documentUid + "'");
-            }
-    }
+		if (log.isDebugEnabled()) {
+			log.debug("registrarInicioImpresion() - Inicio de generación de impresión para el documento '" + documentUid + "'");
+		}
+	}
 
-    public void registrarFinImpresion(String documentUid, int statusCode, Instant startInstant) {
-            if (!log.isDebugEnabled()) {
-                    return;
-            }
+	public void registrarFinImpresion(String documentUid, int statusCode, Instant startInstant) {
+		if (!log.isDebugEnabled()) {
+			return;
+		}
 
-            long elapsedMillis = -1L;
-            if (startInstant != null) {
-                    elapsedMillis = Duration.between(startInstant, Instant.now()).toMillis();
-            }
+		long elapsedMillis = -1L;
+		if (startInstant != null) {
+			elapsedMillis = Duration.between(startInstant, Instant.now()).toMillis();
+		}
 
-            String durationPart = elapsedMillis >= 0 ? " en " + elapsedMillis + " ms" : StringUtils.EMPTY;
-            log.debug("registrarFinImpresion() - Finalizada la generación de impresión del documento '" + documentUid + "' con estado " + statusCode + durationPart);
-    }
+		String durationPart = elapsedMillis >= 0 ? " en " + elapsedMillis + " ms" : StringUtils.EMPTY;
+		log.debug("registrarFinImpresion() - Finalizada la generación de impresión del documento '" + documentUid + "' con estado " + statusCode + durationPart);
+	}
 }

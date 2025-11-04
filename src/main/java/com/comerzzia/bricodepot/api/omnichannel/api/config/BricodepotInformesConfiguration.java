@@ -21,21 +21,21 @@ public class BricodepotInformesConfiguration {
 
 	@PostConstruct
 	public void configureReportsBasePath() {
-                if (StringUtils.isNotBlank(AppInfo.getInformesInfo().getRutaBase())) {
-                        log.debug("configureReportsBasePath() - La ruta base de informes ya está configurada en: " + AppInfo.getInformesInfo().getRutaBase());
+		if (StringUtils.isNotBlank(AppInfo.getInformesInfo().getRutaBase())) {
+			log.debug("configureReportsBasePath() - La ruta base de informes ya está configurada en: " + AppInfo.getInformesInfo().getRutaBase());
 			return;
 		}
 
 		URL resource = Thread.currentThread().getContextClassLoader().getResource(INFORMES_CLASSPATH_DIRECTORY);
 		if (resource == null) {
-                        log.warn("configureReportsBasePath() - No se encuentra el directorio de informes '" + INFORMES_CLASSPATH_DIRECTORY + "' en el classpath");
+			log.warn("configureReportsBasePath() - No se encuentra el directorio de informes '" + INFORMES_CLASSPATH_DIRECTORY + "' en el classpath");
 			return;
 		}
 
 		try {
 			File informesDirectory = new File(resource.toURI());
-                        if (!informesDirectory.exists()) {
-                                log.warn("configureReportsBasePath() - El directorio de informes '" + informesDirectory + "' no existe");
+			if (!informesDirectory.exists()) {
+				log.warn("configureReportsBasePath() - El directorio de informes '" + informesDirectory + "' no existe");
 				return;
 			}
 
@@ -45,10 +45,10 @@ public class BricodepotInformesConfiguration {
 			}
 
 			AppInfo.getInformesInfo().setRutaBase(absolutePath, AppInfo.getRutaTrabajo());
-                        log.info("configureReportsBasePath() - Ruta base de informes configurada en '" + absolutePath + "'");
+			log.info("configureReportsBasePath() - Ruta base de informes configurada en '" + absolutePath + "'");
 		}
 		catch (URISyntaxException exception) {
-                        log.warn("configureReportsBasePath() - No se pudo configurar la ruta base de informes", exception);
+			log.warn("configureReportsBasePath() - No se pudo configurar la ruta base de informes", exception);
 		}
 	}
 }
