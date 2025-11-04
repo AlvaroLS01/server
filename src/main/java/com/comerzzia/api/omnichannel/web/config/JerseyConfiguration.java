@@ -21,11 +21,11 @@ import io.swagger.v3.core.util.Json;
 @Component
 public class JerseyConfiguration extends ResourceConfig {
 
-        private static Logger log = Logger.getLogger(JerseyConfiguration.class);
+	private static Logger log = Logger.getLogger(JerseyConfiguration.class);
 
 	@Autowired
 	public JerseyConfiguration(ApplicationContext applicationContext, DocumentoVentaImpresionFilter documentoVentaImpresionFilter) {
-                log.info("Configurando los servicios REST");
+		log.info("Configurando los servicios REST");
 
 		Json.mapper().registerModule(new JaxbAnnotationModule());
 
@@ -37,9 +37,9 @@ public class JerseyConfiguration extends ResourceConfig {
 	}
 
 	private void registerCustomResources(ApplicationContext applicationContext) {
-                BricodepotSalesDocumentResource resource = applicationContext.getBean(BricodepotSalesDocumentResource.class);
-                log.info("Registrando el recurso de documentos de venta de Bricodepot en la configuración de Jersey");
-                register(resource);
+		BricodepotSalesDocumentResource resource = applicationContext.getBean(BricodepotSalesDocumentResource.class);
+		log.info("Registrando el recurso de documentos de venta de Bricodepot en la configuración de Jersey");
+		register(resource);
 	}
 
 	private void registerStandardResources() {
@@ -48,18 +48,18 @@ public class JerseyConfiguration extends ResourceConfig {
 		provider.addIncludeFilter(new AnnotationTypeFilter(Provider.class));
 		provider.findCandidateComponents("com.comerzzia.api").forEach(beanDefinition -> {
 			String className = beanDefinition.getBeanClassName();
-                        try {
-                                Class<?> candidateClass = Class.forName(className);
-                                if (SalesDocumentResource.class.equals(candidateClass)) {
-                                        log.info("Se omite el registro del recurso estándar de documentos de venta");
-                                        return;
-                                }
-                                log.info("Registrando un recurso estándar en la configuración de Jersey");
-                                register(candidateClass);
-                        }
-                        catch (ClassNotFoundException e) {
-                                log.warn("No se pudo registrar la clase " + className, e);
-                        }
-                });
-        }
+			try {
+				Class<?> candidateClass = Class.forName(className);
+				if (SalesDocumentResource.class.equals(candidateClass)) {
+					log.info("Se omite el registro del recurso estándar de documentos de venta");
+					return;
+				}
+				log.info("Registrando un recurso estándar en la configuración de Jersey");
+				register(candidateClass);
+			}
+			catch (ClassNotFoundException e) {
+				log.warn("No se pudo registrar la clase " + className, e);
+			}
+		});
+	}
 }

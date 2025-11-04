@@ -65,7 +65,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 @Service
 public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDocumentPrintService {
 
-    private static Logger log = Logger.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
+	private static Logger log = Logger.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
 
 	private static final String PARAM_FISCAL_DATA_ATCUD = "fiscalData_ACTUD";
 	private static final String PARAM_FISCAL_DATA_QR = "fiscalData_QR";
@@ -103,10 +103,10 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 	@Override
 	public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
-                if (log.isDebugEnabled()) {
-                        String mimeType = printRequest != null ? printRequest.getMimeType() : null;
-                        log.debug("Generando documento de venta '" + documentUid + "' con tipo MIME '" + mimeType + "'");
-                }
+		if (log.isDebugEnabled()) {
+			String mimeType = printRequest != null ? printRequest.getMimeType() : null;
+			log.debug("Generando documento de venta '" + documentUid + "' con tipo MIME '" + mimeType + "'");
+		}
 
 		if (printRequest == null) {
 			throw new ApiException("Solicitud de impresión nula");
@@ -135,8 +135,8 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 			}
 			return new BricodepotPrintableDocument(documentUid, outputName, printRequest.getMimeType(), out.toByteArray());
 		}
-                catch (Exception e) {
-                        log.error("Error al generar el documento '" + documentUid + "'", e);
+		catch (Exception e) {
+			log.error("Error al generar el documento '" + documentUid + "'", e);
 			if (e instanceof ApiException)
 				throw (ApiException) e;
 			throw new ApiException(e.getMessage(), e);
@@ -192,20 +192,20 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		String companyCode = ((String) cc).trim();
 		try {
 			EmpresaBean empresa = empresasService.consultar(datosSesion, companyCode);
-                        if (empresa != null && empresa.getLogotipo() != null && empresa.getLogotipo().length > 0) {
-                                params.put(PARAM_LOGO, new ByteArrayInputStream(empresa.getLogotipo()));
-                                log.debug("Logo cargado desde base de datos para la empresa '" + companyCode + "'");
-                        }
-                        else {
-                                params.remove(PARAM_LOGO);
-                                log.debug("Sin logo disponible en base de datos para la empresa '" + companyCode + "'");
-                        }
-                }
-                catch (EmpresaNotFoundException | EmpresaException ex) {
-                        params.remove(PARAM_LOGO);
-                        log.warn("No se pudo cargar el logo para la empresa '" + companyCode + "'", ex);
-                }
-        }
+			if (empresa != null && empresa.getLogotipo() != null && empresa.getLogotipo().length > 0) {
+				params.put(PARAM_LOGO, new ByteArrayInputStream(empresa.getLogotipo()));
+				log.debug("Logo cargado desde base de datos para la empresa '" + companyCode + "'");
+			}
+			else {
+				params.remove(PARAM_LOGO);
+				log.debug("Sin logo disponible en base de datos para la empresa '" + companyCode + "'");
+			}
+		}
+		catch (EmpresaNotFoundException | EmpresaException ex) {
+			params.remove(PARAM_LOGO);
+			log.warn("No se pudo cargar el logo para la empresa '" + companyCode + "'", ex);
+		}
+	}
 
 	private void ensureCompanyCodeFromTicketIfMissing(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) {
 		final String KEY = DocumentPrintService.PARAM_COMPANY_CODE;
@@ -230,20 +230,20 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				}
 			}
 		}
-                catch (Exception e) {
-                        log.debug("No fue posible obtener el código de empresa del ticket '" + documentUid + "': " + e.getMessage());
-                }
-        }
+		catch (Exception e) {
+			log.debug("No fue posible obtener el código de empresa del ticket '" + documentUid + "': " + e.getMessage());
+		}
+	}
 
 	private void ensureSubreportDirectory(Map<String, Object> params) {
 		if (params.containsKey(PARAM_SUBREPORT_DIR) && params.get(PARAM_SUBREPORT_DIR) != null)
 			return;
 
 		String basePath = AppInfo.getInformesInfo().getRutaBase();
-                if (!StringUtils.hasText(basePath)) {
-                        log.debug("La ruta base de informes no está configurada");
-                        return;
-                }
+		if (!StringUtils.hasText(basePath)) {
+			log.debug("La ruta base de informes no está configurada");
+			return;
+		}
 		String normalized = basePath.replace('\\', File.separatorChar).replace('/', File.separatorChar);
 		if (!normalized.endsWith(File.separator))
 			normalized = normalized + File.separator;
@@ -261,9 +261,9 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		if (ticketParam instanceof TicketVentaAbono) {
 			ticketVenta = (TicketVentaAbono) ticketParam;
 		}
-                else if (ticketParam != null) {
-                        log.debug("Se ignora el parámetro 'ticket' con un tipo no soportado para la impresión");
-                }
+		else if (ticketParam != null) {
+			log.debug("Se ignora el parámetro 'ticket' con un tipo no soportado para la impresión");
+		}
 
 		if (ticketVenta == null) {
 			try {
@@ -276,12 +276,12 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 			catch (ApiException ex) {
 				throw ex;
 			}
-                        catch (Exception ex) {
-                                log.error("Error al recuperar el ticket '" + documentUid + "'", ex);
-                                throw new ApiException(ex.getMessage(), ex);
-                        }
-                        params.put(PARAM_TICKET, ticketVenta);
-                        log.debug("Ticket '" + documentUid + "' preparado para la impresión");
+			catch (Exception ex) {
+				log.error("Error al recuperar el ticket '" + documentUid + "'", ex);
+				throw new ApiException(ex.getMessage(), ex);
+			}
+			params.put(PARAM_TICKET, ticketVenta);
+			log.debug("Ticket '" + documentUid + "' preparado para la impresión");
 		}
 
 		prepareTicketForPrinting(params, ticketVenta);
@@ -360,9 +360,9 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				ticketLines.clear();
 				ticketLines.addAll(out);
 			}
-                        catch (UnsupportedOperationException ex) {
-                                log.debug("No se pudo reemplazar la colección de líneas: " + ex.getMessage());
-                        }
+			catch (UnsupportedOperationException ex) {
+				log.debug("No se pudo reemplazar la colección de líneas: " + ex.getMessage());
+			}
 		}
 
 		return out;
@@ -430,9 +430,9 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				}
 			}
 		}
-                catch (Exception e) {
-                        log.debug("No se pudo determinar el tipo de documento para el ticket '" + documentUidSafe(ctx) + "': " + e.getMessage());
-                }
+		catch (Exception e) {
+			log.debug("No se pudo determinar el tipo de documento para el ticket '" + documentUidSafe(ctx) + "': " + e.getMessage());
+		}
 		params.put(PARAM_DEVOLUCION, devolucion);
 	}
 
@@ -442,9 +442,9 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 		Map<String, Object> params = printRequest.getCustomParams();
 		if (params != null && !params.containsKey(PARAM_DUPLICATE_FLAG)) {
-                        params.put(PARAM_DUPLICATE_FLAG, Boolean.TRUE);
-                        log.debug("Marcando la copia con el parámetro '" + PARAM_DUPLICATE_FLAG + "'");
-                }
+			params.put(PARAM_DUPLICATE_FLAG, Boolean.TRUE);
+			log.debug("Marcando la copia con el parámetro '" + PARAM_DUPLICATE_FLAG + "'");
+		}
 	}
 
 	private String documentUidSafe(TicketContext ctx) {
@@ -468,15 +468,15 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 		try {
 			DocumentEntity entity = documentService.findById(datosSesion, documentUid);
-                        if (entity == null) {
-                                log.debug("Documento '" + documentUid + "' no encontrado al obtener datos fiscales");
-                                return;
-                        }
-                        byte[] content = entity.getDocumentContent();
-                        if (content == null || content.length == 0) {
-                                log.debug("Documento '" + documentUid + "' sin contenido para datos fiscales");
-                                return;
-                        }
+			if (entity == null) {
+				log.debug("Documento '" + documentUid + "' no encontrado al obtener datos fiscales");
+				return;
+			}
+			byte[] content = entity.getDocumentContent();
+			if (content == null || content.length == 0) {
+				log.debug("Documento '" + documentUid + "' sin contenido para datos fiscales");
+				return;
+			}
 
 			Map<String, Object> params = printRequest.getCustomParams();
 			FiscalDocumentData fd = extractFiscalData(content);
@@ -493,10 +493,10 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				}
 			}
 		}
-                catch (Exception e) {
-                        log.warn("No se pudieron extraer los datos fiscales de '" + documentUid + "'", e);
-                }
-        }
+		catch (Exception e) {
+			log.warn("No se pudieron extraer los datos fiscales de '" + documentUid + "'", e);
+		}
+	}
 
 	private FiscalDocumentData extractFiscalData(byte[] content) {
 		if (content == null || content.length == 0)
@@ -507,10 +507,10 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 			}
 			return parseFiscalDataFromXml(content);
 		}
-                catch (Exception e) {
-                        log.debug("No se pudo analizar la información fiscal", e);
-                        return FiscalDocumentData.empty();
-                }
+		catch (Exception e) {
+			log.debug("No se pudo analizar la información fiscal", e);
+			return FiscalDocumentData.empty();
+		}
 	}
 
 	private boolean isLikelyJson(byte[] content) {
@@ -693,9 +693,9 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				return new ByteArrayInputStream(out.toByteArray());
 			}
 		}
-                catch (IllegalArgumentException | IOException | WriterException e) {
-                        log.warn("No se pudo generar la imagen QR", e);
-                }
+		catch (IllegalArgumentException | IOException | WriterException e) {
+			log.warn("No se pudo generar la imagen QR", e);
+		}
 		return null;
 	}
 

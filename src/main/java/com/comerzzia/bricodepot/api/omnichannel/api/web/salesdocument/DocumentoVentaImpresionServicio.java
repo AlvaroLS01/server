@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class DocumentoVentaImpresionServicio {
 
-    private static Logger log = Logger.getLogger(DocumentoVentaImpresionServicio.class);
+	private static Logger log = Logger.getLogger(DocumentoVentaImpresionServicio.class);
 
-    public void registrarInicioImpresion(String documentUid) {
+	public void registrarInicioImpresion(String documentUid) {
             if (log.isDebugEnabled()) {
                     log.debug("Inicio de generación de impresión para el documento '" + documentUid + "'");
             }
