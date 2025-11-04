@@ -6,9 +6,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -17,18 +17,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.lang.reflect.Field;
+
+import javax.imageio.ImageIO;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-
-import javax.imageio.ImageIO;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -36,10 +37,23 @@ import org.w3c.dom.NodeList;
 
 import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.bricodepot.api.omnichannel.api.domain.salesdocument.BricodepotPrintableDocument;
+import com.comerzzia.core.model.empresas.EmpresaBean;
+import com.comerzzia.core.model.tiposdocumentos.TipoDocumentoBean;
+import com.comerzzia.core.model.ventas.tickets.TicketBean;
+import com.comerzzia.core.servicios.empresas.EmpresaException;
+import com.comerzzia.core.servicios.empresas.EmpresaNotFoundException;
+import com.comerzzia.core.servicios.empresas.EmpresasService;
 import com.comerzzia.core.servicios.sesion.IDatosSesion;
+import com.comerzzia.core.servicios.tipodocumento.ServicioTiposDocumentosImpl;
+import com.comerzzia.core.servicios.ventas.tickets.ServicioTicketsImpl;
+import com.comerzzia.core.util.config.AppInfo;
+import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.LineaTicket;
+import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.SubtotalIvaTicket;
+import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono;
 import com.comerzzia.omnichannel.domain.dto.saledoc.PrintDocumentDTO;
 import com.comerzzia.omnichannel.domain.entity.document.DocumentEntity;
 import com.comerzzia.omnichannel.service.document.DocumentService;
+import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.salesdocument.SaleDocumentService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,911 +63,764 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
-import com.comerzzia.core.model.tiposdocumentos.TipoDocumentoBean;
-import com.comerzzia.core.model.ventas.tickets.TicketBean;
-import com.comerzzia.core.servicios.tipodocumento.ServicioTiposDocumentosImpl;
-import com.comerzzia.core.servicios.ventas.tickets.ServicioTicketsImpl;
-import com.comerzzia.core.util.config.AppInfo;
-import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.LineaTicket;
-import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.SubtotalIvaTicket;
-import com.comerzzia.omnichannel.documentos.facturas.converters.albaran.ticket.TicketVentaAbono;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-// === para cargar LOGO como el estándar ===
-import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
-import com.comerzzia.core.servicios.empresas.EmpresasService;
-import com.comerzzia.core.model.empresas.EmpresaBean;
-import com.comerzzia.core.servicios.empresas.EmpresaException;
-import com.comerzzia.core.servicios.empresas.EmpresaNotFoundException;
-
 @Service
 public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDocumentPrintService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
-    private static final String PARAM_FISCAL_DATA_ATCUD = "fiscalData_ACTUD";
-    private static final String PARAM_FISCAL_DATA_QR = "fiscalData_QR";
-    private static final String PARAM_QR_PORTUGAL = "QR_PORTUGAL";
-    private static final String PARAM_DUPLICATE_FLAG = "esDuplicado";
-    private static final String PARAM_TICKET = "ticket";
-    private static final String PARAM_SUBREPORT_DIR = "SUBREPORT_DIR";
-    private static final String PARAM_LOGO = "LOGO";
-    private static final String PARAM_DEVOLUTION = "DEVOLUCION";
-    private static final String PARAM_LINEAS_AGRUPADAS = "lineasAgrupadas";
-    private static final String FACTURA_REPORT_DIRECTORY = "ventas" + File.separator + "facturas" + File.separator;
-    private static final String TAG_FISCAL_DATA = "fiscal_data";
-    private static final String TAG_PROPERTY = "property";
-    private static final String TAG_NAME = "name";
-    private static final String TAG_VALUE = "value";
-    private static final String ATCUD = "ATCUD";
-    private static final String QR = "QR";
-    private static final int QR_IMAGE_SIZE = 200;
-
-    private static final JAXBContext TICKET_JAXB_CONTEXT = createTicketContext();
-
-    private static volatile Field printDocumentCustomParamsField;
-
-    private final SaleDocumentService saleDocumentService;
-    private final DocumentService documentService;
-
-    @Autowired
-    private EmpresasService empresasService;
-
-    @Autowired
-    public BricodepotSaleDocumentPrintServiceImpl(SaleDocumentService saleDocumentService, DocumentService documentService) {
-        this.saleDocumentService = saleDocumentService;
-        this.documentService = documentService;
-    }
-
-    @Override
-    public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
-        LOGGER.debug("printDocument() - Generating sales document '{}' with mime type '{}'", documentUid, printRequest.getMimeType());
-
-        populateFiscalData(datosSesion, documentUid, printRequest);
-        applyDuplicateFlag(printRequest);
-        ensureFacturaTemplateParameters(datosSesion, documentUid, printRequest);
-
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            saleDocumentService.printDocument(outputStream, datosSesion, documentUid, printRequest);
-
-            String outputDocumentName = printRequest.getOutputDocumentName();
-            if (!StringUtils.hasText(outputDocumentName)) {
-                outputDocumentName = documentUid;
-            }
-
-            return new BricodepotPrintableDocument(documentUid, outputDocumentName, printRequest.getMimeType(), outputStream.toByteArray());
-        }
-        catch (Exception exception) {
-            LOGGER.error("printDocument() - Error generating sales document '{}'", documentUid, exception);
-            if (exception instanceof ApiException) {
-                throw (ApiException) exception;
-            }
-            throw new ApiException(exception.getMessage(), exception);
-        }
-    }
-
-    private void populateFiscalData(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) {
-        if (printRequest == null) {
-            return;
-        }
-
-        try {
-            DocumentEntity documentEntity = documentService.findById(datosSesion, documentUid);
-            if (documentEntity == null) {
-                LOGGER.debug("populateFiscalData() - Document '{}' not found, skipping fiscal data extraction", documentUid);
-                return;
-            }
-
-            byte[] content = documentEntity.getDocumentContent();
-            if (content == null || content.length == 0) {
-                LOGGER.debug("populateFiscalData() - Document '{}' has no content, skipping fiscal data extraction", documentUid);
-                return;
-            }
-
-            Map<String, Object> customParams = printRequest.getCustomParams();
-            FiscalDocumentData fiscalData = extractFiscalData(content);
-
-            if (!customParams.containsKey(PARAM_FISCAL_DATA_ATCUD) && StringUtils.hasText(fiscalData.getAtcud())) {
-                customParams.put(PARAM_FISCAL_DATA_ATCUD, fiscalData.getAtcud());
-            }
-
-            if (!customParams.containsKey(PARAM_FISCAL_DATA_QR) && StringUtils.hasText(fiscalData.getQr())) {
-                customParams.put(PARAM_FISCAL_DATA_QR, fiscalData.getQr());
-
-                InputStream qrStream = createQrImage(fiscalData.getQr());
-                if (qrStream != null && !customParams.containsKey(PARAM_QR_PORTUGAL)) {
-                    customParams.put(PARAM_QR_PORTUGAL, qrStream);
-                }
-            }
-        }
-        catch (Exception exception) {
-            LOGGER.warn("populateFiscalData() - Unable to extract fiscal data for document '{}'", documentUid, exception);
-        }
-    }
-
-    private void applyDuplicateFlag(PrintDocumentDTO printRequest) {
-        if (printRequest == null || !Boolean.TRUE.equals(printRequest.getCopy())) {
-            return;
-        }
-
-        Map<String, Object> customParams = printRequest.getCustomParams();
-        if (!customParams.containsKey(PARAM_DUPLICATE_FLAG)) {
-            customParams.put(PARAM_DUPLICATE_FLAG, Boolean.TRUE);
-            LOGGER.debug("applyDuplicateFlag() - Flagging document copy request with parameter '{}'", PARAM_DUPLICATE_FLAG);
-        }
-    }
-
-    // === FIX LOGO & PARAMS ===
-    private void ensureFacturaTemplateParameters(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
-        if (printRequest == null) return;
-
-        Map<String, Object> customParams = ensureCustomParamsWrapper(printRequest);
-        if (customParams == null) return;
-
-        customParams = printRequest.getCustomParams();
-        if (customParams == null) return;
-
-        // No permitir que LOGO=null pise al estándar
-        if (customParams.containsKey(PARAM_LOGO) && customParams.get(PARAM_LOGO) == null) {
-            customParams.remove(PARAM_LOGO);
-        }
-
-        // Garantiza companyCode para que el estándar pueda cargar logo/divisa
-        ensureCompanyCodeFromTicketIfMissing(datosSesion, documentUid, customParams);
-
-        // Carga nuestro logo solo si no existe todavía (siempre InputStream)
-        ensureCompanyLogo(datosSesion, customParams);
-
-        // DEVOLUCIÓN por defecto
-        customParams.putIfAbsent(PARAM_DEVOLUTION, Boolean.FALSE);
-
-        ensureSubreportDirectory(customParams);
-
-        TicketContext ticketContext = ensureTicketParameter(datosSesion, documentUid, customParams);
-        if (ticketContext != null) {
-            ensureDevolutionParameter(customParams, ticketContext, datosSesion);
-        }
-    }
-
-    private void ensureCompanyLogo(IDatosSesion datosSesion, Map<String, Object> customParams) {
-        if (customParams == null) return;
-
-        Object existingLogo = customParams.get(PARAM_LOGO);
-        if (existingLogo instanceof InputStream) return;
-        if (existingLogo == null) customParams.remove(PARAM_LOGO);
-
-        Object cc = customParams.get(DocumentPrintService.PARAM_COMPANY_CODE);
-        if (!(cc instanceof String) || !StringUtils.hasText((String) cc)) return;
-
-        String companyCode = ((String) cc).trim();
-        try {
-            EmpresaBean empresa = empresasService.consultar(datosSesion, companyCode);
-            if (empresa != null && empresa.getLogotipo() != null && empresa.getLogotipo().length > 0) {
-                customParams.put(PARAM_LOGO, new ByteArrayInputStream(empresa.getLogotipo()));
-                LOGGER.debug("ensureCompanyLogo() - Loaded logo from DB for companyCode '{}'", companyCode);
-            } else {
-                customParams.remove(PARAM_LOGO);
-                LOGGER.debug("ensureCompanyLogo() - No logo in DB for companyCode '{}'", companyCode);
-            }
-        } catch (EmpresaNotFoundException | EmpresaException ex) {
-            customParams.remove(PARAM_LOGO);
-            LOGGER.warn("ensureCompanyLogo() - Unable to load company logo for companyCode '{}'", companyCode, ex);
-        }
-    }
-
-    private void ensureCompanyCodeFromTicketIfMissing(IDatosSesion datosSesion, String documentUid, Map<String, Object> customParams) {
-        final String KEY = DocumentPrintService.PARAM_COMPANY_CODE;
-        Object cc = customParams.get(KEY);
-        if (cc instanceof String && StringUtils.hasText((String) cc)) return;
-
-        try {
-            Object t = customParams.get(PARAM_TICKET);
-            if (t instanceof TicketVentaAbono) {
-                TicketVentaAbono tv = (TicketVentaAbono) t;
-                if (tv.getCabecera() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
-                    customParams.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
-                    return;
-                }
-            }
-            TicketBean tb = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
-            if (tb != null && tb.getTicket() != null && tb.getTicket().length > 0) {
-                TicketVentaAbono tv = parseTicketVenta(tb.getTicket());
-                if (tv != null && tv.getCabecera() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
-                    customParams.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.debug("ensureCompanyCodeFromTicketIfMissing() - Unable to derive company code from ticket '{}': {}", documentUid, e.getMessage());
-        }
-    }
-    // === FIN FIX LOGO & PARAMS ===
-
-    private void ensureSubreportDirectory(Map<String, Object> customParams) {
-        if (customParams.containsKey(PARAM_SUBREPORT_DIR) && customParams.get(PARAM_SUBREPORT_DIR) != null) {
-            return;
-        }
-
-        String basePath = AppInfo.getInformesInfo().getRutaBase();
-        if (!StringUtils.hasText(basePath)) {
-            LOGGER.debug("ensureSubreportDirectory() - Report base path not configured, skipping subreport directory parameter");
-            return;
-        }
-
-        String normalizedBasePath = basePath.replace('\\', File.separatorChar).replace('/', File.separatorChar);
-        if (!normalizedBasePath.endsWith(File.separator)) {
-            normalizedBasePath = normalizedBasePath + File.separator;
-        }
-
-        String directory = normalizedBasePath + FACTURA_REPORT_DIRECTORY;
-        customParams.put(PARAM_SUBREPORT_DIR, directory);
-    }
-
-    private TicketContext ensureTicketParameter(IDatosSesion datosSesion, String documentUid, Map<String, Object> customParams) throws ApiException {
-        Object ticketParam = customParams.get(PARAM_TICKET);
-        if (ticketParam instanceof TicketVentaAbono) {
-            TicketVentaAbono ticketVenta = (TicketVentaAbono) ticketParam;
-            prepareTicketForPrinting(customParams, ticketVenta);
-            return new TicketContext(null, ticketVenta);
-        }
-
-        if (ticketParam != null) {
-            LOGGER.debug("ensureTicketParameter() - Ignoring ticket parameter of unsupported type: {}", ticketParam.getClass());
-            return null;
-        }
-
-        TicketBean ticketBean;
-        TicketVentaAbono ticketVenta;
-        try {
-            ticketBean = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
-            if (ticketBean == null) {
-                throw new ApiException("Ticket not found for documentUid=" + documentUid);
-            }
-
-            ticketVenta = parseTicketVenta(ticketBean.getTicket());
-        }
-        catch (ApiException exception) {
-            throw exception;
-        }
-        catch (Exception exception) {
-            LOGGER.error("ensureTicketParameter() - Error retrieving ticket '{}'", documentUid, exception);
-            throw new ApiException(exception.getMessage(), exception);
-        }
-
-        prepareTicketForPrinting(customParams, ticketVenta);
-        customParams.put(PARAM_TICKET, ticketVenta);
-        LOGGER.debug("ensureTicketParameter() - Loaded ticket '{}' for printing", documentUid);
-        return new TicketContext(ticketBean, ticketVenta);
-    }
-
-    private void prepareTicketForPrinting(Map<String, Object> customParams, TicketVentaAbono ticketVenta) {
-        if (customParams == null || ticketVenta == null) {
-            return;
-        }
-
-        List<LineaTicket> aggregatedLines = aggregateTicketLines(ticketVenta);
-        customParams.put(PARAM_LINEAS_AGRUPADAS, new ArrayList<>(aggregatedLines));
-    }
-
-    private List<LineaTicket> aggregateTicketLines(TicketVentaAbono ticketVenta) {
-        List<LineaTicket> originalLines = ticketVenta != null ? ticketVenta.getLineas() : null;
-        if (originalLines == null || originalLines.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<LineaTicket> working = new ArrayList<>();
-        for (LineaTicket line : originalLines) {
-            if (line != null) {
-                working.add(line);
-            }
-        }
-
-        List<LineaTicket> aggregated = new ArrayList<>(working.size());
-        while (!working.isEmpty()) {
-            LineaTicket line = working.remove(0);
-            if (line == null) {
-                continue;
-            }
-
-            BigDecimal totalQuantity = safe(line.getCantidad());
-            BigDecimal totalPromotions = safe(line.getImporteTotalPromociones());
-            BigDecimal totalWithDiscount = safe(line.getImporteTotalConDto());
-            BigDecimal totalAmount = safe(line.getImporteConDto());
-            List<LineaTicket> mergedLines = new ArrayList<>();
-
-            Iterator<LineaTicket> iterator = working.iterator();
-            while (iterator.hasNext()) {
-                LineaTicket candidate = iterator.next();
-                if (candidate == null) {
-                    iterator.remove();
-                    continue;
-                }
-
-                if (haveSameSaleConditions(line, candidate)) {
-                    totalQuantity = totalQuantity.add(safe(candidate.getCantidad()));
-                    totalPromotions = totalPromotions.add(safe(candidate.getImporteTotalPromociones()));
-                    totalWithDiscount = totalWithDiscount.add(safe(candidate.getImporteTotalConDto()));
-                    totalAmount = totalAmount.add(safe(candidate.getImporteConDto()));
-                    mergedLines.add(candidate);
-                    iterator.remove();
-                }
-            }
-
-            if (isZero(totalQuantity)) {
-                continue;
-            }
-
-            line.setCantidad(totalQuantity);
-            line.setImporteTotalPromociones(totalPromotions);
-            line.setImporteTotalConDto(totalWithDiscount);
-            line.setImporteConDto(totalAmount);
-
-            applyTaxBreakdown(line, ticketVenta, totalQuantity);
-            if (!mergedLines.isEmpty()) {
-                String formattedTax = line.getDesglose2();
-                String formattedCode = line.getCodImp();
-                for (LineaTicket merged : mergedLines) {
-                    merged.setDesglose2(formattedTax);
-                    merged.setCodImp(formattedCode);
-                }
-            }
-            aggregated.add(line);
-        }
-
-        List<LineaTicket> ticketLines = ticketVenta.getLineas();
-        if (ticketLines != null) {
-            try {
-                ticketLines.clear();
-                ticketLines.addAll(aggregated);
-            }
-            catch (UnsupportedOperationException exception) {
-                LOGGER.debug("aggregateTicketLines() - Unable to replace ticket line collection: {}", exception.getMessage());
-            }
-        }
-
-        return aggregated;
-    }
-
-    private boolean haveSameSaleConditions(LineaTicket primary, LineaTicket candidate) {
-        if (primary == null || candidate == null) {
-            return false;
-        }
-
-        if (!Objects.equals(primary.getCodArticulo(), candidate.getCodArticulo())) {
-            return false;
-        }
-
-        if (safe(primary.getPrecioTotalConDto()).compareTo(safe(candidate.getPrecioTotalConDto())) != 0) {
-            return false;
-        }
-
-        BigDecimal primaryQty = safe(primary.getCantidad());
-        BigDecimal candidateQty = safe(candidate.getCantidad());
-        return primaryQty.signum() == candidateQty.signum();
-    }
-
-    private void applyTaxBreakdown(LineaTicket line, TicketVentaAbono ticketVenta, BigDecimal quantity) {
-        if (line == null || ticketVenta == null || ticketVenta.getCabecera() == null) {
-            return;
-        }
-
-        List<SubtotalIvaTicket> subtotals = ticketVenta.getCabecera().getSubtotalesIva();
-        if (subtotals == null || subtotals.isEmpty()) {
-            return;
-        }
-
-        String lineTaxCode = normalize(line.getCodImp());
-        for (SubtotalIvaTicket subtotal : subtotals) {
-            if (subtotal == null) {
-                continue;
-            }
-
-            if (!normalize(subtotal.getCodImp()).equals(lineTaxCode)) {
-                continue;
-            }
-
-            line.setCodImp(formatPercentage(subtotal.getPorcentaje()));
-
-            BigDecimal priceWithDiscount = safe(line.getPrecioConDto());
-            BigDecimal percentage = safe(subtotal.getPorcentaje());
-            BigDecimal taxAmount = priceWithDiscount.multiply(quantity).multiply(percentage).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-            line.setDesglose2(formatDecimal(taxAmount, 4));
-            return;
-        }
-    }
-
-    private BigDecimal safe(BigDecimal value) {
-        return value != null ? value : BigDecimal.ZERO;
-    }
-
-    private boolean isZero(BigDecimal value) {
-        return safe(value).compareTo(BigDecimal.ZERO) == 0;
-    }
-
-    private String normalize(String value) {
-        return value != null ? value.trim() : "";
-    }
-
-    private String formatPercentage(BigDecimal value) {
-        if (value == null) {
-            return "";
-        }
-        return value.stripTrailingZeros().toPlainString();
-    }
-
-    private String formatDecimal(BigDecimal value, int scale) {
-        if (value == null) {
-            return null;
-        }
-        return value.setScale(scale, RoundingMode.HALF_UP).toPlainString();
-    }
-
-    private void ensureDevolutionParameter(Map<String, Object> customParams, TicketContext ticketContext, IDatosSesion datosSesion) {
-        if (Boolean.TRUE.equals(customParams.get(PARAM_DEVOLUTION))) {
-            return;
-        }
-
-        TicketVentaAbono ticketVenta = ticketContext != null ? ticketContext.getTicketVenta() : null;
-        if (ticketVenta == null || ticketVenta.getCabecera() == null) {
-            return;
-        }
-
-        boolean devolucion = false;
-        try {
-            String codTipoDocumento = ticketVenta.getCabecera().getCodTipoDocumento();
-            if (StringUtils.hasText(codTipoDocumento)) {
-                if ("FR".equalsIgnoreCase(codTipoDocumento)) {
-                    devolucion = true;
-                }
-                else if ("NC".equalsIgnoreCase(codTipoDocumento)) {
-                    TipoDocumentoBean tipoDocumento = ServicioTiposDocumentosImpl.get().consultar(datosSesion, ticketVenta.getCabecera().getTipoDocumento());
-                    if (tipoDocumento != null && !"ES".equalsIgnoreCase(tipoDocumento.getCodPais())) {
-                        devolucion = true;
-                    }
-                }
-            }
-        }
-        catch (Exception exception) {
-            LOGGER.debug("ensureDevolutionParameter() - Unable to determine document type for ticket '{}': {}", documentUidSafe(ticketContext), exception.getMessage());
-        }
-
-        customParams.put(PARAM_DEVOLUTION, devolucion);
-    }
-
-    private String documentUidSafe(TicketContext ticketContext) {
-        if (ticketContext == null) {
-            return "";
-        }
-        TicketBean ticketBean = ticketContext.getTicketBean();
-        if (ticketBean != null && StringUtils.hasText(ticketBean.getUidTicket())) {
-            return ticketBean.getUidTicket();
-        }
-        TicketVentaAbono ticketVenta = ticketContext.getTicketVenta();
-        if (ticketVenta != null && ticketVenta.getCabecera() != null && StringUtils.hasText(ticketVenta.getCabecera().getUidTicket())) {
-            return ticketVenta.getCabecera().getUidTicket();
-        }
-        return "";
-    }
-
-    private Map<String, Object> ensureCustomParamsWrapper(PrintDocumentDTO printRequest) {
-        if (printRequest == null) {
-            return null;
-        }
-
-        Map<String, Object> current = printRequest.getCustomParams();
-        if (current instanceof TicketPreservingMap) {
-            return current;
-        }
-
-        TicketPreservingMap wrapper = new TicketPreservingMap(current);
-        if (assignCustomParamsMap(printRequest, wrapper)) {
-            return wrapper;
-        }
-
-        if (current == null) {
-            Map<String, Object> fallback = new HashMap<>();
-            if (assignCustomParamsMap(printRequest, fallback)) {
-                return fallback;
-            }
-            return null;
-        }
-
-        LOGGER.debug("ensureCustomParamsWrapper() - Unable to replace custom params map, continuing without wrapper");
-        return current;
-    }
-
-    private boolean assignCustomParamsMap(PrintDocumentDTO printRequest, Map<String, Object> replacement) {
-        if (printRequest == null || replacement == null) {
-            return false;
-        }
-
-        Field field = resolveCustomParamsField(printRequest.getClass());
-        if (field == null) {
-            return false;
-        }
-
-        try {
-            field.set(printRequest, replacement);
-            return true;
-        }
-        catch (IllegalAccessException exception) {
-            LOGGER.debug("assignCustomParamsMap() - Unable to access custom params field: {}", exception.getMessage());
-            return false;
-        }
-    }
-
-    private Field resolveCustomParamsField(Class<?> type) {
-        if (type == null) {
-            return null;
-        }
-
-        Field cached = printDocumentCustomParamsField;
-        if (cached != null) {
-            return cached;
-        }
-
-        synchronized (BricodepotSaleDocumentPrintServiceImpl.class) {
-            if (printDocumentCustomParamsField != null) {
-                return printDocumentCustomParamsField;
-            }
-
-            Class<?> current = type;
-            while (current != null) {
-                for (Field field : current.getDeclaredFields()) {
-                    if (Map.class.isAssignableFrom(field.getType())) {
-                        field.setAccessible(true);
-                        printDocumentCustomParamsField = field;
-                        return field;
-                    }
-                }
-                current = current.getSuperclass();
-            }
-        }
-
-        LOGGER.debug("resolveCustomParamsField() - Unable to locate custom params field in {}", type.getName());
-        return null;
-    }
-
-    private TicketVentaAbono parseTicketVenta(byte[] ticketData) throws ApiException {
-        if (ticketData == null || ticketData.length == 0) {
-            throw new ApiException("Ticket data is empty");
-        }
-
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(ticketData)) {
-            Unmarshaller unmarshaller = TICKET_JAXB_CONTEXT.createUnmarshaller();
-            Object parsed = unmarshaller.unmarshal(inputStream);
-            if (parsed instanceof TicketVentaAbono) {
-                return (TicketVentaAbono) parsed;
-            }
-            throw new ApiException("Unable to parse ticket XML into TicketVentaAbono");
-        }
-        catch (JAXBException | IOException exception) {
-            throw new ApiException(exception.getMessage(), exception);
-        }
-    }
-
-    private static JAXBContext createTicketContext() {
-        try {
-            return JAXBContext.newInstance(TicketVentaAbono.class);
-        }
-        catch (JAXBException exception) {
-            throw new IllegalStateException("Unable to create JAXB context for TicketVentaAbono", exception);
-        }
-    }
-
-    private static final class TicketPreservingMap extends HashMap<String, Object> {
-
-        private static final long serialVersionUID = 1L;
-
-        TicketPreservingMap(Map<String, Object> existing) {
-            super(existing != null ? Math.max(existing.size() * 2, 16) : 16);
-            if (existing != null) {
-                super.putAll(existing);
-            }
-        }
-
-        @Override
-        public Object put(String key, Object value) {
-            if (PARAM_TICKET.equals(key) && !(value instanceof TicketVentaAbono)) {
-                LOGGER.debug("TicketPreservingMap.put() - Ignoring non ticket value '{}' for parameter '{}'", value != null ? value.getClass() : null, key);
-                return super.get(key);
-            }
-            return super.put(key, value);
-        }
-
-        @Override
-        public void putAll(Map<? extends String, ?> m) {
-            if (m == null) {
-                return;
-            }
-            for (Map.Entry<? extends String, ?> entry : m.entrySet()) {
-                put(entry.getKey(), entry.getValue());
-            }
-        }
-    }
-
-    private FiscalDocumentData extractFiscalData(byte[] content) {
-        if (content == null || content.length == 0) {
-            return FiscalDocumentData.empty();
-        }
-
-        try {
-            if (isLikelyJson(content)) {
-                return parseFiscalDataFromJson(content);
-            }
-
-            return parseFiscalDataFromXml(content);
-        }
-        catch (Exception exception) {
-            LOGGER.debug("extractFiscalData() - Unable to parse fiscal data as structured content", exception);
-            return FiscalDocumentData.empty();
-        }
-    }
-
-    private boolean isLikelyJson(byte[] content) {
-        for (byte candidate : content) {
-            if (candidate <= ' ') {
-                continue;
-            }
-            return candidate == '{' || candidate == '[';
-        }
-        return false;
-    }
-
-    private FiscalDocumentData parseFiscalDataFromXml(byte[] xmlContent) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setXIncludeAware(false);
-        factory.setExpandEntityReferences(false);
-
-        DocumentBuilder builder = factory.newDocumentBuilder();
-
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(xmlContent)) {
-            Document document = builder.parse(inputStream);
-            Element root = document.getDocumentElement();
-            if (root == null) {
-                return FiscalDocumentData.empty();
-            }
-
-            NodeList fiscalNodes = root.getElementsByTagName(TAG_FISCAL_DATA);
-            if (fiscalNodes == null || fiscalNodes.getLength() == 0) {
-                return FiscalDocumentData.empty();
-            }
-
-            FiscalDocumentData result = new FiscalDocumentData();
-            for (int index = 0; index < fiscalNodes.getLength(); index++) {
-                Node node = fiscalNodes.item(index);
-                if (node instanceof Element) {
-                    populateFromFiscalElement((Element) node, result);
-                }
-            }
-            return result;
-        }
-    }
-
-    private void populateFromFiscalElement(Element fiscalDataElement, FiscalDocumentData result) {
-        if (fiscalDataElement == null) {
-            return;
-        }
-
-        NodeList propertyNodes = fiscalDataElement.getElementsByTagName(TAG_PROPERTY);
-        if (propertyNodes == null || propertyNodes.getLength() == 0) {
-            return;
-        }
-
-        for (int i = 0; i < propertyNodes.getLength(); i++) {
-            Node node = propertyNodes.item(i);
-            if (!(node instanceof Element)) {
-                continue;
-            }
-
-            Element propertyElement = (Element) node;
-            String name = getChildTextContent(propertyElement, TAG_NAME);
-            String value = getChildTextContent(propertyElement, TAG_VALUE);
-            applyFiscalProperty(result, name, value);
-        }
-    }
-
-    private String getChildTextContent(Element parent, String tagName) {
-        if (parent == null) {
-            return null;
-        }
-
-        NodeList nodes = parent.getElementsByTagName(tagName);
-        if (nodes == null || nodes.getLength() == 0) {
-            return null;
-        }
-
-        Node node = nodes.item(0);
-        if (node == null) {
-            return null;
-        }
-
-        String text = node.getTextContent();
-        return StringUtils.hasText(text) ? text.trim() : null;
-    }
-
-    private FiscalDocumentData parseFiscalDataFromJson(byte[] jsonContent) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(jsonContent);
-
-        FiscalDocumentData result = new FiscalDocumentData();
-        traverseJson(rootNode, result);
-        return result;
-    }
-
-    private void traverseJson(JsonNode node, FiscalDocumentData result) {
-        if (node == null) {
-            return;
-        }
-
-        if (node.isObject()) {
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> entry = fields.next();
-                String key = entry.getKey();
-                JsonNode value = entry.getValue();
-
-                if (key != null && (TAG_FISCAL_DATA.equalsIgnoreCase(key) || "fiscalData".equalsIgnoreCase(key))) {
-                    parseFiscalJsonNode(value, result);
-                }
-
-                traverseJson(value, result);
-            }
-        }
-        else if (node.isArray()) {
-            for (JsonNode child : node) {
-                traverseJson(child, result);
-            }
-        }
-    }
-
-    private void parseFiscalJsonNode(JsonNode fiscalNode, FiscalDocumentData result) {
-        if (fiscalNode == null) {
-            return;
-        }
-
-        if (fiscalNode.isObject()) {
-            if (fiscalNode.has(ATCUD)) {
-                applyFiscalProperty(result, ATCUD, getJsonText(fiscalNode.get(ATCUD)));
-            }
-            if (fiscalNode.has(QR)) {
-                applyFiscalProperty(result, QR, getJsonText(fiscalNode.get(QR)));
-            }
-
-            if (fiscalNode.has("properties")) {
-                parseFiscalJsonProperties(fiscalNode.get("properties"), result);
-            }
-            if (fiscalNode.has("property")) {
-                parseFiscalJsonProperties(fiscalNode.get("property"), result);
-            }
-        }
-        else if (fiscalNode.isArray()) {
-            parseFiscalJsonProperties(fiscalNode, result);
-        }
-    }
-
-    private void parseFiscalJsonProperties(JsonNode propertiesNode, FiscalDocumentData result) {
-        if (propertiesNode == null) {
-            return;
-        }
-
-        for (JsonNode propertyNode : propertiesNode) {
-            if (propertyNode == null) {
-                continue;
-            }
-
-            if (propertyNode.isObject()) {
-                String name = getJsonText(propertyNode.get(TAG_NAME));
-                String value = getJsonText(propertyNode.get(TAG_VALUE));
-                if (!StringUtils.hasText(value)) {
-                    value = getJsonText(propertyNode.get("valor"));
-                }
-                applyFiscalProperty(result, name, value);
-            }
-            else {
-                parseFiscalJsonNode(propertyNode, result);
-            }
-        }
-    }
-
-    private String getJsonText(JsonNode node) {
-        if (node == null) {
-            return null;
-        }
-
-        if (node.isValueNode()) {
-            String text = node.asText();
-            return StringUtils.hasText(text) ? text.trim() : null;
-        }
-
-        return null;
-    }
-
-    private void applyFiscalProperty(FiscalDocumentData result, String name, String value) {
-        if (!StringUtils.hasText(name) || !StringUtils.hasText(value) || result == null) {
-            return;
-        }
-
-        if (ATCUD.equalsIgnoreCase(name) && !StringUtils.hasText(result.getAtcud())) {
-            result.setAtcud(value.trim());
-        }
-        else if (QR.equalsIgnoreCase(name) && !StringUtils.hasText(result.getQr())) {
-            result.setQr(value.trim());
-        }
-    }
-
-    private InputStream createQrImage(String base64Value) {
-        if (!StringUtils.hasText(base64Value)) {
-            return null;
-        }
-
-        try {
-            byte[] decoded = Base64.getDecoder().decode(base64Value.trim());
-            String qrText = new String(decoded, StandardCharsets.UTF_8);
-            if (!StringUtils.hasText(qrText)) {
-                return null;
-            }
-
-            QRCodeWriter writer = new QRCodeWriter();
-            BitMatrix bitMatrix = writer.encode(qrText, BarcodeFormat.QR_CODE, QR_IMAGE_SIZE, QR_IMAGE_SIZE);
-            BufferedImage qrImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
-
-            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                ImageIO.write(qrImage, "jpeg", outputStream);
-                return new ByteArrayInputStream(outputStream.toByteArray());
-            }
-        }
-        catch (IllegalArgumentException | IOException | WriterException exception) {
-            LOGGER.warn("createQrImage() - Unable to generate QR image from fiscal data", exception);
-        }
-
-        return null;
-    }
-
-    private static final class TicketContext {
-        private final TicketBean ticketBean;
-        private final TicketVentaAbono ticketVenta;
-
-        TicketContext(TicketBean ticketBean, TicketVentaAbono ticketVenta) {
-            this.ticketBean = ticketBean;
-            this.ticketVenta = ticketVenta;
-        }
-
-        TicketBean getTicketBean() {
-            return ticketBean;
-        }
-
-        TicketVentaAbono getTicketVenta() {
-            return ticketVenta;
-        }
-    }
-
-    private static final class FiscalDocumentData {
-        private String atcud;
-        private String qr;
-
-        static FiscalDocumentData empty() {
-            return new FiscalDocumentData();
-        }
-
-        String getAtcud() {
-            return atcud;
-        }
-
-        void setAtcud(String atcud) {
-            this.atcud = atcud;
-        }
-
-        String getQr() {
-            return qr;
-        }
-
-        void setQr(String qr) {
-            this.qr = qr;
-        }
-    }
+	private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
+
+	private static final String PARAM_FISCAL_DATA_ATCUD = "fiscalData_ACTUD";
+	private static final String PARAM_FISCAL_DATA_QR = "fiscalData_QR";
+	private static final String PARAM_QR_PORTUGAL = "QR_PORTUGAL";
+	private static final String PARAM_DUPLICATE_FLAG = "esDuplicado";
+	private static final String PARAM_TICKET = "ticket";
+	private static final String PARAM_SUBREPORT_DIR = "SUBREPORT_DIR";
+	private static final String PARAM_LOGO = "LOGO";
+	private static final String PARAM_DEVOLUCION = "DEVOLUCION";
+	private static final String PARAM_LINEAS_AGRUPADAS = "lineasAgrupadas";
+
+	private static final String FACTURA_REPORT_DIRECTORY = "ventas" + File.separator + "facturas" + File.separator;
+
+	private static final String TAG_FISCAL_DATA = "fiscal_data";
+	private static final String TAG_PROPERTY = "property";
+	private static final String TAG_NAME = "name";
+	private static final String TAG_VALUE = "value";
+	private static final String ATCUD = "ATCUD";
+	private static final String QR = "QR";
+	private static final int QR_IMAGE_SIZE = 200;
+
+	private static final JAXBContext TICKET_JAXB_CONTEXT = createTicketContext();
+
+	private final SaleDocumentService saleDocumentService;
+	private final DocumentService documentService;
+
+	@Autowired
+	private EmpresasService empresasService;
+
+	@Autowired
+	public BricodepotSaleDocumentPrintServiceImpl(SaleDocumentService saleDocumentService, DocumentService documentService) {
+		this.saleDocumentService = saleDocumentService;
+		this.documentService = documentService;
+	}
+
+	@Override
+	public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
+		LOGGER.debug("printDocument() - Generando documento de venta '{}' con mime type '{}'", documentUid, printRequest != null ? printRequest.getMimeType() : null);
+
+		if (printRequest == null) {
+			throw new ApiException("Solicitud de impresión nula");
+		}
+
+		// Asegura un mapa de parámetros controlado (sin reflexión)
+		Map<String, Object> customParams = ensureParamsMap(printRequest);
+
+		// Cargar ticket primero para que el resto dependa de él
+		TicketContext ticketCtx = ensureTicketParameter(datosSesion, documentUid, customParams);
+
+		// Derivados
+		ensureCompanyCodeFromTicketIfMissing(datosSesion, documentUid, customParams);
+		ensureCompanyLogo(datosSesion, customParams);
+		ensureSubreportDirectory(customParams);
+		ensureDevolucionParameter(customParams, ticketCtx, datosSesion);
+		applyDuplicateFlag(printRequest);
+		populateFiscalData(datosSesion, documentUid, printRequest); // añade ATCUD/QR si existen
+
+		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+			saleDocumentService.printDocument(out, datosSesion, documentUid, printRequest);
+
+			String outputName = printRequest.getOutputDocumentName();
+			if (!StringUtils.hasText(outputName)) {
+				outputName = documentUid;
+			}
+			return new BricodepotPrintableDocument(documentUid, outputName, printRequest.getMimeType(), out.toByteArray());
+		}
+		catch (Exception e) {
+			LOGGER.error("printDocument() - Error generando documento '{}'", documentUid, e);
+			if (e instanceof ApiException)
+				throw (ApiException) e;
+			throw new ApiException(e.getMessage(), e);
+		}
+	}
+
+	/* ===================== Soporte parámetros y logo ===================== */
+
+	/**
+	 * Crea un HashMap si es nulo y sustituye por un TicketPreservingMap para evitar que terceros pisen el parámetro
+	 * 'ticket' con objetos no válidos.
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> ensureParamsMap(PrintDocumentDTO dto) {
+		Map<String, Object> current = dto.getCustomParams();
+		if (current == null) {
+			current = new HashMap<>();
+		}
+		else if (!(current instanceof Map)) {
+			current = new HashMap<>(current);
+		}
+		else {
+			current = new HashMap<>(current); // copiamos para envolver limpio
+		}
+
+		TicketPreservingMap wrapped = new TicketPreservingMap(current);
+
+		try {
+			// Si existe setter, úsalo. (La mayoría de DTOs lo tienen)
+			dto.setCustomParams(wrapped);
+		}
+		catch (Throwable ignore) {
+			// Si no existiera setter, seguimos trabajando sobre 'wrapped'
+			// pero al menos devolvemos el mapa para usarlo en esta clase.
+		}
+		return wrapped;
+	}
+
+	private void ensureCompanyLogo(IDatosSesion datosSesion, Map<String, Object> params) {
+		if (params == null)
+			return;
+
+		Object existingLogo = params.get(PARAM_LOGO);
+		if (existingLogo instanceof InputStream)
+			return;
+		if (existingLogo == null)
+			params.remove(PARAM_LOGO);
+
+		Object cc = params.get(DocumentPrintService.PARAM_COMPANY_CODE);
+		if (!(cc instanceof String) || !StringUtils.hasText((String) cc))
+			return;
+
+		String companyCode = ((String) cc).trim();
+		try {
+			EmpresaBean empresa = empresasService.consultar(datosSesion, companyCode);
+			if (empresa != null && empresa.getLogotipo() != null && empresa.getLogotipo().length > 0) {
+				params.put(PARAM_LOGO, new ByteArrayInputStream(empresa.getLogotipo()));
+				LOGGER.debug("ensureCompanyLogo() - Logo cargado de BBDD para companyCode '{}'", companyCode);
+			}
+			else {
+				params.remove(PARAM_LOGO);
+				LOGGER.debug("ensureCompanyLogo() - Sin logo en BBDD para companyCode '{}'", companyCode);
+			}
+		}
+		catch (EmpresaNotFoundException | EmpresaException ex) {
+			params.remove(PARAM_LOGO);
+			LOGGER.warn("ensureCompanyLogo() - No se pudo cargar el logo para companyCode '{}'", companyCode, ex);
+		}
+	}
+
+	private void ensureCompanyCodeFromTicketIfMissing(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) {
+		final String KEY = DocumentPrintService.PARAM_COMPANY_CODE;
+		Object cc = params.get(KEY);
+		if (cc instanceof String && StringUtils.hasText((String) cc))
+			return;
+
+		try {
+			Object t = params.get(PARAM_TICKET);
+			if (t instanceof TicketVentaAbono) {
+				TicketVentaAbono tv = (TicketVentaAbono) t;
+				if (tv.getCabecera() != null && tv.getCabecera().getEmpresa() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
+					params.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
+					return;
+				}
+			}
+			TicketBean tb = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
+			if (tb != null && tb.getTicket() != null && tb.getTicket().length > 0) {
+				TicketVentaAbono tv = parseTicketVenta(tb.getTicket());
+				if (tv != null && tv.getCabecera() != null && tv.getCabecera().getEmpresa() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
+					params.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
+				}
+			}
+		}
+		catch (Exception e) {
+			LOGGER.debug("ensureCompanyCodeFromTicketIfMissing() - No se pudo derivar companyCode desde ticket '{}': {}", documentUid, e.getMessage());
+		}
+	}
+
+	private void ensureSubreportDirectory(Map<String, Object> params) {
+		if (params.containsKey(PARAM_SUBREPORT_DIR) && params.get(PARAM_SUBREPORT_DIR) != null)
+			return;
+
+		String basePath = AppInfo.getInformesInfo().getRutaBase();
+		if (!StringUtils.hasText(basePath)) {
+			LOGGER.debug("ensureSubreportDirectory() - Ruta base de informes no configurada");
+			return;
+		}
+		String normalized = basePath.replace('\\', File.separatorChar).replace('/', File.separatorChar);
+		if (!normalized.endsWith(File.separator))
+			normalized = normalized + File.separator;
+
+		params.put(PARAM_SUBREPORT_DIR, normalized + FACTURA_REPORT_DIRECTORY);
+	}
+
+	/* ===================== Ticket y líneas ===================== */
+
+	private TicketContext ensureTicketParameter(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) throws ApiException {
+		Object ticketParam = params.get(PARAM_TICKET);
+		TicketVentaAbono ticketVenta = null;
+		TicketBean ticketBean = null;
+
+		if (ticketParam instanceof TicketVentaAbono) {
+			ticketVenta = (TicketVentaAbono) ticketParam;
+		}
+		else if (ticketParam != null) {
+			LOGGER.debug("ensureTicketParameter() - Ignorando parámetro 'ticket' de tipo no soportado: {}", ticketParam.getClass());
+		}
+
+		if (ticketVenta == null) {
+			try {
+				ticketBean = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
+				if (ticketBean == null) {
+					throw new ApiException("No se encontró ticket para documentUid=" + documentUid);
+				}
+				ticketVenta = parseTicketVenta(ticketBean.getTicket());
+			}
+			catch (ApiException ex) {
+				throw ex;
+			}
+			catch (Exception ex) {
+				LOGGER.error("ensureTicketParameter() - Error recuperando ticket '{}'", documentUid, ex);
+				throw new ApiException(ex.getMessage(), ex);
+			}
+			params.put(PARAM_TICKET, ticketVenta);
+			LOGGER.debug("ensureTicketParameter() - Ticket '{}' cargado para impresión", documentUid);
+		}
+
+		prepareTicketForPrinting(params, ticketVenta);
+		return new TicketContext(ticketBean, ticketVenta);
+	}
+
+	private void prepareTicketForPrinting(Map<String, Object> params, TicketVentaAbono ticketVenta) {
+		if (params == null || ticketVenta == null)
+			return;
+		List<LineaTicket> agregadas = aggregateTicketLines(ticketVenta);
+		params.put(PARAM_LINEAS_AGRUPADAS, new ArrayList<>(agregadas));
+	}
+
+	private List<LineaTicket> aggregateTicketLines(TicketVentaAbono ticketVenta) {
+		List<LineaTicket> original = ticketVenta != null ? ticketVenta.getLineas() : null;
+		if (original == null || original.isEmpty())
+			return Collections.emptyList();
+
+		List<LineaTicket> working = new ArrayList<>();
+		for (LineaTicket l : original)
+			if (l != null)
+				working.add(l);
+
+		List<LineaTicket> out = new ArrayList<>(working.size());
+		while (!working.isEmpty()) {
+			LineaTicket base = working.remove(0);
+			if (base == null)
+				continue;
+
+			BigDecimal q = safe(base.getCantidad());
+			BigDecimal promo = safe(base.getImporteTotalPromociones());
+			BigDecimal totalConDto = safe(base.getImporteTotalConDto());
+			BigDecimal importe = safe(base.getImporteConDto());
+			List<LineaTicket> merged = new ArrayList<>();
+
+			Iterator<LineaTicket> it = working.iterator();
+			while (it.hasNext()) {
+				LineaTicket cand = it.next();
+				if (cand == null) {
+					it.remove();
+					continue;
+				}
+				if (haveSameSaleConditions(base, cand)) {
+					q = q.add(safe(cand.getCantidad()));
+					promo = promo.add(safe(cand.getImporteTotalPromociones()));
+					totalConDto = totalConDto.add(safe(cand.getImporteTotalConDto()));
+					importe = importe.add(safe(cand.getImporteConDto()));
+					merged.add(cand);
+					it.remove();
+				}
+			}
+
+			if (isZero(q))
+				continue;
+
+			base.setCantidad(q);
+			base.setImporteTotalPromociones(promo);
+			base.setImporteTotalConDto(totalConDto);
+			base.setImporteConDto(importe);
+
+			applyTaxBreakdown(base, ticketVenta, q);
+			if (!merged.isEmpty()) {
+				String desg2 = base.getDesglose2();
+				String codImpFmt = base.getCodImp();
+				for (LineaTicket m : merged) {
+					m.setDesglose2(desg2);
+					m.setCodImp(codImpFmt);
+				}
+			}
+			out.add(base);
+		}
+
+		List<LineaTicket> ticketLines = ticketVenta.getLineas();
+		if (ticketLines != null) {
+			try {
+				ticketLines.clear();
+				ticketLines.addAll(out);
+			}
+			catch (UnsupportedOperationException ex) {
+				LOGGER.debug("aggregateTicketLines() - No se pudo reemplazar la colección de líneas: {}", ex.getMessage());
+			}
+		}
+
+		return out;
+	}
+
+	private boolean haveSameSaleConditions(LineaTicket a, LineaTicket b) {
+		if (a == null || b == null)
+			return false;
+		if (!Objects.equals(a.getCodArticulo(), b.getCodArticulo()))
+			return false;
+		if (safe(a.getPrecioTotalConDto()).compareTo(safe(b.getPrecioTotalConDto())) != 0)
+			return false;
+
+		BigDecimal qa = safe(a.getCantidad());
+		BigDecimal qb = safe(b.getCantidad());
+		return qa.signum() == qb.signum();
+	}
+
+	private void applyTaxBreakdown(LineaTicket l, TicketVentaAbono ticketVenta, BigDecimal qty) {
+		if (l == null || ticketVenta == null || ticketVenta.getCabecera() == null)
+			return;
+
+		List<SubtotalIvaTicket> subs = ticketVenta.getCabecera().getSubtotalesIva();
+		if (subs == null || subs.isEmpty())
+			return;
+
+		String code = normalize(l.getCodImp());
+		for (SubtotalIvaTicket s : subs) {
+			if (s == null)
+				continue;
+			if (!normalize(s.getCodImp()).equals(code))
+				continue;
+
+			l.setCodImp(formatPercentage(s.getPorcentaje()));
+			BigDecimal priceWithDto = safe(l.getPrecioConDto());
+			BigDecimal pct = safe(s.getPorcentaje());
+			BigDecimal tax = priceWithDto.multiply(qty).multiply(pct).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+			l.setDesglose2(formatDecimal(tax, 4));
+			return;
+		}
+	}
+
+	/* ===================== Devolución / flags ===================== */
+
+	private void ensureDevolucionParameter(Map<String, Object> params, TicketContext ctx, IDatosSesion datosSesion) {
+		if (Boolean.TRUE.equals(params.get(PARAM_DEVOLUCION)))
+			return;
+
+		TicketVentaAbono tv = ctx != null ? ctx.getTicketVenta() : null;
+		if (tv == null || tv.getCabecera() == null)
+			return;
+
+		boolean devolucion = false;
+		try {
+			String codTipoDocumento = tv.getCabecera().getCodTipoDocumento();
+			if (StringUtils.hasText(codTipoDocumento)) {
+				if ("FR".equalsIgnoreCase(codTipoDocumento)) {
+					devolucion = true;
+				}
+				else if ("NC".equalsIgnoreCase(codTipoDocumento)) {
+					TipoDocumentoBean tipo = ServicioTiposDocumentosImpl.get().consultar(datosSesion, tv.getCabecera().getTipoDocumento());
+					if (tipo != null && !"ES".equalsIgnoreCase(tipo.getCodPais())) {
+						devolucion = true;
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			LOGGER.debug("ensureDevolucionParameter() - No se pudo determinar tipo de documento para ticket '{}': {}", documentUidSafe(ctx), e.getMessage());
+		}
+		params.put(PARAM_DEVOLUCION, devolucion);
+	}
+
+	private void applyDuplicateFlag(PrintDocumentDTO printRequest) {
+		if (printRequest == null || !Boolean.TRUE.equals(printRequest.getCopy()))
+			return;
+
+		Map<String, Object> params = printRequest.getCustomParams();
+		if (params != null && !params.containsKey(PARAM_DUPLICATE_FLAG)) {
+			params.put(PARAM_DUPLICATE_FLAG, Boolean.TRUE);
+			LOGGER.debug("applyDuplicateFlag() - Marcando copia con parámetro '{}'", PARAM_DUPLICATE_FLAG);
+		}
+	}
+
+	private String documentUidSafe(TicketContext ctx) {
+		if (ctx == null)
+			return "";
+		TicketBean tb = ctx.getTicketBean();
+		if (tb != null && StringUtils.hasText(tb.getUidTicket()))
+			return tb.getUidTicket();
+		TicketVentaAbono tv = ctx.getTicketVenta();
+		if (tv != null && tv.getCabecera() != null && StringUtils.hasText(tv.getCabecera().getUidTicket())) {
+			return tv.getCabecera().getUidTicket();
+		}
+		return "";
+	}
+
+	/* ===================== Fiscal data (ATCUD / QR) ===================== */
+
+	private void populateFiscalData(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) {
+		if (printRequest == null)
+			return;
+
+		try {
+			DocumentEntity entity = documentService.findById(datosSesion, documentUid);
+			if (entity == null) {
+				LOGGER.debug("populateFiscalData() - Documento '{}' no encontrado", documentUid);
+				return;
+			}
+			byte[] content = entity.getDocumentContent();
+			if (content == null || content.length == 0) {
+				LOGGER.debug("populateFiscalData() - Documento '{}' sin contenido", documentUid);
+				return;
+			}
+
+			Map<String, Object> params = printRequest.getCustomParams();
+			FiscalDocumentData fd = extractFiscalData(content);
+
+			if (!params.containsKey(PARAM_FISCAL_DATA_ATCUD) && StringUtils.hasText(fd.getAtcud())) {
+				params.put(PARAM_FISCAL_DATA_ATCUD, fd.getAtcud());
+			}
+
+			if (!params.containsKey(PARAM_FISCAL_DATA_QR) && StringUtils.hasText(fd.getQr())) {
+				params.put(PARAM_FISCAL_DATA_QR, fd.getQr());
+				InputStream qr = createQrImage(fd.getQr());
+				if (qr != null && !params.containsKey(PARAM_QR_PORTUGAL)) {
+					params.put(PARAM_QR_PORTUGAL, qr);
+				}
+			}
+		}
+		catch (Exception e) {
+			LOGGER.warn("populateFiscalData() - No se pudo extraer datos fiscales para '{}'", documentUid, e);
+		}
+	}
+
+	private FiscalDocumentData extractFiscalData(byte[] content) {
+		if (content == null || content.length == 0)
+			return FiscalDocumentData.empty();
+		try {
+			if (isLikelyJson(content)) {
+				return parseFiscalDataFromJson(content);
+			}
+			return parseFiscalDataFromXml(content);
+		}
+		catch (Exception e) {
+			LOGGER.debug("extractFiscalData() - No se pudo parsear fiscal data", e);
+			return FiscalDocumentData.empty();
+		}
+	}
+
+	private boolean isLikelyJson(byte[] content) {
+		for (byte b : content) {
+			if (b <= ' ')
+				continue;
+			return b == '{' || b == '[';
+		}
+		return false;
+	}
+
+	private FiscalDocumentData parseFiscalDataFromXml(byte[] xml) throws Exception {
+		DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+		f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		f.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+		f.setXIncludeAware(false);
+		f.setExpandEntityReferences(false);
+
+		DocumentBuilder b = f.newDocumentBuilder();
+		try (ByteArrayInputStream in = new ByteArrayInputStream(xml)) {
+			Document doc = b.parse(in);
+			Element root = doc.getDocumentElement();
+			if (root == null)
+				return FiscalDocumentData.empty();
+
+			NodeList fiscalNodes = root.getElementsByTagName(TAG_FISCAL_DATA);
+			if (fiscalNodes == null || fiscalNodes.getLength() == 0)
+				return FiscalDocumentData.empty();
+
+			FiscalDocumentData res = new FiscalDocumentData();
+			for (int i = 0; i < fiscalNodes.getLength(); i++) {
+				Node n = fiscalNodes.item(i);
+				if (n instanceof Element)
+					populateFromFiscalElement((Element) n, res);
+			}
+			return res;
+		}
+	}
+
+	private void populateFromFiscalElement(Element el, FiscalDocumentData res) {
+		if (el == null)
+			return;
+		NodeList props = el.getElementsByTagName(TAG_PROPERTY);
+		if (props == null || props.getLength() == 0)
+			return;
+
+		for (int i = 0; i < props.getLength(); i++) {
+			Node n = props.item(i);
+			if (!(n instanceof Element))
+				continue;
+
+			Element p = (Element) n;
+			String name = getChildTextContent(p, TAG_NAME);
+			String value = getChildTextContent(p, TAG_VALUE);
+			applyFiscalProperty(res, name, value);
+		}
+	}
+
+	private String getChildTextContent(Element parent, String tagName) {
+		if (parent == null)
+			return null;
+		NodeList nodes = parent.getElementsByTagName(tagName);
+		if (nodes == null || nodes.getLength() == 0)
+			return null;
+		Node n = nodes.item(0);
+		if (n == null)
+			return null;
+		String txt = n.getTextContent();
+		return StringUtils.hasText(txt) ? txt.trim() : null;
+	}
+
+	private FiscalDocumentData parseFiscalDataFromJson(byte[] json) throws IOException {
+		ObjectMapper om = new ObjectMapper();
+		JsonNode root = om.readTree(json);
+		FiscalDocumentData res = new FiscalDocumentData();
+		traverseJson(root, res);
+		return res;
+	}
+
+	private void traverseJson(JsonNode node, FiscalDocumentData res) {
+		if (node == null)
+			return;
+
+		if (node.isObject()) {
+			Iterator<Map.Entry<String, JsonNode>> it = node.fields();
+			while (it.hasNext()) {
+				Map.Entry<String, JsonNode> e = it.next();
+				String key = e.getKey();
+				JsonNode val = e.getValue();
+
+				if (key != null && (TAG_FISCAL_DATA.equalsIgnoreCase(key) || "fiscalData".equalsIgnoreCase(key))) {
+					parseFiscalJsonNode(val, res);
+				}
+				traverseJson(val, res);
+			}
+		}
+		else if (node.isArray()) {
+			for (JsonNode c : node)
+				traverseJson(c, res);
+		}
+	}
+
+	private void parseFiscalJsonNode(JsonNode fiscalNode, FiscalDocumentData res) {
+		if (fiscalNode == null)
+			return;
+
+		if (fiscalNode.isObject()) {
+			if (fiscalNode.has(ATCUD))
+				applyFiscalProperty(res, ATCUD, getJsonText(fiscalNode.get(ATCUD)));
+			if (fiscalNode.has(QR))
+				applyFiscalProperty(res, QR, getJsonText(fiscalNode.get(QR)));
+
+			if (fiscalNode.has("properties"))
+				parseFiscalJsonProperties(fiscalNode.get("properties"), res);
+			if (fiscalNode.has("property"))
+				parseFiscalJsonProperties(fiscalNode.get("property"), res);
+		}
+		else if (fiscalNode.isArray()) {
+			parseFiscalJsonProperties(fiscalNode, res);
+		}
+	}
+
+	private void parseFiscalJsonProperties(JsonNode props, FiscalDocumentData res) {
+		if (props == null)
+			return;
+		for (JsonNode p : props) {
+			if (p == null)
+				continue;
+			if (p.isObject()) {
+				String name = getJsonText(p.get(TAG_NAME));
+				String value = getJsonText(p.get(TAG_VALUE));
+				if (!StringUtils.hasText(value))
+					value = getJsonText(p.get("valor"));
+				applyFiscalProperty(res, name, value);
+			}
+			else {
+				parseFiscalJsonNode(p, res);
+			}
+		}
+	}
+
+	private String getJsonText(JsonNode n) {
+		if (n == null)
+			return null;
+		if (n.isValueNode()) {
+			String t = n.asText();
+			return StringUtils.hasText(t) ? t.trim() : null;
+		}
+		return null;
+	}
+
+	private void applyFiscalProperty(FiscalDocumentData res, String name, String value) {
+		if (!StringUtils.hasText(name) || !StringUtils.hasText(value) || res == null)
+			return;
+
+		if (ATCUD.equalsIgnoreCase(name) && !StringUtils.hasText(res.getAtcud())) {
+			res.setAtcud(value.trim());
+		}
+		else if (QR.equalsIgnoreCase(name) && !StringUtils.hasText(res.getQr())) {
+			res.setQr(value.trim());
+		}
+	}
+
+	private InputStream createQrImage(String base64Value) {
+		if (!StringUtils.hasText(base64Value))
+			return null;
+		try {
+			byte[] decoded = Base64.getDecoder().decode(base64Value.trim());
+			String qrText = new String(decoded, StandardCharsets.UTF_8);
+			if (!StringUtils.hasText(qrText))
+				return null;
+
+			QRCodeWriter writer = new QRCodeWriter();
+			BitMatrix matrix = writer.encode(qrText, BarcodeFormat.QR_CODE, QR_IMAGE_SIZE, QR_IMAGE_SIZE);
+			BufferedImage img = MatrixToImageWriter.toBufferedImage(matrix);
+
+			try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+				ImageIO.write(img, "jpeg", out);
+				return new ByteArrayInputStream(out.toByteArray());
+			}
+		}
+		catch (IllegalArgumentException | IOException | WriterException e) {
+			LOGGER.warn("createQrImage() - No se pudo generar imagen QR", e);
+		}
+		return null;
+	}
+
+	/* ===================== Utilidades ===================== */
+
+	private BigDecimal safe(BigDecimal v) {
+		return v != null ? v : BigDecimal.ZERO;
+	}
+
+	private boolean isZero(BigDecimal v) {
+		return safe(v).compareTo(BigDecimal.ZERO) == 0;
+	}
+
+	private String normalize(String v) {
+		return v != null ? v.trim() : "";
+	}
+
+	private String formatPercentage(BigDecimal v) {
+		return v == null ? "" : v.stripTrailingZeros().toPlainString();
+	}
+
+	private String formatDecimal(BigDecimal v, int scale) {
+		if (v == null)
+			return null;
+		return v.setScale(scale, RoundingMode.HALF_UP).toPlainString();
+	}
+
+	private TicketVentaAbono parseTicketVenta(byte[] ticketData) throws ApiException {
+		if (ticketData == null || ticketData.length == 0)
+			throw new ApiException("Datos de ticket vacíos");
+		try (ByteArrayInputStream in = new ByteArrayInputStream(ticketData)) {
+			Unmarshaller u = TICKET_JAXB_CONTEXT.createUnmarshaller();
+			Object parsed = u.unmarshal(in);
+			if (parsed instanceof TicketVentaAbono)
+				return (TicketVentaAbono) parsed;
+			throw new ApiException("No se pudo parsear el XML de ticket a TicketVentaAbono");
+		}
+		catch (JAXBException | IOException e) {
+			throw new ApiException(e.getMessage(), e);
+		}
+	}
+
+	private static JAXBContext createTicketContext() {
+		try {
+			return JAXBContext.newInstance(TicketVentaAbono.class);
+		}
+		catch (JAXBException e) {
+			throw new IllegalStateException("No se pudo crear JAXBContext para TicketVentaAbono", e);
+		}
+	}
+
+	/* ===================== Tipos internos ===================== */
+
+	/**
+	 * Mapa que evita que se sobreescriba 'ticket' con un tipo incorrecto.
+	 */
+	private static final class TicketPreservingMap extends HashMap<String, Object> {
+
+		private static final long serialVersionUID = 1L;
+
+		TicketPreservingMap(Map<String, Object> existing) {
+			super(existing != null ? Math.max(existing.size() * 2, 16) : 16);
+			if (existing != null)
+				super.putAll(existing);
+		}
+
+		@Override
+		public Object put(String key, Object value) {
+			if (PARAM_TICKET.equals(key) && !(value instanceof TicketVentaAbono)) {
+				// Mantenemos el ticket válido que ya estuviera
+				return super.get(key);
+			}
+			return super.put(key, value);
+		}
+
+		@Override
+		public void putAll(Map<? extends String, ?> m) {
+			if (m == null)
+				return;
+			for (Map.Entry<? extends String, ?> e : m.entrySet()) {
+				put(e.getKey(), e.getValue());
+			}
+		}
+	}
+
+	private static final class TicketContext {
+
+		private final TicketBean ticketBean;
+		private final TicketVentaAbono ticketVenta;
+
+		TicketContext(TicketBean ticketBean, TicketVentaAbono ticketVenta) {
+			this.ticketBean = ticketBean;
+			this.ticketVenta = ticketVenta;
+		}
+
+		TicketBean getTicketBean() {
+			return ticketBean;
+		}
+
+		TicketVentaAbono getTicketVenta() {
+			return ticketVenta;
+		}
+	}
+
+	private static final class FiscalDocumentData {
+
+		private String atcud;
+		private String qr;
+
+		static FiscalDocumentData empty() {
+			return new FiscalDocumentData();
+		}
+
+		String getAtcud() {
+			return atcud;
+		}
+
+		void setAtcud(String atcud) {
+			this.atcud = atcud;
+		}
+
+		String getQr() {
+			return qr;
+		}
+
+		void setQr(String qr) {
+			this.qr = qr;
+		}
+	}
 }
