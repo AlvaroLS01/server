@@ -116,10 +116,10 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		Map<String, Object> customParams = ensureParamsMap(printRequest);
 
 		// Cargar ticket primero para que el resto dependa de él
-		TicketContext ticketCtx = ensureTicketParameter(datosSesion, documentUid, customParams);
+                TicketContext ticketCtx = ensureTicketParameter(datosSesion, documentUid, customParams);
 
-		// Derivados
-		ensureCompanyCodeFromTicketIfMissing(datosSesion, documentUid, customParams);
+                // Derivados
+                ensureCompanyCodeFromTicketIfMissing(datosSesion, documentUid, customParams, ticketCtx);
 		ensureCompanyLogo(datosSesion, customParams);
 		ensureSubreportDirectory(customParams);
 		ensureDevolucionParameter(customParams, ticketCtx, datosSesion);
@@ -207,33 +207,30 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		}
 	}
 
-	private void ensureCompanyCodeFromTicketIfMissing(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) {
-		final String KEY = DocumentPrintService.PARAM_COMPANY_CODE;
-		Object cc = params.get(KEY);
-		if (cc instanceof String && StringUtils.hasText((String) cc))
-			return;
+        private void ensureCompanyCodeFromTicketIfMissing(IDatosSesion datosSesion, String documentUid, Map<String, Object> params,
+                        TicketContext ctx) {
+                final String KEY = DocumentPrintService.PARAM_COMPANY_CODE;
+                Object cc = params.get(KEY);
+                if (cc instanceof String && StringUtils.hasText((String) cc))
+                        return;
 
-		try {
-			Object t = params.get(PARAM_TICKET);
-			if (t instanceof TicketVentaAbono) {
-				TicketVentaAbono tv = (TicketVentaAbono) t;
-				if (tv.getCabecera() != null && tv.getCabecera().getEmpresa() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
-					params.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
-					return;
-				}
-			}
-			TicketBean tb = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
-			if (tb != null && tb.getTicket() != null && tb.getTicket().length > 0) {
-				TicketVentaAbono tv = parseTicketVenta(tb.getTicket());
-				if (tv != null && tv.getCabecera() != null && tv.getCabecera().getEmpresa() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
-					params.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
-				}
-			}
-		}
-		catch (Exception e) {
-			log.debug("No fue posible obtener el código de empresa del ticket '" + documentUid + "': " + e.getMessage());
-		}
-	}
+                try {
+                        TicketContext effectiveCtx = ctx;
+                        if (effectiveCtx == null || effectiveCtx.getTicketVenta() == null) {
+                                effectiveCtx = ensureTicketContext(datosSesion, documentUid, params);
+                        }
+
+                        TicketVentaAbono tv = effectiveCtx != null ? effectiveCtx.getTicketVenta() : null;
+                        if (tv != null && tv.getCabecera() != null && tv.getCabecera().getEmpresa() != null
+                                        && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
+                                params.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
+                        }
+                }
+                catch (Exception e) {
+                        log.debug("ensureCompanyCodeFromTicketIfMissing - No fue posible obtener el código de empresa del ticket '"
+                                        + documentUid + "': " + e.getMessage());
+                }
+        }
 
 	private void ensureSubreportDirectory(Map<String, Object> params) {
 		if (params.containsKey(PARAM_SUBREPORT_DIR) && params.get(PARAM_SUBREPORT_DIR) != null)
@@ -253,40 +250,47 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 	/* ===================== Ticket y líneas ===================== */
 
-	private TicketContext ensureTicketParameter(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) throws ApiException {
-		Object ticketParam = params.get(PARAM_TICKET);
-		TicketVentaAbono ticketVenta = null;
-		TicketBean ticketBean = null;
+        private TicketContext ensureTicketParameter(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) throws ApiException {
+                TicketContext ctx = ensureTicketContext(datosSesion, documentUid, params);
+                prepareTicketForPrinting(params, ctx.getTicketVenta());
+                return ctx;
+        }
 
-		if (ticketParam instanceof TicketVentaAbono) {
-			ticketVenta = (TicketVentaAbono) ticketParam;
-		}
-		else if (ticketParam != null) {
-			log.debug("Se ignora el parámetro 'ticket' con un tipo no soportado para la impresión");
-		}
+        private TicketContext ensureTicketContext(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) throws ApiException {
+                Object ticketParam = params != null ? params.get(PARAM_TICKET) : null;
+                TicketVentaAbono ticketVenta = null;
+                TicketBean ticketBean = null;
 
-		if (ticketVenta == null) {
-			try {
-				ticketBean = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
-				if (ticketBean == null) {
-					throw new ApiException("No se encontró ticket para documentUid=" + documentUid);
-				}
-				ticketVenta = parseTicketVenta(ticketBean.getTicket());
-			}
-			catch (ApiException ex) {
-				throw ex;
-			}
-			catch (Exception ex) {
-				log.error("Error al recuperar el ticket '" + documentUid + "'", ex);
-				throw new ApiException(ex.getMessage(), ex);
-			}
-			params.put(PARAM_TICKET, ticketVenta);
-			log.debug("Ticket '" + documentUid + "' preparado para la impresión");
-		}
+                if (ticketParam instanceof TicketVentaAbono) {
+                        ticketVenta = (TicketVentaAbono) ticketParam;
+                }
+                else if (ticketParam != null) {
+                        log.debug("ensureTicketContext - Se ignora el parámetro 'ticket' con un tipo no soportado para la impresión");
+                }
 
-		prepareTicketForPrinting(params, ticketVenta);
-		return new TicketContext(ticketBean, ticketVenta);
-	}
+                if (ticketVenta == null) {
+                        try {
+                                ticketBean = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
+                                if (ticketBean == null) {
+                                        throw new ApiException("No se encontró ticket para documentUid=" + documentUid);
+                                }
+                                ticketVenta = parseTicketVenta(ticketBean.getTicket());
+                        }
+                        catch (ApiException ex) {
+                                throw ex;
+                        }
+                        catch (Exception ex) {
+                                log.error("ensureTicketContext - Error al recuperar el ticket '" + documentUid + "'", ex);
+                                throw new ApiException(ex.getMessage(), ex);
+                        }
+                        if (params != null) {
+                                params.put(PARAM_TICKET, ticketVenta);
+                        }
+                        log.debug("ensureTicketContext - Ticket '" + documentUid + "' preparado para la impresión");
+                }
+
+                return new TicketContext(ticketBean, ticketVenta);
+        }
 
 	private void prepareTicketForPrinting(Map<String, Object> params, TicketVentaAbono ticketVenta) {
 		if (params == null || ticketVenta == null)
