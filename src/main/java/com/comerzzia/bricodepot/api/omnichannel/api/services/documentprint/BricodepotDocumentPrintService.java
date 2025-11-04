@@ -11,8 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +25,7 @@ import net.sf.jasperreports.engine.JasperCompileManager;
 @Primary
 public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(BricodepotDocumentPrintService.class);
+    private static Logger log = Logger.getLogger(BricodepotDocumentPrintService.class);
 	private static final Set<String> COMPILED = ConcurrentHashMap.newKeySet();
 
 	private static final String DEFAULT_TEMPLATE_PATH = "ventas/facturas/facturaA4_Original";
@@ -48,9 +47,9 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			}
 		}
 
-		if (jasper != null) {
-			LOGGER.debug("getTemplate() - Using template: {}", jasper.getAbsolutePath());
-		}
+                if (jasper != null) {
+                        log.debug("Plantilla seleccionada: " + jasper.getAbsolutePath());
+                }
 		return jasper;
 	}
 
@@ -68,9 +67,9 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			}
 		}
 
-		if (jasper != null) {
-			LOGGER.debug("getTemplate() - Using template: {}", jasper.getAbsolutePath());
-		}
+                if (jasper != null) {
+                        log.debug("Plantilla seleccionada: " + jasper.getAbsolutePath());
+                }
 		return jasper;
 	}
 
@@ -80,10 +79,10 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 		}
 		String t = template.replace('\\', '/').trim();
 
-		if (!t.contains("/")) {
-			LOGGER.debug("Ignoring short alias '{}' and forcing default template '{}'", t, DEFAULT_TEMPLATE_PATH);
-			return DEFAULT_TEMPLATE_PATH;
-		}
+                if (!t.contains("/")) {
+                        log.debug("Alias corto '" + t + "' ignorado; se usa la plantilla por defecto '" + DEFAULT_TEMPLATE_PATH + "'");
+                        return DEFAULT_TEMPLATE_PATH;
+                }
 
 		if (t.equals("ventas/facturas/facturaA4") || t.endsWith("/facturaA4")) {
 			return "ventas/facturas/facturaA4_Original";
@@ -112,10 +111,10 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			JasperCompileManager.compileReportToFile(jrxml.getAbsolutePath(), jasperPath);
 			COMPILED.add(jasperPath);
 		}
-		catch (JRException e) {
-			LOGGER.warn("Failed to compile Jasper template '{}' from '{}'", jasperPath, jrxml.getAbsolutePath(), e);
-		}
-	}
+                catch (JRException e) {
+                        log.warn("Error al compilar la plantilla Jasper '" + jasperPath + "' desde '" + jrxml.getAbsolutePath() + "'", e);
+                }
+        }
 
 	private void ensurePortugueseCompatibility(File jrxml) {
 		String name = jrxml.getName();
@@ -125,15 +124,15 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 		try {
 			String content = new String(Files.readAllBytes(jrxml.toPath()), StandardCharsets.UTF_8);
 			String updated = patchAtcud(content);
-			if (!updated.equals(content)) {
-				Files.write(jrxml.toPath(), updated.getBytes(StandardCharsets.UTF_8));
-				LOGGER.debug("ensurePortugueseCompatibility() - Patched fiscal data in '{}'", jrxml.getAbsolutePath());
-			}
-		}
-		catch (IOException e) {
-			LOGGER.warn("ensurePortugueseCompatibility() - Unable to adjust '{}'", jrxml.getAbsolutePath(), e);
-		}
-	}
+                        if (!updated.equals(content)) {
+                                Files.write(jrxml.toPath(), updated.getBytes(StandardCharsets.UTF_8));
+                                log.debug("Datos fiscales ajustados en '" + jrxml.getAbsolutePath() + "'");
+                        }
+                }
+                catch (IOException e) {
+                        log.warn("No se pudo ajustar el fichero '" + jrxml.getAbsolutePath() + "'", e);
+                }
+        }
 
 	private String patchAtcud(String xml) {
 		if (xml == null)
