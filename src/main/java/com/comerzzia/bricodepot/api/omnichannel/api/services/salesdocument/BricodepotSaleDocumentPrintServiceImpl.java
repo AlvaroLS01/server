@@ -4,8 +4,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -54,8 +54,10 @@ import com.comerzzia.omnichannel.domain.entity.document.DocumentEntity;
 import com.comerzzia.omnichannel.service.document.DocumentService;
 import com.comerzzia.omnichannel.service.documentprint.DocumentPrintService;
 import com.comerzzia.omnichannel.service.salesdocument.SaleDocumentService;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -65,7 +67,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 @Service
 public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDocumentPrintService {
 
-	private static Logger log = Logger.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
+	private static final Logger log = Logger.getLogger(BricodepotSaleDocumentPrintServiceImpl.class);
 
 	private static final String PARAM_FISCAL_DATA_ATCUD = "fiscalData_ACTUD";
 	private static final String PARAM_FISCAL_DATA_QR = "fiscalData_QR";
@@ -103,36 +105,24 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 	@Override
 	public BricodepotPrintableDocument printDocument(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) throws ApiException {
-		if (log.isDebugEnabled()) {
-			String mimeType = printRequest != null ? printRequest.getMimeType() : null;
-			log.debug("Generando documento de venta '" + documentUid + "' con tipo MIME '" + mimeType + "'");
-		}
-
-		if (printRequest == null) {
+		if (printRequest == null)
 			throw new ApiException("Solicitud de impresión nula");
-		}
+		log.debug("Generando documento de venta '" + documentUid + "' con tipo MIME '" + printRequest.getMimeType() + "'");
 
-		// Asegura un mapa de parámetros controlado (sin reflexión)
-		Map<String, Object> customParams = ensureParamsMap(printRequest);
+		Map<String, Object> params = ensureParamsMap(printRequest);
 
-		// Cargar ticket primero para que el resto dependa de él
-		TicketContext ticketCtx = ensureTicketParameter(datosSesion, documentUid, customParams);
+		TicketContext ticketCtx = loadTicketContext(datosSesion, documentUid, params);
 
-		// Derivados
-		ensureCompanyCodeFromTicketIfMissing(datosSesion, documentUid, customParams);
-		ensureCompanyLogo(datosSesion, customParams);
-		ensureSubreportDirectory(customParams);
-		ensureDevolucionParameter(customParams, ticketCtx, datosSesion);
+		ensureCompanyCodeFromTicket(ticketCtx, params);
+		ensureCompanyLogo(datosSesion, params);
+		ensureSubreportDirectory(params);
+		ensureDevolucionParameter(params, ticketCtx, datosSesion);
 		applyDuplicateFlag(printRequest);
-		populateFiscalData(datosSesion, documentUid, printRequest); // añade ATCUD/QR si existen
+		populateFiscalData(datosSesion, documentUid, printRequest);
 
 		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 			saleDocumentService.printDocument(out, datosSesion, documentUid, printRequest);
-
-			String outputName = printRequest.getOutputDocumentName();
-			if (!StringUtils.hasText(outputName)) {
-				outputName = documentUid;
-			}
+			String outputName = StringUtils.hasText(printRequest.getOutputDocumentName()) ? printRequest.getOutputDocumentName() : documentUid;
 			return new BricodepotPrintableDocument(documentUid, outputName, printRequest.getMimeType(), out.toByteArray());
 		}
 		catch (Exception e) {
@@ -143,42 +133,48 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		}
 	}
 
-	/* ===================== Soporte parámetros y logo ===================== */
-
-	/**
-	 * Crea un HashMap si es nulo y sustituye por un TicketPreservingMap para evitar que terceros pisen el parámetro
-	 * 'ticket' con objetos no válidos.
-	 */
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> ensureParamsMap(PrintDocumentDTO dto) {
 		Map<String, Object> current = dto.getCustomParams();
-		if (current == null) {
+		if (current == null)
 			current = new HashMap<>();
-		}
-		else if (!(current instanceof Map)) {
+		else
 			current = new HashMap<>(current);
-		}
-		else {
-			current = new HashMap<>(current); // copiamos para envolver limpio
-		}
-
 		TicketPreservingMap wrapped = new TicketPreservingMap(current);
-
 		try {
-			// Si existe setter, úsalo. (La mayoría de DTOs lo tienen)
 			dto.setCustomParams(wrapped);
 		}
 		catch (Throwable ignore) {
-			// Si no existiera setter, seguimos trabajando sobre 'wrapped'
-			// pero al menos devolvemos el mapa para usarlo en esta clase.
 		}
 		return wrapped;
+	}
+
+	/** Carga el ticket (consultar + parsear) una única vez y lo deja en params. */
+	private TicketContext loadTicketContext(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) throws ApiException {
+		Object ticketParam = params.get(PARAM_TICKET);
+		if (ticketParam instanceof TicketVentaAbono) {
+			TicketVentaAbono tv = (TicketVentaAbono) ticketParam;
+			prepareTicketForPrinting(params, tv);
+			return new TicketContext(null, tv);
+		}
+		TicketBean tb;
+		TicketVentaAbono tv;
+		try {
+			tb = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
+			if (tb == null)
+				throw new ApiException("No se encontró ticket para documentUid=" + documentUid);
+			tv = parseTicketVenta(tb.getTicket());
+		}
+		catch (Exception ex) {
+			throw new ApiException(ex.getMessage(), ex);
+		}
+		params.put(PARAM_TICKET, tv);
+		prepareTicketForPrinting(params, tv);
+		return new TicketContext(tb, tv);
 	}
 
 	private void ensureCompanyLogo(IDatosSesion datosSesion, Map<String, Object> params) {
 		if (params == null)
 			return;
-
 		Object existingLogo = params.get(PARAM_LOGO);
 		if (existingLogo instanceof InputStream)
 			return;
@@ -192,100 +188,44 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		String companyCode = ((String) cc).trim();
 		try {
 			EmpresaBean empresa = empresasService.consultar(datosSesion, companyCode);
-			if (empresa != null && empresa.getLogotipo() != null && empresa.getLogotipo().length > 0) {
+			if (empresa != null && empresa.getLogotipo() != null && empresa.getLogotipo().length > 0)
 				params.put(PARAM_LOGO, new ByteArrayInputStream(empresa.getLogotipo()));
-				log.debug("Logo cargado desde base de datos para la empresa '" + companyCode + "'");
-			}
-			else {
+			else
 				params.remove(PARAM_LOGO);
-				log.debug("Sin logo disponible en base de datos para la empresa '" + companyCode + "'");
-			}
 		}
 		catch (EmpresaNotFoundException | EmpresaException ex) {
 			params.remove(PARAM_LOGO);
-			log.warn("No se pudo cargar el logo para la empresa '" + companyCode + "'", ex);
 		}
 	}
 
-	private void ensureCompanyCodeFromTicketIfMissing(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) {
+	/** Solo lee el companyCode del ticket ya cargado. No consulta ni parsea nada. */
+	private void ensureCompanyCodeFromTicket(TicketContext ctx, Map<String, Object> params) {
+		if (params == null)
+			return;
 		final String KEY = DocumentPrintService.PARAM_COMPANY_CODE;
 		Object cc = params.get(KEY);
 		if (cc instanceof String && StringUtils.hasText((String) cc))
 			return;
-
-		try {
-			Object t = params.get(PARAM_TICKET);
-			if (t instanceof TicketVentaAbono) {
-				TicketVentaAbono tv = (TicketVentaAbono) t;
-				if (tv.getCabecera() != null && tv.getCabecera().getEmpresa() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
-					params.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
-					return;
-				}
-			}
-			TicketBean tb = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
-			if (tb != null && tb.getTicket() != null && tb.getTicket().length > 0) {
-				TicketVentaAbono tv = parseTicketVenta(tb.getTicket());
-				if (tv != null && tv.getCabecera() != null && tv.getCabecera().getEmpresa() != null && StringUtils.hasText(tv.getCabecera().getEmpresa().getCodEmpresa())) {
-					params.put(KEY, tv.getCabecera().getEmpresa().getCodEmpresa().trim());
-				}
-			}
-		}
-		catch (Exception e) {
-			log.debug("No fue posible obtener el código de empresa del ticket '" + documentUid + "': " + e.getMessage());
-		}
+		if (ctx == null)
+			return;
+		TicketVentaAbono tv = ctx.getTicketVenta();
+		if (tv == null || tv.getCabecera() == null || tv.getCabecera().getEmpresa() == null)
+			return;
+		String code = tv.getCabecera().getEmpresa().getCodEmpresa();
+		if (StringUtils.hasText(code))
+			params.put(KEY, code.trim());
 	}
 
 	private void ensureSubreportDirectory(Map<String, Object> params) {
 		if (params.containsKey(PARAM_SUBREPORT_DIR) && params.get(PARAM_SUBREPORT_DIR) != null)
 			return;
-
 		String basePath = AppInfo.getInformesInfo().getRutaBase();
-		if (!StringUtils.hasText(basePath)) {
-			log.debug("La ruta base de informes no está configurada");
+		if (!StringUtils.hasText(basePath))
 			return;
-		}
 		String normalized = basePath.replace('\\', File.separatorChar).replace('/', File.separatorChar);
 		if (!normalized.endsWith(File.separator))
 			normalized = normalized + File.separator;
-
 		params.put(PARAM_SUBREPORT_DIR, normalized + FACTURA_REPORT_DIRECTORY);
-	}
-
-	/* ===================== Ticket y líneas ===================== */
-
-	private TicketContext ensureTicketParameter(IDatosSesion datosSesion, String documentUid, Map<String, Object> params) throws ApiException {
-		Object ticketParam = params.get(PARAM_TICKET);
-		TicketVentaAbono ticketVenta = null;
-		TicketBean ticketBean = null;
-
-		if (ticketParam instanceof TicketVentaAbono) {
-			ticketVenta = (TicketVentaAbono) ticketParam;
-		}
-		else if (ticketParam != null) {
-			log.debug("Se ignora el parámetro 'ticket' con un tipo no soportado para la impresión");
-		}
-
-		if (ticketVenta == null) {
-			try {
-				ticketBean = ServicioTicketsImpl.get().consultarTicketUid(documentUid, datosSesion.getUidActividad());
-				if (ticketBean == null) {
-					throw new ApiException("No se encontró ticket para documentUid=" + documentUid);
-				}
-				ticketVenta = parseTicketVenta(ticketBean.getTicket());
-			}
-			catch (ApiException ex) {
-				throw ex;
-			}
-			catch (Exception ex) {
-				log.error("Error al recuperar el ticket '" + documentUid + "'", ex);
-				throw new ApiException(ex.getMessage(), ex);
-			}
-			params.put(PARAM_TICKET, ticketVenta);
-			log.debug("Ticket '" + documentUid + "' preparado para la impresión");
-		}
-
-		prepareTicketForPrinting(params, ticketVenta);
-		return new TicketContext(ticketBean, ticketVenta);
 	}
 
 	private void prepareTicketForPrinting(Map<String, Object> params, TicketVentaAbono ticketVenta) {
@@ -360,11 +300,9 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 				ticketLines.clear();
 				ticketLines.addAll(out);
 			}
-			catch (UnsupportedOperationException ex) {
-				log.debug("No se pudo reemplazar la colección de líneas: " + ex.getMessage());
+			catch (UnsupportedOperationException ignored) {
 			}
 		}
-
 		return out;
 	}
 
@@ -375,7 +313,6 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 			return false;
 		if (safe(a.getPrecioTotalConDto()).compareTo(safe(b.getPrecioTotalConDto())) != 0)
 			return false;
-
 		BigDecimal qa = safe(a.getCantidad());
 		BigDecimal qb = safe(b.getCantidad());
 		return qa.signum() == qb.signum();
@@ -405,12 +342,9 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		}
 	}
 
-	/* ===================== Devolución / flags ===================== */
-
 	private void ensureDevolucionParameter(Map<String, Object> params, TicketContext ctx, IDatosSesion datosSesion) {
 		if (Boolean.TRUE.equals(params.get(PARAM_DEVOLUCION)))
 			return;
-
 		TicketVentaAbono tv = ctx != null ? ctx.getTicketVenta() : null;
 		if (tv == null || tv.getCabecera() == null)
 			return;
@@ -418,20 +352,16 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		boolean devolucion = false;
 		try {
 			String codTipoDocumento = tv.getCabecera().getCodTipoDocumento();
-			if (StringUtils.hasText(codTipoDocumento)) {
-				if ("FR".equalsIgnoreCase(codTipoDocumento)) {
+			if ("FR".equalsIgnoreCase(codTipoDocumento)) {
+				devolucion = true;
+			}
+			else if ("NC".equalsIgnoreCase(codTipoDocumento)) {
+				TipoDocumentoBean tipo = ServicioTiposDocumentosImpl.get().consultar(datosSesion, tv.getCabecera().getTipoDocumento());
+				if (tipo != null && !"ES".equalsIgnoreCase(tipo.getCodPais()))
 					devolucion = true;
-				}
-				else if ("NC".equalsIgnoreCase(codTipoDocumento)) {
-					TipoDocumentoBean tipo = ServicioTiposDocumentosImpl.get().consultar(datosSesion, tv.getCabecera().getTipoDocumento());
-					if (tipo != null && !"ES".equalsIgnoreCase(tipo.getCodPais())) {
-						devolucion = true;
-					}
-				}
 			}
 		}
-		catch (Exception e) {
-			log.debug("No se pudo determinar el tipo de documento para el ticket '" + documentUidSafe(ctx) + "': " + e.getMessage());
+		catch (Exception ignored) {
 		}
 		params.put(PARAM_DEVOLUCION, devolucion);
 	}
@@ -439,62 +369,36 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	private void applyDuplicateFlag(PrintDocumentDTO printRequest) {
 		if (printRequest == null || !Boolean.TRUE.equals(printRequest.getCopy()))
 			return;
-
 		Map<String, Object> params = printRequest.getCustomParams();
-		if (params != null && !params.containsKey(PARAM_DUPLICATE_FLAG)) {
+		if (params != null && !params.containsKey(PARAM_DUPLICATE_FLAG))
 			params.put(PARAM_DUPLICATE_FLAG, Boolean.TRUE);
-			log.debug("Marcando la copia con el parámetro '" + PARAM_DUPLICATE_FLAG + "'");
-		}
 	}
-
-	private String documentUidSafe(TicketContext ctx) {
-		if (ctx == null)
-			return "";
-		TicketBean tb = ctx.getTicketBean();
-		if (tb != null && StringUtils.hasText(tb.getUidTicket()))
-			return tb.getUidTicket();
-		TicketVentaAbono tv = ctx.getTicketVenta();
-		if (tv != null && tv.getCabecera() != null && StringUtils.hasText(tv.getCabecera().getUidTicket())) {
-			return tv.getCabecera().getUidTicket();
-		}
-		return "";
-	}
-
-	/* ===================== Fiscal data (ATCUD / QR) ===================== */
 
 	private void populateFiscalData(IDatosSesion datosSesion, String documentUid, PrintDocumentDTO printRequest) {
 		if (printRequest == null)
 			return;
-
 		try {
 			DocumentEntity entity = documentService.findById(datosSesion, documentUid);
-			if (entity == null) {
-				log.debug("Documento '" + documentUid + "' no encontrado al obtener datos fiscales");
+			if (entity == null)
 				return;
-			}
 			byte[] content = entity.getDocumentContent();
-			if (content == null || content.length == 0) {
-				log.debug("Documento '" + documentUid + "' sin contenido para datos fiscales");
+			if (content == null || content.length == 0)
 				return;
-			}
 
 			Map<String, Object> params = printRequest.getCustomParams();
 			FiscalDocumentData fd = extractFiscalData(content);
 
-			if (!params.containsKey(PARAM_FISCAL_DATA_ATCUD) && StringUtils.hasText(fd.getAtcud())) {
+			if (!params.containsKey(PARAM_FISCAL_DATA_ATCUD) && StringUtils.hasText(fd.getAtcud()))
 				params.put(PARAM_FISCAL_DATA_ATCUD, fd.getAtcud());
-			}
 
 			if (!params.containsKey(PARAM_FISCAL_DATA_QR) && StringUtils.hasText(fd.getQr())) {
 				params.put(PARAM_FISCAL_DATA_QR, fd.getQr());
 				InputStream qr = createQrImage(fd.getQr());
-				if (qr != null && !params.containsKey(PARAM_QR_PORTUGAL)) {
+				if (qr != null && !params.containsKey(PARAM_QR_PORTUGAL))
 					params.put(PARAM_QR_PORTUGAL, qr);
-				}
 			}
 		}
-		catch (Exception e) {
-			log.warn("No se pudieron extraer los datos fiscales de '" + documentUid + "'", e);
+		catch (Exception ignored) {
 		}
 	}
 
@@ -502,13 +406,11 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		if (content == null || content.length == 0)
 			return FiscalDocumentData.empty();
 		try {
-			if (isLikelyJson(content)) {
+			if (isLikelyJson(content))
 				return parseFiscalDataFromJson(content);
-			}
 			return parseFiscalDataFromXml(content);
 		}
 		catch (Exception e) {
-			log.debug("No se pudo analizar la información fiscal", e);
 			return FiscalDocumentData.empty();
 		}
 	}
@@ -527,20 +429,15 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 		f.setFeature("http://xml.org/sax/features/external-general-entities", false);
 		f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-		f.setXIncludeAware(false);
-		f.setExpandEntityReferences(false);
-
 		DocumentBuilder b = f.newDocumentBuilder();
 		try (ByteArrayInputStream in = new ByteArrayInputStream(xml)) {
 			Document doc = b.parse(in);
 			Element root = doc.getDocumentElement();
 			if (root == null)
 				return FiscalDocumentData.empty();
-
 			NodeList fiscalNodes = root.getElementsByTagName(TAG_FISCAL_DATA);
 			if (fiscalNodes == null || fiscalNodes.getLength() == 0)
 				return FiscalDocumentData.empty();
-
 			FiscalDocumentData res = new FiscalDocumentData();
 			for (int i = 0; i < fiscalNodes.getLength(); i++) {
 				Node n = fiscalNodes.item(i);
@@ -552,34 +449,24 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	}
 
 	private void populateFromFiscalElement(Element el, FiscalDocumentData res) {
-		if (el == null)
-			return;
 		NodeList props = el.getElementsByTagName(TAG_PROPERTY);
-		if (props == null || props.getLength() == 0)
-			return;
-
 		for (int i = 0; i < props.getLength(); i++) {
 			Node n = props.item(i);
-			if (!(n instanceof Element))
-				continue;
-
-			Element p = (Element) n;
-			String name = getChildTextContent(p, TAG_NAME);
-			String value = getChildTextContent(p, TAG_VALUE);
-			applyFiscalProperty(res, name, value);
+			if (n instanceof Element) {
+				Element p = (Element) n;
+				String name = getChildTextContent(p, TAG_NAME);
+				String value = getChildTextContent(p, TAG_VALUE);
+				applyFiscalProperty(res, name, value);
+			}
 		}
 	}
 
 	private String getChildTextContent(Element parent, String tagName) {
-		if (parent == null)
-			return null;
 		NodeList nodes = parent.getElementsByTagName(tagName);
 		if (nodes == null || nodes.getLength() == 0)
 			return null;
 		Node n = nodes.item(0);
-		if (n == null)
-			return null;
-		String txt = n.getTextContent();
+		String txt = n != null ? n.getTextContent() : null;
 		return StringUtils.hasText(txt) ? txt.trim() : null;
 	}
 
@@ -594,17 +481,14 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	private void traverseJson(JsonNode node, FiscalDocumentData res) {
 		if (node == null)
 			return;
-
 		if (node.isObject()) {
 			Iterator<Map.Entry<String, JsonNode>> it = node.fields();
 			while (it.hasNext()) {
 				Map.Entry<String, JsonNode> e = it.next();
 				String key = e.getKey();
 				JsonNode val = e.getValue();
-
-				if (key != null && (TAG_FISCAL_DATA.equalsIgnoreCase(key) || "fiscalData".equalsIgnoreCase(key))) {
+				if (key != null && (TAG_FISCAL_DATA.equalsIgnoreCase(key) || "fiscalData".equalsIgnoreCase(key)))
 					parseFiscalJsonNode(val, res);
-				}
 				traverseJson(val, res);
 			}
 		}
@@ -617,13 +501,11 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	private void parseFiscalJsonNode(JsonNode fiscalNode, FiscalDocumentData res) {
 		if (fiscalNode == null)
 			return;
-
 		if (fiscalNode.isObject()) {
 			if (fiscalNode.has(ATCUD))
 				applyFiscalProperty(res, ATCUD, getJsonText(fiscalNode.get(ATCUD)));
 			if (fiscalNode.has(QR))
 				applyFiscalProperty(res, QR, getJsonText(fiscalNode.get(QR)));
-
 			if (fiscalNode.has("properties"))
 				parseFiscalJsonProperties(fiscalNode.get("properties"), res);
 			if (fiscalNode.has("property"))
@@ -666,13 +548,10 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	private void applyFiscalProperty(FiscalDocumentData res, String name, String value) {
 		if (!StringUtils.hasText(name) || !StringUtils.hasText(value) || res == null)
 			return;
-
-		if (ATCUD.equalsIgnoreCase(name) && !StringUtils.hasText(res.getAtcud())) {
+		if (ATCUD.equalsIgnoreCase(name) && !StringUtils.hasText(res.getAtcud()))
 			res.setAtcud(value.trim());
-		}
-		else if (QR.equalsIgnoreCase(name) && !StringUtils.hasText(res.getQr())) {
+		else if (QR.equalsIgnoreCase(name) && !StringUtils.hasText(res.getQr()))
 			res.setQr(value.trim());
-		}
 	}
 
 	private InputStream createQrImage(String base64Value) {
@@ -699,8 +578,6 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		return null;
 	}
 
-	/* ===================== Utilidades ===================== */
-
 	private BigDecimal safe(BigDecimal v) {
 		return v != null ? v : BigDecimal.ZERO;
 	}
@@ -718,9 +595,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	}
 
 	private String formatDecimal(BigDecimal v, int scale) {
-		if (v == null)
-			return null;
-		return v.setScale(scale, RoundingMode.HALF_UP).toPlainString();
+		return v == null ? null : v.setScale(scale, RoundingMode.HALF_UP).toPlainString();
 	}
 
 	private TicketVentaAbono parseTicketVenta(byte[] ticketData) throws ApiException {
@@ -747,11 +622,6 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		}
 	}
 
-	/* ===================== Tipos internos ===================== */
-
-	/**
-	 * Mapa que evita que se sobreescriba 'ticket' con un tipo incorrecto.
-	 */
 	private static final class TicketPreservingMap extends HashMap<String, Object> {
 
 		private static final long serialVersionUID = 1L;
@@ -764,10 +634,8 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 		@Override
 		public Object put(String key, Object value) {
-			if (PARAM_TICKET.equals(key) && !(value instanceof TicketVentaAbono)) {
-				// Mantenemos el ticket válido que ya estuviera
+			if (PARAM_TICKET.equals(key) && !(value instanceof TicketVentaAbono))
 				return super.get(key);
-			}
 			return super.put(key, value);
 		}
 
@@ -775,9 +643,8 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		public void putAll(Map<? extends String, ?> m) {
 			if (m == null)
 				return;
-			for (Map.Entry<? extends String, ?> e : m.entrySet()) {
+			for (Map.Entry<? extends String, ?> e : m.entrySet())
 				put(e.getKey(), e.getValue());
-			}
 		}
 	}
 
