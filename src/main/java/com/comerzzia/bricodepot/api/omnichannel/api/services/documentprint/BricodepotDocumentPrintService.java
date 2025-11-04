@@ -47,8 +47,8 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			}
 		}
 
-		if (jasper != null) {
-			log.debug("Plantilla seleccionada: " + jasper.getAbsolutePath());
+                if (jasper != null) {
+                        log.debug("getTemplate() - Plantilla seleccionada: " + jasper.getAbsolutePath());
 		}
 		return jasper;
 	}
@@ -67,8 +67,8 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			}
 		}
 
-		if (jasper != null) {
-			log.debug("Plantilla seleccionada: " + jasper.getAbsolutePath());
+                if (jasper != null) {
+                        log.debug("getTemplateLocaleFile() - Plantilla seleccionada: " + jasper.getAbsolutePath());
 		}
 		return jasper;
 	}
@@ -80,7 +80,7 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 		String t = template.replace('\\', '/').trim();
 
 		if (!t.contains("/")) {
-			log.debug("Alias corto '" + t + "' ignorado; se usa la plantilla por defecto '" + DEFAULT_TEMPLATE_PATH + "'");
+                        log.debug("decideTemplate() - Alias corto '" + t + "' ignorado; se usa la plantilla por defecto '" + DEFAULT_TEMPLATE_PATH + "'");
 			return DEFAULT_TEMPLATE_PATH;
 		}
 
@@ -112,7 +112,7 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			COMPILED.add(jasperPath);
 		}
 		catch (JRException e) {
-			log.warn("Error al compilar la plantilla Jasper '" + jasperPath + "' desde '" + jrxml.getAbsolutePath() + "'", e);
+                        log.warn("compileIfNeeded() - Error al compilar la plantilla Jasper '" + jasperPath + "' desde '" + jrxml.getAbsolutePath() + "'", e);
 		}
 	}
 
@@ -126,11 +126,11 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			String updated = patchAtcud(content);
 			if (!updated.equals(content)) {
 				Files.write(jrxml.toPath(), updated.getBytes(StandardCharsets.UTF_8));
-				log.debug("Datos fiscales ajustados en '" + jrxml.getAbsolutePath() + "'");
+                                log.debug("ensurePortugueseCompatibility() - Datos fiscales ajustados en '" + jrxml.getAbsolutePath() + "'");
 			}
 		}
 		catch (IOException e) {
-			log.warn("No se pudo ajustar el fichero '" + jrxml.getAbsolutePath() + "'", e);
+                        log.warn("ensurePortugueseCompatibility() - No se pudo ajustar el fichero '" + jrxml.getAbsolutePath() + "'", e);
 		}
 	}
 
