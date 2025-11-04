@@ -3,9 +3,8 @@ package com.comerzzia.api.omnichannel.web.config;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
+import org.apache.log4j.Logger;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -22,11 +21,11 @@ import io.swagger.v3.core.util.Json;
 @Component
 public class JerseyConfiguration extends ResourceConfig {
 
-	private static final Logger log = LoggerFactory.getLogger(JerseyConfiguration.class);
+        private static Logger log = Logger.getLogger(JerseyConfiguration.class);
 
 	@Autowired
 	public JerseyConfiguration(ApplicationContext applicationContext, DocumentoVentaImpresionFilter documentoVentaImpresionFilter) {
-		log.info("JerseyConfiguration() - Configuring REST services...");
+                log.info("Configurando los servicios REST");
 
 		Json.mapper().registerModule(new JaxbAnnotationModule());
 
@@ -38,9 +37,9 @@ public class JerseyConfiguration extends ResourceConfig {
 	}
 
 	private void registerCustomResources(ApplicationContext applicationContext) {
-		BricodepotSalesDocumentResource resource = applicationContext.getBean(BricodepotSalesDocumentResource.class);
-		log.info("registering {} to jersey config", resource.getClass().getName());
-		register(resource);
+                BricodepotSalesDocumentResource resource = applicationContext.getBean(BricodepotSalesDocumentResource.class);
+                log.info("Registrando el recurso de documentos de venta de Bricodepot en la configuración de Jersey");
+                register(resource);
 	}
 
 	private void registerStandardResources() {
@@ -49,18 +48,18 @@ public class JerseyConfiguration extends ResourceConfig {
 		provider.addIncludeFilter(new AnnotationTypeFilter(Provider.class));
 		provider.findCandidateComponents("com.comerzzia.api").forEach(beanDefinition -> {
 			String className = beanDefinition.getBeanClassName();
-			try {
-				Class<?> candidateClass = Class.forName(className);
-				if (SalesDocumentResource.class.equals(candidateClass)) {
-					log.info("Skipping registration {}", className);
-					return;
-				}
-				log.info("registering {} to jersey config", className);
-				register(candidateClass);
-			}
-			catch (ClassNotFoundException e) {
-				log.warn("Failed to register: {}", className, e);
-			}
-		});
-	}
+                        try {
+                                Class<?> candidateClass = Class.forName(className);
+                                if (SalesDocumentResource.class.equals(candidateClass)) {
+                                        log.info("Se omite el registro del recurso estándar de documentos de venta");
+                                        return;
+                                }
+                                log.info("Registrando un recurso estándar en la configuración de Jersey");
+                                register(candidateClass);
+                        }
+                        catch (ClassNotFoundException e) {
+                                log.warn("No se pudo registrar la clase " + className, e);
+                        }
+                });
+        }
 }

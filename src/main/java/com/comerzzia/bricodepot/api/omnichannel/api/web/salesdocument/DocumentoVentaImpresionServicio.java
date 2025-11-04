@@ -4,32 +4,31 @@ import java.time.Duration;
 import java.time.Instant;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DocumentoVentaImpresionServicio {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(DocumentoVentaImpresionServicio.class);
+    private static Logger log = Logger.getLogger(DocumentoVentaImpresionServicio.class);
 
-	public void registrarInicioImpresion(String documentUid) {
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("registrarInicioImpresion() - Starting print generation for document '{}'", documentUid);
-		}
-	}
+    public void registrarInicioImpresion(String documentUid) {
+            if (log.isDebugEnabled()) {
+                    log.debug("Inicio de generación de impresión para el documento '" + documentUid + "'");
+            }
+    }
 
-	public void registrarFinImpresion(String documentUid, int statusCode, Instant startInstant) {
-		if (!LOGGER.isDebugEnabled()) {
-			return;
-		}
+    public void registrarFinImpresion(String documentUid, int statusCode, Instant startInstant) {
+            if (!log.isDebugEnabled()) {
+                    return;
+            }
 
-		long elapsedMillis = -1L;
-		if (startInstant != null) {
-			elapsedMillis = Duration.between(startInstant, Instant.now()).toMillis();
-		}
+            long elapsedMillis = -1L;
+            if (startInstant != null) {
+                    elapsedMillis = Duration.between(startInstant, Instant.now()).toMillis();
+            }
 
-		String durationPart = elapsedMillis >= 0 ? " in " + elapsedMillis + " ms" : StringUtils.EMPTY;
-		LOGGER.debug("registrarFinImpresion() - Completed print generation for document '{}' with status {}{}", documentUid, statusCode, durationPart);
-	}
+            String durationPart = elapsedMillis >= 0 ? " en " + elapsedMillis + " ms" : StringUtils.EMPTY;
+            log.debug("Finalizada la generación de impresión del documento '" + documentUid + "' con estado " + statusCode + durationPart);
+    }
 }

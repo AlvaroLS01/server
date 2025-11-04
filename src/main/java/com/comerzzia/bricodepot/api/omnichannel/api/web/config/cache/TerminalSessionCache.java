@@ -24,13 +24,13 @@ public class TerminalSessionCache {
    
    @Cacheable(cacheNames="terminalSessions", key = "new org.springframework.cache.interceptor.SimpleKey(#datosSesion.user)")
    public Sesion getTerminalSession(IDatosSesion datosSesion) throws Exception {        
-      log.info("getTerminalSession() - Creating new session user'" + datosSesion.getUser() + "'...");
+      log.info("Creando nueva sesión para el usuario '" + datosSesion.getUser() + "'");
       return new Sesion(initDatosSesion((com.comerzzia.core.servicios.sesion.DatosSesionBean) datosSesion));
    }
       
    @Scheduled(fixedRate = 300000)
    public void clearSessionCache() {
-	   log.debug("clearSessionCache() - Clean session cache");
+           log.debug("Limpiando la caché de sesiones");
 	   cacheManager.getCache("terminalSessions").clear();
    }
    
