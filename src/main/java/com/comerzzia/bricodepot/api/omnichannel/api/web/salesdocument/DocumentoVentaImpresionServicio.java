@@ -14,7 +14,7 @@ public class DocumentoVentaImpresionServicio {
 
 	public void registrarInicioImpresion(String documentUid) {
             if (log.isDebugEnabled()) {
-                    log.debug("Inicio de generación de impresión para el documento '" + documentUid + "'");
+                    log.debug("registrarInicioImpresion() - Inicio de generación de impresión para el documento '" + documentUid + "'");
             }
     }
 
@@ -29,6 +29,6 @@ public class DocumentoVentaImpresionServicio {
             }
 
             String durationPart = elapsedMillis >= 0 ? " en " + elapsedMillis + " ms" : StringUtils.EMPTY;
-            log.debug("Finalizada la generación de impresión del documento '" + documentUid + "' con estado " + statusCode + durationPart);
+            log.debug("registrarFinImpresion() - Finalizada la generación de impresión del documento '" + documentUid + "' con estado " + statusCode + durationPart);
     }
 }

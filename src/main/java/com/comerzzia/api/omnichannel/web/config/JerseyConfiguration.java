@@ -25,7 +25,7 @@ public class JerseyConfiguration extends ResourceConfig {
 
 	@Autowired
 	public JerseyConfiguration(ApplicationContext applicationContext, DocumentoVentaImpresionFilter documentoVentaImpresionFilter) {
-		log.info("Configurando los servicios REST");
+                log.info("JerseyConfiguration() - Configurando los servicios REST");
 
 		Json.mapper().registerModule(new JaxbAnnotationModule());
 
@@ -38,7 +38,7 @@ public class JerseyConfiguration extends ResourceConfig {
 
 	private void registerCustomResources(ApplicationContext applicationContext) {
 		BricodepotSalesDocumentResource resource = applicationContext.getBean(BricodepotSalesDocumentResource.class);
-		log.info("Registrando el recurso de documentos de venta de Bricodepot en la configuración de Jersey");
+                log.info("registerCustomResources() - Registrando el recurso de documentos de venta de Bricodepot en la configuración de Jersey");
 		register(resource);
 	}
 
@@ -51,14 +51,14 @@ public class JerseyConfiguration extends ResourceConfig {
 			try {
 				Class<?> candidateClass = Class.forName(className);
 				if (SalesDocumentResource.class.equals(candidateClass)) {
-					log.info("Se omite el registro del recurso estándar de documentos de venta");
+                                        log.info("registerStandardResources() - Se omite el registro del recurso estándar de documentos de venta");
 					return;
 				}
-				log.info("Registrando un recurso estándar en la configuración de Jersey");
+                                log.info("registerStandardResources() - Registrando un recurso estándar en la configuración de Jersey");
 				register(candidateClass);
 			}
 			catch (ClassNotFoundException e) {
-				log.warn("No se pudo registrar la clase " + className, e);
+                                log.warn("registerStandardResources() - No se pudo registrar la clase " + className, e);
 			}
 		});
 	}
