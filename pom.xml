@@ -112,11 +112,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-                <dependency>
-                        <groupId>com.comerzzia.omnichannel</groupId>
-                        <artifactId>comerzzia-omnichannel-services</artifactId>
-                        <version>4.8-SNAPSHOT</version>
-                </dependency>
+         <dependency>
+            <groupId>com.comerzzia.omnichannel</groupId>
+            <artifactId>comerzzia-omnichannel-services</artifactId>
+            <version>4.8-SNAPSHOT</version>
+         </dependency>
 		<dependency>
 			<groupId>com.comerzzia.api.v2.core</groupId>
 			<artifactId>comerzzia-api-core-services</artifactId>
