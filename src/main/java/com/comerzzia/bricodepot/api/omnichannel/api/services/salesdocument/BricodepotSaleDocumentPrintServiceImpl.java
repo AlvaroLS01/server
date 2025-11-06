@@ -10,13 +10,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBContext;
@@ -71,15 +75,21 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 	private static final String PARAM_FISCAL_DATA_ATCUD = "fiscalData_ACTUD";
 	private static final String PARAM_FISCAL_DATA_QR = "fiscalData_QR";
-	private static final String PARAM_QR_PORTUGAL = "QR_PORTUGAL";
-	private static final String PARAM_DUPLICATE_FLAG = "esDuplicado";
-	private static final String PARAM_TICKET = "ticket";
-	private static final String PARAM_SUBREPORT_DIR = "SUBREPORT_DIR";
-	private static final String PARAM_LOGO = "LOGO";
-	private static final String PARAM_DEVOLUCION = "DEVOLUCION";
-	private static final String PARAM_LINEAS_AGRUPADAS = "lineasAgrupadas";
+        private static final String PARAM_QR_PORTUGAL = "QR_PORTUGAL";
+        private static final String PARAM_DUPLICATE_FLAG = "esDuplicado";
+        private static final String PARAM_TICKET = "ticket";
+        private static final String PARAM_SUBREPORT_DIR = "SUBREPORT_DIR";
+        private static final String PARAM_LOGO = "LOGO";
+        private static final String PARAM_DEVOLUCION = "DEVOLUCION";
+        private static final String PARAM_LINEAS_AGRUPADAS = "lineasAgrupadas";
 
-	private static final String FACTURA_REPORT_DIRECTORY = "ventas" + File.separator + "facturas" + File.separator;
+        private static final String FACTURA_REPORT_DIRECTORY = "ventas" + File.separator + "facturas" + File.separator;
+
+        private static final String FACTURA_TEMPLATE_BASE = "ventas/facturas/facturaA4";
+        private static final String FACTURA_TEMPLATE_ORIGINAL = "ventas/facturas/facturaA4_Original";
+        private static final String FACTURA_TEMPLATE_PORTUGAL = "ventas/facturas/facturaA4_PT";
+        private static final String FACTURA_TEMPLATE_CATALONIA = "ventas/facturas/facturaA4_CA";
+        private static final Set<String> FACTURA_DOCUMENT_TYPES = new HashSet<>(Arrays.asList("FT", "FS", "NC", "VC", "FR"));
 
 	private static final String TAG_FISCAL_DATA = "fiscal_data";
 	private static final String TAG_PROPERTY = "property";
@@ -109,11 +119,13 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 			throw new ApiException("Solicitud de impresión nula");
 		log.debug("printDocument() - Generando documento de venta '" + documentUid + "' con tipo MIME '" + printRequest.getMimeType() + "'");
 
-		Map<String, Object> params = ensureParamsMap(printRequest);
+                Map<String, Object> params = ensureParamsMap(printRequest);
 
-		TicketContext ticketCtx = loadTicketContext(datosSesion, documentUid, params);
+                TicketContext ticketCtx = loadTicketContext(datosSesion, documentUid, params);
 
-		ensureCompanyCodeFromTicket(ticketCtx, params);
+                applyInvoiceTemplateByCountry(printRequest, ticketCtx, datosSesion);
+
+                ensureCompanyCodeFromTicket(ticketCtx, params);
 		ensureCompanyLogo(datosSesion, params);
 		ensureSubreportDirectory(params);
 		ensureDevolucionParameter(params, ticketCtx, datosSesion);
@@ -228,12 +240,84 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		params.put(PARAM_SUBREPORT_DIR, normalized + FACTURA_REPORT_DIRECTORY);
 	}
 
-	private void prepareTicketForPrinting(Map<String, Object> params, TicketVentaAbono ticketVenta) {
-		if (params == null || ticketVenta == null)
-			return;
-		List<LineaTicket> agregadas = aggregateTicketLines(ticketVenta);
-		params.put(PARAM_LINEAS_AGRUPADAS, new ArrayList<>(agregadas));
-	}
+        private void prepareTicketForPrinting(Map<String, Object> params, TicketVentaAbono ticketVenta) {
+                if (params == null || ticketVenta == null)
+                        return;
+                List<LineaTicket> agregadas = aggregateTicketLines(ticketVenta);
+                params.put(PARAM_LINEAS_AGRUPADAS, new ArrayList<>(agregadas));
+        }
+
+        private void applyInvoiceTemplateByCountry(PrintDocumentDTO printRequest, TicketContext ctx, IDatosSesion datosSesion) {
+                if (printRequest == null || ctx == null || datosSesion == null)
+                        return;
+
+                TicketVentaAbono ticketVenta = ctx.getTicketVenta();
+                if (ticketVenta == null || ticketVenta.getCabecera() == null)
+                        return;
+
+                String docType = normalizeDocType(ticketVenta.getCabecera().getCodTipoDocumento());
+                if (!FACTURA_DOCUMENT_TYPES.contains(docType))
+                        return;
+
+                Long tipoDocumentoId = ticketVenta.getCabecera().getTipoDocumento();
+                if (tipoDocumentoId == null)
+                        return;
+
+                try {
+                        TipoDocumentoBean tipo = ServicioTiposDocumentosImpl.get().consultar(datosSesion, tipoDocumentoId);
+                        String template = selectTemplateForCountry(tipo != null ? tipo.getCodPais() : null,
+                                        normalizeTemplate(printRequest.getPrintTemplate()));
+                        if (StringUtils.hasText(template))
+                                printRequest.setPrintTemplate(template);
+                }
+                catch (Exception e) {
+                        log.debug("applyInvoiceTemplateByCountry() - No se pudo determinar la plantilla por país", e);
+                }
+        }
+
+        private String selectTemplateForCountry(String countryCode, String currentTemplate) {
+                String normalizedCountry = normalizeCountry(countryCode);
+                if ("PT".equals(normalizedCountry))
+                        return FACTURA_TEMPLATE_PORTUGAL;
+                if ("CA".equals(normalizedCountry))
+                        return FACTURA_TEMPLATE_CATALONIA;
+                if (!StringUtils.hasText(normalizedCountry) || "ES".equals(normalizedCountry))
+                        return FACTURA_TEMPLATE_ORIGINAL;
+
+                if (FACTURA_TEMPLATE_PORTUGAL.equals(currentTemplate) || FACTURA_TEMPLATE_CATALONIA.equals(currentTemplate))
+                        return currentTemplate;
+                return FACTURA_TEMPLATE_ORIGINAL;
+        }
+
+        private String normalizeDocType(String code) {
+                if (!StringUtils.hasText(code))
+                        return "";
+                String trimmed = code.trim();
+                int slash = trimmed.indexOf('/');
+                if (slash >= 0)
+                        trimmed = trimmed.substring(0, slash);
+                int space = trimmed.indexOf(' ');
+                if (space >= 0)
+                        trimmed = trimmed.substring(0, space);
+                return trimmed.toUpperCase(Locale.ROOT);
+        }
+
+        private String normalizeTemplate(String template) {
+                if (!StringUtils.hasText(template))
+                        return null;
+                String normalized = template.replace('\\', '/').trim();
+                if (FACTURA_TEMPLATE_BASE.equals(normalized))
+                        return FACTURA_TEMPLATE_ORIGINAL;
+                if (!normalized.contains("/"))
+                        return FACTURA_TEMPLATE_BASE;
+                return normalized;
+        }
+
+        private String normalizeCountry(String countryCode) {
+                if (!StringUtils.hasText(countryCode))
+                        return null;
+                return countryCode.trim().toUpperCase(Locale.ROOT);
+        }
 
 	private List<LineaTicket> aggregateTicketLines(TicketVentaAbono ticketVenta) {
 		List<LineaTicket> original = ticketVenta != null ? ticketVenta.getLineas() : null;
