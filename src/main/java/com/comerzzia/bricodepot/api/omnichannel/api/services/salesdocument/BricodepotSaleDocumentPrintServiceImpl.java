@@ -641,8 +641,8 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	private InputStream createQrImage(String base64Value) {
 		if (!StringUtils.hasText(base64Value))
 			return null;
-		try {
-			byte[] decoded = Base64.getDecoder().decode(base64Value.trim());
+                try {
+                        byte[] decoded = Base64.getMimeDecoder().decode(base64Value.trim());
 			String qrText = new String(decoded, StandardCharsets.UTF_8);
 			if (!StringUtils.hasText(qrText))
 				return null;
