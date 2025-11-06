@@ -40,6 +40,7 @@ import org.w3c.dom.NodeList;
 
 import com.comerzzia.api.core.service.exception.ApiException;
 import com.comerzzia.bricodepot.api.omnichannel.domain.salesdocument.BricodepotPrintableDocument;
+import com.comerzzia.bricodepot.api.omnichannel.services.documentprint.BricodepotDocumentPrintService;
 import com.comerzzia.core.model.empresas.EmpresaBean;
 import com.comerzzia.core.model.tiposdocumentos.TipoDocumentoBean;
 import com.comerzzia.core.model.ventas.tickets.TicketBean;
@@ -101,6 +102,7 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 	private final SaleDocumentService saleDocumentService;
 	private final DocumentService documentService;
+	private final BricodepotDocumentPrintService documentPrintService;
 
 	@Autowired
 	private TicketService ticketService;
@@ -112,9 +114,11 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 	private EmpresasService empresasService;
 
 	@Autowired
-	public BricodepotSaleDocumentPrintServiceImpl(SaleDocumentService saleDocumentService, DocumentService documentService) {
+	public BricodepotSaleDocumentPrintServiceImpl(SaleDocumentService saleDocumentService, DocumentService documentService,
+			BricodepotDocumentPrintService documentPrintService) {
 		this.saleDocumentService = saleDocumentService;
 		this.documentService = documentService;
+		this.documentPrintService = documentPrintService;
 	}
 
 	@Override
@@ -269,6 +273,12 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 
 		try {
 			TipoDocumentoBean tipo = tiposDocumentosService.consultar(datosSesion, tipoDocumentoId);
+			String customTemplate = resolveCustomInvoiceTemplate(printRequest.getPrintTemplate());
+			if (StringUtils.hasText(customTemplate)) {
+				printRequest.setPrintTemplate(customTemplate);
+				return;
+			}
+
 			String template = selectTemplateForCountry(tipo != null ? tipo.getCodPais() : null, normalizeTemplate(printRequest.getPrintTemplate()));
 			if (StringUtils.hasText(template))
 				printRequest.setPrintTemplate(template);
@@ -314,6 +324,17 @@ public class BricodepotSaleDocumentPrintServiceImpl implements BricodepotSaleDoc
 		if (!normalized.contains("/"))
 			return FACTURA_TEMPLATE_BASE;
 		return normalized;
+	}
+
+	private String resolveCustomInvoiceTemplate(String template) {
+		if (!StringUtils.hasText(template) || documentPrintService == null)
+			return null;
+
+		String existingTemplate = documentPrintService.findExistingTemplate(template);
+		if (!StringUtils.hasText(existingTemplate))
+			return null;
+
+		return existingTemplate.replace('\\', '/').trim();
 	}
 
 	private String normalizeCountry(String countryCode) {

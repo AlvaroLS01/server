@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +33,7 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 
 	private static final Pattern PROPERTY_PATTERN = Pattern.compile("\\$P\\{ticket\\}\\.getCabecera\\(\\)\\.getFiscalData\\(\\)\\.getProperty\\(\\\"ATCUD\\\"\\)");
 	private static final Pattern PROPERTY_VALUE_PATTERN = Pattern
-	        .compile("\\$P\\{ticket\\}\\.getCabecera\\(\\)\\.getFiscalData\\(\\)\\.getProperty(?:Value)?\\(\\\"ATCUD\\\"\\)(?:\\.getValue\\(\\))?");
+		.compile("\\$P\\{ticket\\}\\.getCabecera\\(\\)\\.getFiscalData\\(\\)\\.getProperty(?:Value)?\\(\\\"ATCUD\\\"\\)(?:\\.getValue\\(\\))?");
 
 	protected File getTemplate(String template, String localeId) {
 		String decided = decideTemplate(template);
@@ -71,6 +72,53 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 			log.debug("getTemplateLocaleFile() - Plantilla seleccionada: " + jasper.getAbsolutePath());
 		}
 		return jasper;
+	}
+
+	public String findExistingTemplate(String template) {
+		if (StringUtils.isBlank(template)) {
+			return null;
+		}
+
+		for (String candidate : buildTemplateCandidates(template)) {
+			if (StringUtils.isBlank(candidate)) {
+				continue;
+			}
+
+			File jasper = super.getTemplateLocaleFile(candidate, null);
+			if (jasper != null && jasper.exists()) {
+				return candidate;
+			}
+
+			File alternative = resolveFromReportsBase(candidate, null);
+			if (alternative != null && alternative.exists()) {
+				return candidate;
+			}
+		}
+
+		return null;
+	}
+
+	private Set<String> buildTemplateCandidates(String template) {
+		LinkedHashSet<String> candidates = new LinkedHashSet<>();
+		String trimmed = template.replace('\\', '/').trim();
+		if (StringUtils.isBlank(trimmed)) {
+			return candidates;
+		}
+
+		candidates.add(trimmed);
+
+		if (!trimmed.contains("/")) {
+			int lastSlash = DEFAULT_TEMPLATE_PATH.lastIndexOf('/');
+			if (lastSlash > 0) {
+				String baseDir = DEFAULT_TEMPLATE_PATH.substring(0, lastSlash);
+				candidates.add(baseDir + "/" + trimmed);
+			}
+		}
+
+		candidates.add(decideTemplate(trimmed));
+		candidates.removeIf(StringUtils::isBlank);
+
+		return candidates;
 	}
 
 	private String decideTemplate(String template) {
@@ -143,7 +191,7 @@ public class BricodepotDocumentPrintService extends JasperPrintServiceImpl {
 		}
 		else if (!xml.contains("name=\"fiscalData_QR\"")) {
 			xml = xml.replace("name=\"fiscalData_ACTUD\" class=\"java.lang.String\"/>",
-			        "name=\"fiscalData_ACTUD\" class=\"java.lang.String\"/>\n        <parameter name=\"fiscalData_QR\" class=\"java.lang.String\"/>");
+				"name=\"fiscalData_ACTUD\" class=\"java.lang.String\"/>\n        <parameter name=\"fiscalData_QR\" class=\"java.lang.String\"/>");
 		}
 
 		String repl = Matcher.quoteReplacement("$P{fiscalData_ACTUD}");
