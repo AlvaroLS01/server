@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.comerzzia.api.v2.facturacionmagento.persistence.tarjetas.TarjetasMapper">
+  <resultMap id="ResultMap" type="com.comerzzia.api.v2.facturacionmagento.persistence.tarjetas.TarjetaBean">
+    <result property="numTarjetaFidelizado" jdbcType="VARCHAR" column="numero_tarjeta"/>
+    <result property="codTipoTarj" jdbcType="VARCHAR" column="codtipotarj"/>
+</resultMap>
+
+  <select id="selectByNumTarjeta" resultMap="ResultMap">
+  	SELECT numero_tarjeta, codtipotarj
+	FROM f_tarjetas_tbl
+	WHERE uid_instancia = #{uid_instancia, jdbcType=VARCHAR} AND numero_tarjeta = #{numero_tarjeta, jdbcType=VARCHAR}
+	ORDER by fecha_asignacion_fidelizado ASC
+	LIMIT 1;
+  </select>
+</mapper>

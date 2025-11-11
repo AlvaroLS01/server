@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.comerzzia.api.v2.facturacionmagento.persistence.cupones.CuponesMapper">
+
+  <select id="getCupon" resultType="com.comerzzia.api.v2.facturacionmagento.persistence.cupones.CuponBean">
+  	SELECT coupon_code, promotion_id, coupon_description, coupon_type_code
+  	FROM ly_coupons_tbl
+  	WHERE uid_actividad = #{uid_actividad, jdbcType=VARCHAR} AND coupon_code = #{coupon_code, jdbcType=VARCHAR};
+  </select>
+</mapper>

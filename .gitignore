@@ -4,4 +4,4 @@
 **/target/
 /.metadata/
 **/uid_pos.properties
-.springBeans
+/target/

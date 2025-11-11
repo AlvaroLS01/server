@@ -1,13 +1,13 @@
 server:
     port: 8080    
     servlet:
-        contextPath: /api/v2/omnichannel
+        contextPath: /api/v2/billing
 
 spring:  
     main:
         allow-bean-definition-overriding: true
     application:
-        name: "comerzzia api v2 custom"
+        name: "comerzzia api v2 billing"
     messages:
         basename: i18n/messages,i18n/custom-messages
     jackson:
@@ -17,6 +17,13 @@ spring:
 management:
   server:
     port: 8081
+  endpoint:
+    prometheus:
+      enabled: true      
+  metrics:
+    export:      
+      prometheus:
+        enabled: true             
   endpoints:
     web:
       base-path: "/manage"        
@@ -27,7 +34,6 @@ logging:
     level:
         ROOT: INFO        
         com.comerzzia.api: DEBUG
-        com.comerzzia.bricodepot: DEBUG
         com.comerzzia.custom.api: DEBUG
-        org.mybatis: INFO
-        org.springframework : INFO
+        org.mybatis: INFO   
+        org.springframework : INFO     

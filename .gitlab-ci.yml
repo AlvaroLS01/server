@@ -8,11 +8,11 @@ variables:
   GIT_SUBMODULE_STRATEGY: normal
   MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=.m2/repository -DbuildTimestamp=${CI_COMMIT_TIMESTAMP} -DbuildNumber=${CI_PIPELINE_ID} -DbuildCommit=${CI_COMMIT_SHA} -DbuildUser=${GITLAB_USER_LOGIN}"   
   MAVEN_CLI_OPTS: "-s .m2/settings.xml --batch-mode --errors --fail-at-end --show-version"
-  K8S_WORKLOAD: api-v2-omnichannel
+  K8S_WORKLOAD: api-v2-facturacionmagento
   K8S_NAMESPACE: bricodepot
   
-  DOCKER_IMAGE_CLIENT: clients/bricodepot/comerzzia/api/omnichannel
-  DOCKER_IMAGE_TIER1: comerzzia/api/v2/omnichannel
+  DOCKER_IMAGE_CLIENT: clients/bricodepot/comerzzia/api/facturacionmagento
+  DOCKER_IMAGE_TIER1: comerzzia/api/v2/facturacionmagento
   
   DOCKER_IMAGE: $DEVELOP_REGISTRY_SERVER/$CLIENT/$DOCKER_IMAGE_TIER1
   DOCKER_IMAGE_PRE: $REGISTRY_SERVER_CLIENT_PRE/$DOCKER_IMAGE_CLIENT

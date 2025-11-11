@@ -5,16 +5,14 @@
 	<!-- Se puede definir el Datasource desde el que se obtendrán los datos de la conexión o establecer los datos directamente -->
 	<BaseDatos>
 		<!--  <Datasource>java:/jdbc/COMERZZIA_DS</Datasource> -->
-		<url>jdbc:oracle:thin:@server:1521:database</url> 
+		 <url>jdbc:mysql://172.16.102.35:33062/czz_bricodepot?serverTimezone=Europe/Madrid</url>
 		<!-- 
-			url MySQL: jdbc:mysql://server:3306/database
-			url Oracle: jdbc:oracle:thin:@server:1521:database
 			Driver MySQL: com.mysql.jdbc.Driver
 			Driver Oracle: oracle.jdbc.OracleDriver 
 		-->
-		<driver-class>oracle.jdbc.OracleDriver</driver-class>
-		<usuario>USER</usuario>
-		<password>PASSWORD</password>
+		<driver-class>com.mysql.jdbc.Driver</driver-class>
+		<usuario>czz_bricodepot</usuario>
+		<password>czz_bricodepot</password>
 		<!-- 
 			El valor del tag debe ser la ruta absoluta a la carpeta en la que se encuentran los scripts. Se puede definir la ruta relativa 
 			a la definida por la variable ${COMERZZIA_HOME}

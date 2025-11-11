@@ -14,22 +14,14 @@
       
     <!-- estos beans se inician lazy-init=false porque necesitan inicializarse al principio y están fuera del component-scan -->  
     <bean id="AppInfo" class="com.comerzzia.core.util.config.AppInfo" lazy-init="false"/>
+    
     <context:component-scan base-package="com.comerzzia.core.servicios" />
-
-    <context:component-scan base-package="com.comerzzia.api">
-        <context:exclude-filter type="assignable" expression="com.comerzzia.api.omnichannel.web.rest.salesdoc.SalesDocumentResource" />
-    </context:component-scan>
-    <context:component-scan base-package="com.comerzzia.bricodepot.api" />
-    <context:component-scan base-package="com.comerzzia.core.servicios" />
-    <context:component-scan base-package="com.comerzzia.core.basketcalculator" />
-    <context:component-scan base-package="com.comerzzia.omnichannel.service" />     
-    <context:component-scan base-package="com.comerzzia.pos" />
+    <context:component-scan base-package="com.comerzzia.api" />
+    <context:component-scan base-package="com.comerzzia.api.v2.facturacionmagento" />
         
     <tx:annotation-driven />
     
-    <mybatis:scan base-package="com.comerzzia.omnichannel.persistence" /> 
-    <mybatis:scan base-package="com.comerzzia.omnichannel.repository" />
     <!-- scan for mappers and let them be autowired -->
     <!-- <mybatis:scan base-package="com.comerzzia.core.persistencia.permisos,com.comerzzia.core.persistencia.actividades,com.comerzzia.core.persistencia.usuarios,com.comerzzia.core.persistencia.variables" /> -->
-    <mybatis:scan base-package="com.comerzzia.core.persistencia, com.comerzzia.bricodepot.api.omnichannel.api.persistence, com.comerzzia.core.persistencia,com.comerzzia.core.basketcalculator.persistencia,com.comerzzia.pos.persistence" />
+    <mybatis:scan base-package="com.comerzzia.core.persistencia,com.comerzzia.pos.persistence,com.comerzzia.bricodepot.persistence, com.comerzzia.api.v2.facturacionmagento.persistence" /> 
 </beans>

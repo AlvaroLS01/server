@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.comerzzia.api.v2.facturacionmagento.persistence.fidelizacion.FidelizacionMapper">
+  <resultMap id="ResultMap" type="com.comerzzia.omnichannel.model.documents.sales.ticket.cabecera.FidelizacionBean">
+    <result property="idFidelizado" jdbcType="INTEGER" column="id_fidelizado"/>
+    <result property="numTarjetaFidelizado" jdbcType="VARCHAR" column="numero_tarjeta"/>
+    <result property="nombre" jdbcType="VARCHAR" column="nombre"/>
+    <result property="apellido" jdbcType="VARCHAR" column="apellidos"/>
+    <result property="saldo" jdbcType="DECIMAL" column="saldo"/>
+    <result property="saldoProvisional" jdbcType="DECIMAL" column="saldo_provisional"/>
+</resultMap>
+
+  <select id="selectById" resultMap="ResultMap">
+  	SELECT fide.id_fidelizado, tarj.numero_tarjeta, fide.nombre, fide.apellidos, tarj.saldo, tarj.saldo_provisional
+	FROM f_fidelizados_tbl fide
+	JOIN f_tarjetas tarj on (fide.uid_instancia = tarj.uid_instancia AND fide.id_fidelizado = tarj.id_fidelizado)
+	WHERE fide.uid_instancia = #{uid_instancia, jdbcType=VARCHAR} AND fide.id_fidelizado = #{id_fidelizado, jdbcType=INTEGER}
+	ORDER by tarj.fecha_asignacion_fidelizado ASC
+	LIMIT 1;
+  </select>
+  
+  <select id="selectByCardCode" resultMap="ResultMap">
+  	SELECT fide.id_fidelizado, tarj.numero_tarjeta, fide.nombre, fide.apellidos, tarj.saldo, tarj.saldo_provisional
+	FROM f_fidelizados_tbl fide
+	JOIN f_tarjetas tarj on (fide.uid_instancia = tarj.uid_instancia AND fide.id_fidelizado = tarj.id_fidelizado)
+	WHERE fide.uid_instancia = #{uid_instancia, jdbcType=VARCHAR} AND fide.id_fidelizado = #{id_fidelizado, jdbcType=INTEGER} AND tarj.numero_tarjeta = #{cod_tarjeta, jdbcType=VARCHAR};
+  </select>
+</mapper>

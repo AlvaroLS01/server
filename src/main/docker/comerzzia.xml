@@ -29,7 +29,7 @@
 			El valor del tag debe ser la ruta absoluta a la carpeta en la que se encuentran los scripts. Se puede definir la ruta relativa
 			a la definida por la variable ${COMERZZIA_HOME}
 		-->
-		<RutaBase>${COMERZZIA_HOME}/resources-bo/informes/</RutaBase>
+		<RutaBase>${COMERZZIA_HOME}/informes/</RutaBase>
 	</Informes>
 	<PlantillasImportacion>
 		<!--
