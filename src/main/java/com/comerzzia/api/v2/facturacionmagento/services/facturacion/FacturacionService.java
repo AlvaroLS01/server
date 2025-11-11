@@ -811,8 +811,20 @@ public class FacturacionService {
 		totales.setImpuestos(totalTaxAmount);
 		totales.setTotal(total);
 		totales.setTotalAPagar(total);
+
+		//totales
+        totales.setTotalSinPromociones(total);
+
+        BigDecimal totalPromociones = BigDecimal.ZERO.setScale(2);
+        totales.setTotalPromociones(totalPromociones);
+        totales.setTotalPromocionesCabecera(totalPromociones);
+        totales.setTotalPromocionesLineas(totalPromociones);
+
+        totales.setEntregado(total);
+        totales.setEntregadoACuenta(totalPromociones);
 		
 		PagoTicket cambio = tiendasService.selectMedioPagoDefecto(datosSesion.getUidActividad(), tienda.getCodAlmacen());
+		//desde magento nunca hay cambio
 		cambio.setImporte(BigDecimal.ZERO);
 		cambio.setEliminable(Boolean.FALSE);
 		cambio.setIntroducidoPorCajero(Boolean.FALSE);
