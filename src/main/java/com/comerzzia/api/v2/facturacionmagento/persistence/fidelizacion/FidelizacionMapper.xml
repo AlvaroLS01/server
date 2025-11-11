@@ -26,3 +26,4 @@
 	WHERE fide.uid_instancia = #{uid_instancia, jdbcType=VARCHAR} AND fide.id_fidelizado = #{id_fidelizado, jdbcType=INTEGER} AND tarj.numero_tarjeta = #{cod_tarjeta, jdbcType=VARCHAR};
   </select>
 </mapper>
+
