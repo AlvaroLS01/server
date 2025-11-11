@@ -30,5 +30,5 @@
   	SELECT a.codmedpag_por_defecto, desmedpag
 	FROM d_tiendas a 
 	WHERE a.uid_actividad = #{uid_actividad, jdbcType=VARCHAR} and a.codalm = #{idTienda, jdbcType=VARCHAR};
-  </select>  
+  </select>
 </mapper>

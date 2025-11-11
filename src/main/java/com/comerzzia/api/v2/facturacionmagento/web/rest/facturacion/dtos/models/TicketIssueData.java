@@ -8,12 +8,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class TicketIssueData {
 
 	private String invoiceCurrencyCode;
-	private String issueDate;
-	private String origenIssueDate;
-	private TaxesData taxesData;
-	private BigDecimal totalBaseAmount;
-	private BigDecimal totalTaxAmount;
-	private BigDecimal totalGrossAmount;
+        private String issueDate;
+        private String origenIssueDate;
+        private String fechaTicketOrigen;
+        private TaxesData taxesData;
+        private BigDecimal totalBaseAmount;
+        private BigDecimal totalTaxAmount;
+        private BigDecimal totalGrossAmount;
 
 	public String getInvoiceCurrencyCode() {
 		return invoiceCurrencyCode;
@@ -35,13 +36,21 @@ public class TicketIssueData {
 		return origenIssueDate;
 	}
 
-	public void setOrigenIssueDate(String origenIssueDate) {
-		this.origenIssueDate = origenIssueDate;
-	}
+        public void setOrigenIssueDate(String origenIssueDate) {
+                this.origenIssueDate = origenIssueDate;
+        }
 
-	public TaxesData getTaxesData() {
-		return taxesData;
-	}
+        public String getFechaTicketOrigen() {
+                return fechaTicketOrigen;
+        }
+
+        public void setFechaTicketOrigen(String fechaTicketOrigen) {
+                this.fechaTicketOrigen = fechaTicketOrigen;
+        }
+
+        public TaxesData getTaxesData() {
+                return taxesData;
+        }
 
 	public void setTaxesData(TaxesData taxesData) {
 		this.taxesData = taxesData;
