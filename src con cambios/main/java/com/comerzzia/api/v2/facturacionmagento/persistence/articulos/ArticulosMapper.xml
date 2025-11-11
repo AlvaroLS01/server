@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.comerzzia.api.v2.facturacionmagento.persistence.articulos.ArticulosMapper">
+
+  <select id="selectCodBar" resultType="java.lang.String">
+  	SELECT codigo_barras
+  	FROM d_articulos_codbar_tbl
+  	WHERE uid_actividad = #{uid_actividad, jdbcType=VARCHAR} AND codart = #{cod_art, jdbcType=VARCHAR} AND principal = 'S'
+  </select>
+</mapper>

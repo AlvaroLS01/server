@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.comerzzia.api.v2.facturacionmagento.persistence.tarifas.TarifasMapper">
+  <resultMap id="ResultMap" type="com.comerzzia.api.v2.facturacionmagento.persistence.tarifas.Tarifa">
+    <result column="CODTAR" property="codTar" jdbcType="VARCHAR" />
+    <result column="CODART" property="codArt" jdbcType="VARCHAR" />
+    <result column="PRECIO_VENTA" property="precioVenta" jdbcType="DECIMAL" />
+    <result column="PRECIO_TOTAL" property="precioTotal" jdbcType="CHAR" />
+  </resultMap>
+  
+  <select id="selectTarifaArt" resultMap="ResultMap">
+  	SELECT det.codtar, det.codart, det.precio_venta, det.precio_total
+	FROM d_tarifas_det det
+	JOIN d_tiendas_tarifas_tbl tientar ON det.codtar = tientar.codtar
+	WHERE det.uid_actividad = #{uid_actividad, jdbcType=VARCHAR} AND tientar.codalm = #{cod_alm, jdbcType=VARCHAR} and det.codart = #{cod_art, jdbcType=VARCHAR}
+	ORDER BY det.fecha_inicio DESC
+	LIMIT 1;
+  </select>
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.comerzzia.api.v2.facturacionmagento.persistence.cajas.movimientos.CajaMovimientosMapper">
+  <resultMap id="CajaMovimientoResultMap" type="com.comerzzia.api.v2.facturacionmagento.persistence.cajas.movimientos.CajaMovimientoBean" >
+    <id column="UID_ACTIVIDAD" property="uidActividad" jdbcType="VARCHAR" />
+    <id column="UID_DIARIO_CAJA" property="uidDiarioCaja" jdbcType="VARCHAR" />
+    <id column="LINEA" property="linea" jdbcType="DECIMAL" />
+    <result column="FECHA" property="fecha" jdbcType="TIMESTAMP" />
+    <result column="CARGO" property="cargo" jdbcType="DECIMAL" />
+    <result column="ABONO" property="abono" jdbcType="DECIMAL" />
+    <result column="CONCEPTO" property="concepto" jdbcType="VARCHAR" />
+    <result column="DOCUMENTO" property="documento" jdbcType="VARCHAR" />
+    <result column="CODMEDPAG" property="codMedioPago" jdbcType="VARCHAR" />
+    <result column="ID_DOCUMENTO" property="idDocumento" jdbcType="VARCHAR" />
+    <result column="CODCONCEPTO_MOV" property="codConceptoMovimiento" jdbcType="VARCHAR" />
+    <result column="ID_TIPO_DOCUMENTO" property="idTipoDocumento" jdbcType="DECIMAL" />
+    <result column="UID_TRANSACCION_DET" property="uidTransaccionDet" jdbcType="VARCHAR" />
+    <result column="CODDIVISA" property="coddivisa" jdbcType="VARCHAR" />
+    <result column="TIPO_DE_CAMBIO" property="tipoDeCambio" jdbcType="DECIMAL" />
+    <result column="USUARIO" property="usuario" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <insert id="insert" parameterType="com.comerzzia.api.v2.facturacionmagento.persistence.cajas.movimientos.CajaMovimientoBean" >
+    insert into D_CAJA_DET_TBL (UID_ACTIVIDAD, UID_DIARIO_CAJA, LINEA, 
+      FECHA, CARGO, ABONO, 
+      CONCEPTO, DOCUMENTO, CODMEDPAG, 
+      ID_DOCUMENTO, CODCONCEPTO_MOV, ID_TIPO_DOCUMENTO, 
+      UID_TRANSACCION_DET, CODDIVISA, TIPO_DE_CAMBIO, 
+      USUARIO)
+    values (#{uidActividad,jdbcType=VARCHAR}, #{uidDiarioCaja,jdbcType=VARCHAR}, #{linea,jdbcType=DECIMAL}, 
+      #{fecha,jdbcType=TIMESTAMP}, #{cargo,jdbcType=DECIMAL}, #{abono,jdbcType=DECIMAL}, 
+      #{concepto,jdbcType=VARCHAR}, #{documento,jdbcType=VARCHAR}, #{codMedioPago,jdbcType=VARCHAR}, 
+      #{idDocumento,jdbcType=VARCHAR}, #{codConceptoMovimiento,jdbcType=VARCHAR}, #{idTipoDocumento,jdbcType=DECIMAL}, 
+      #{uidTransaccionDet,jdbcType=VARCHAR}, #{coddivisa,jdbcType=VARCHAR}, #{tipoDeCambio,jdbcType=DECIMAL}, 
+      #{usuario,jdbcType=VARCHAR})
+  </insert>
+  <sql id="Caja_Movimiento_Column_List" >
+    UID_ACTIVIDAD, UID_DIARIO_CAJA, LINEA, FECHA, CARGO, ABONO, CONCEPTO, DOCUMENTO, 
+    CODMEDPAG, ID_DOCUMENTO, CODCONCEPTO_MOV, ID_TIPO_DOCUMENTO, UID_TRANSACCION_DET, 
+    CODDIVISA, TIPO_DE_CAMBIO, USUARIO
+  </sql>
+  
+  <select id="selectByPrimaryKey" resultMap="CajaMovimientoResultMap" parameterType="com.comerzzia.api.v2.facturacionmagento.persistence.cajas.movimientos.CajaMovimientoKey" >
+    select 
+    <include refid="Caja_Movimiento_Column_List" />
+    from D_CAJA_DET_TBL
+    where UID_ACTIVIDAD = #{uidActividad,jdbcType=VARCHAR}
+    and UID_DIARIO_CAJA = #{uidDiarioCaja,jdbcType=VARCHAR}
+  </select>
+  <select resultType="java.lang.Integer" parameterType="com.comerzzia.api.v2.facturacionmagento.persistence.cajas.movimientos.CajaMovimientoKey" id="selectMaximaLineaMovimiento" >
+    select MAX(linea)+1 from D_CAJA_DET_TBL 
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+</mapper>
