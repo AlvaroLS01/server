@@ -11,7 +11,7 @@
   <select id="selectTarifaArt" resultMap="ResultMap">
   	SELECT det.codtar, det.codart, det.precio_venta, det.precio_total
 	FROM d_tarifas_det det
-	JOIN d_tiendas_tarifas_tbl tientar ON (det.uid_actividad = tientar.uid_actividad AND det.codtar = tientar.codtar)
+	JOIN d_tiendas_tarifas_tbl tientar ON det.codtar = tientar.codtar
 	WHERE det.uid_actividad = #{uid_actividad, jdbcType=VARCHAR} AND tientar.codalm = #{cod_alm, jdbcType=VARCHAR} and det.codart = #{cod_art, jdbcType=VARCHAR}
 	ORDER BY det.fecha_inicio DESC
 	LIMIT 1;

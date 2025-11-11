@@ -13,7 +13,7 @@
   <select id="selectById" resultMap="ResultMap">
   	SELECT fide.id_fidelizado, tarj.numero_tarjeta, fide.nombre, fide.apellidos, tarj.saldo, tarj.saldo_provisional
 	FROM f_fidelizados_tbl fide
-	JOIN f_tarjetas tarj on (fide.uid_instancia = tarj.uid_instancia AND fide.id_fidelizado = tarj.id_fidelizado)
+	JOIN f_tarjetas tarj on fide.id_fidelizado = tarj.id_fidelizado
 	WHERE fide.uid_instancia = #{uid_instancia, jdbcType=VARCHAR} AND fide.id_fidelizado = #{id_fidelizado, jdbcType=INTEGER}
 	ORDER by tarj.fecha_asignacion_fidelizado ASC
 	LIMIT 1;
@@ -22,7 +22,7 @@
   <select id="selectByCardCode" resultMap="ResultMap">
   	SELECT fide.id_fidelizado, tarj.numero_tarjeta, fide.nombre, fide.apellidos, tarj.saldo, tarj.saldo_provisional
 	FROM f_fidelizados_tbl fide
-	JOIN f_tarjetas tarj on (fide.uid_instancia = tarj.uid_instancia AND fide.id_fidelizado = tarj.id_fidelizado)
+	JOIN f_tarjetas tarj on fide.id_fidelizado = tarj.id_fidelizado
 	WHERE fide.uid_instancia = #{uid_instancia, jdbcType=VARCHAR} AND fide.id_fidelizado = #{id_fidelizado, jdbcType=INTEGER} AND tarj.numero_tarjeta = #{cod_tarjeta, jdbcType=VARCHAR};
   </select>
 </mapper>
