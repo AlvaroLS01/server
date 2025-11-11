@@ -4,7 +4,6 @@
   <resultMap id="ClienteResultMap" type="com.comerzzia.omnichannel.model.documents.sales.ticket.cabecera.ClienteBean">
     <result property="codCliente" jdbcType="VARCHAR" column="codcli"/>
     <result property="desCliente" jdbcType="VARCHAR" column="descli"/>
-    <result property="nombreComercial" jdbcType="VARCHAR" column="nombre_comercial"/>
     <result property="domicilio" jdbcType="VARCHAR" column="domicilio"/>
     <result property="poblacion" jdbcType="VARCHAR" column="poblacion"/>
     <result property="provincia" jdbcType="VARCHAR" column="provincia"/>
@@ -47,7 +46,7 @@
 </resultMap>
 
   <select id="selectByCif" resultMap="ClienteResultMap">
-  	SELECT cli.codcli, cli.descli, cli.nombre_comercial, cli.domicilio, cli.poblacion, cli.provincia, cli.cp, cli.telefono1, cli.telefono2, cli.fax, cli.codpais, cli.persona_contacto, cli.email, cli.cif, cli.id_trat_impuestos, cli.codtar, cli.codsec, cli.banco, cli.banco_domicilio, cli.banco_poblacion, cli.ccc, cli.localidad, cli.codtipoiden, imp.id_grupo_impuestos
+  	SELECT cli.codcli, cli.descli, cli.domicilio, cli.poblacion, cli.provincia, cli.cp, cli.telefono1, cli.telefono2, cli.fax, cli.codpais, cli.persona_contacto, cli.email, cli.cif, cli.id_trat_impuestos, cli.codtar, cli.codsec, cli.banco, cli.banco_domicilio, cli.banco_poblacion, cli.ccc, cli.localidad, cli.codtipoiden, imp.id_grupo_impuestos
 	FROM d_clientes_tbl cli
 	JOIN d_imp_grupos_tbl imp ON cli.uid_actividad = imp.uid_actividad
 	WHERE cli.uid_actividad = #{uid_actividad, jdbcType=VARCHAR} and cli.cif = #{cif, jdbcType=VARCHAR}
@@ -56,7 +55,7 @@
   </select>
   
   <select id="selectByCod" resultMap="ClienteResultMap">
-  	SELECT cli.codcli, cli.descli, cli.nombre_comercial, cli.domicilio, cli.poblacion, cli.provincia, cli.cp, cli.telefono1, cli.telefono2, cli.fax, cli.codpais, cli.persona_contacto, cli.email, cli.cif, cli.id_trat_impuestos, cli.codtar, cli.codsec, cli.banco, cli.banco_domicilio, cli.banco_poblacion, cli.ccc, cli.localidad, cli.codtipoiden, imp.id_grupo_impuestos
+  	SELECT cli.codcli, cli.descli, cli.domicilio, cli.poblacion, cli.provincia, cli.cp, cli.telefono1, cli.telefono2, cli.fax, cli.codpais, cli.persona_contacto, cli.email, cli.cif, cli.id_trat_impuestos, cli.codtar, cli.codsec, cli.banco, cli.banco_domicilio, cli.banco_poblacion, cli.ccc, cli.localidad, cli.codtipoiden, imp.id_grupo_impuestos
 	FROM d_clientes_tbl cli
 	JOIN d_imp_grupos_tbl imp ON cli.uid_actividad = imp.uid_actividad
 	WHERE cli.uid_actividad = #{uid_actividad, jdbcType=VARCHAR} and cli.codcli = #{codCli, jdbcType=VARCHAR}

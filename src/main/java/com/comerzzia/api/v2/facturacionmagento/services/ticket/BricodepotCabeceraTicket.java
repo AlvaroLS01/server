@@ -21,12 +21,9 @@ import com.comerzzia.omnichannel.model.documents.sales.ticket.cabecera.CabeceraT
 @Scope("prototype")
 public class BricodepotCabeceraTicket extends CabeceraTicket {
 
-        @XmlElementWrapper(name = "eventos_auditoria")
-        @XmlElement(name = "evento")
-        protected List<TicketAuditEvent> auditEvents;
-
-        @XmlElement(name = "fechaTicketOrigen")
-        protected String fechaTicketOrigen;
+	@XmlElementWrapper(name = "eventos_auditoria")
+	@XmlElement(name = "evento")
+	protected List<TicketAuditEvent> auditEvents;
 
 	public BricodepotCabeceraTicket(){
 		auditEvents = new ArrayList<TicketAuditEvent>();
@@ -40,18 +37,10 @@ public class BricodepotCabeceraTicket extends CabeceraTicket {
 		this.auditEvents = auditEvents;
 	}
 
-        public void addAuditEvent(TicketAuditEvent auditEvent) {
-                if (this.auditEvents == null) {
-                        this.auditEvents = new ArrayList<>();
-                }
-                this.auditEvents.add(auditEvent);
-        }
-
-        public String getFechaTicketOrigen() {
-                return fechaTicketOrigen;
-        }
-
-        public void setFechaTicketOrigen(String fechaTicketOrigen) {
-                this.fechaTicketOrigen = fechaTicketOrigen;
-        }
+	public void addAuditEvent(TicketAuditEvent auditEvent) {
+		if (this.auditEvents == null) {
+			this.auditEvents = new ArrayList<>();
+		}
+		this.auditEvents.add(auditEvent);
+	}
 }
