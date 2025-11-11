@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.comerzzia.api.v2.facturacionmagento.persistence.tiendas.TiendasMapper;
 import com.comerzzia.omnichannel.model.documents.sales.ticket.cabecera.Tienda;
+import com.comerzzia.omnichannel.model.documents.sales.ticket.pagos.PagoTicket;
 
 @Component
 public class TiendasService {
@@ -26,6 +27,19 @@ public class TiendasService {
 		}
 		
 		return tienda;
+	}
+	
+	public PagoTicket selectMedioPagoDefecto(String uidActividad, String codTienda) throws Exception {
+		log.debug("selectMedioPagoDefecto() - Consultando medio pago por defecto de la tienda " + codTienda);
+		
+		PagoTicket pagoTicket = tiendasMapper.selectMedioPagoDefecto(uidActividad, codTienda);
+		if(pagoTicket == null) {
+			String msg = "No se ha encontrado ninguna tienda con código " + codTienda;
+			log.error("selectMedioPagoDefecto() - " + msg);
+			throw new Exception(msg);
+		}
+		
+		return pagoTicket;
 	}
 	
 }

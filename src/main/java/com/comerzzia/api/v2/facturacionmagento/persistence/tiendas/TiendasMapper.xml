@@ -14,11 +14,21 @@
     <result property="fax" jdbcType="VARCHAR" column="fax"/>
 </resultMap>
 
+  <resultMap id="ResultMapPagoDefecto" type="com.comerzzia.omnichannel.model.documents.sales.ticket.pagos.PagoTicket">
+    <result property="codMedioPago" jdbcType="VARCHAR" column="codmedpag_por_defecto"/>
+    <result property="desMedioPago" jdbcType="VARCHAR" column="desmedpag"/>
+</resultMap>
+
   <select id="selectById" resultMap="ResultMap">
   	SELECT a.codalm, a.cp, a.desalm, a.domicilio, c.id_trat_impuestos, a.poblacion, a.provincia, a.telefono1, a.telefono2, a.fax 
 	FROM d_almacenes_tbl a 
-	JOIN d_clientes_tbl c on a.codalm = c.codcli
+	INNER JOIN d_clientes_tbl c on (a.uid_actividad = c.uid_actividad and a.codalm = c.codcli)
 	WHERE a.uid_actividad = #{uid_actividad, jdbcType=VARCHAR} and a.codalm = #{idTienda, jdbcType=VARCHAR};
   </select>
-  
+
+  <select id="selectMedioPagoDefecto" resultMap="ResultMapPagoDefecto">
+  	SELECT a.codmedpag_por_defecto, desmedpag
+	FROM d_tiendas a 
+	WHERE a.uid_actividad = #{uid_actividad, jdbcType=VARCHAR} and a.codalm = #{idTienda, jdbcType=VARCHAR};
+  </select>  
 </mapper>
