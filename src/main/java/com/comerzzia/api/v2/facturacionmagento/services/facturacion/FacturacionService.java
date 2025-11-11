@@ -807,13 +807,22 @@ public class FacturacionService {
 		BigDecimal base = ticketIssueData.getTotalBaseAmount();
 		BigDecimal totalTaxAmount = ticketIssueData.getTotalTaxAmount();
 		BigDecimal total = ticketIssueData.getTotalGrossAmount();
-		totales.setBase(base);
-		totales.setImpuestos(totalTaxAmount);
-		totales.setTotal(total);
-		totales.setTotalAPagar(total);
+                totales.setBase(base);
+                totales.setImpuestos(totalTaxAmount);
+                totales.setTotal(total);
+                totales.setTotalAPagar(total);
+                totales.setTotalSinPromociones(total);
+
+                BigDecimal totalPromociones = BigDecimal.ZERO.setScale(2);
+                totales.setTotalPromociones(totalPromociones);
+                totales.setTotalPromocionesCabecera(totalPromociones);
+                totales.setTotalPromocionesLineas(totalPromociones);
+
+                totales.setEntregado(total);
+                totales.setEntregadoACuenta(totalPromociones);
 		
 		PagoTicket cambio = tiendasService.selectMedioPagoDefecto(datosSesion.getUidActividad(), tienda.getCodAlmacen());
-		cambio.setImporte(BigDecimal.ZERO);
+                cambio.setImporte(totalPromociones);
 		cambio.setEliminable(Boolean.FALSE);
 		cambio.setIntroducidoPorCajero(Boolean.FALSE);
 		cambio.setMovimientoCajaInsertado(Boolean.FALSE);
