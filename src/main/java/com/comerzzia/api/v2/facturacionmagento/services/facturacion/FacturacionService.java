@@ -130,10 +130,10 @@ public class FacturacionService {
 
 	protected static final Logger log = Logger.getLogger(FacturacionService.class);
 
-        private static final String PROPIEDAD_POS_FORMATO_IMPRESION = "POS.FORMATO_IMPRESION";
-        private static final String COD_PAIS_PT = "PT";
+	private static final String PROPIEDAD_POS_FORMATO_IMPRESION = "POS.FORMATO_IMPRESION";
+	private static final String COD_PAIS_PT = "PT";
 
-         private static final Set<String> DOCUMENTOS_DEVOLUCION = new HashSet<>(Arrays.asList("NC", "FR"));
+	private static final Set<String> DOCUMENTOS_DEVOLUCION = new HashSet<>(Arrays.asList("NC", "FR"));
 	
 	@Autowired
 	protected TicketService ticketService;
@@ -317,45 +317,18 @@ public class FacturacionService {
          }
  }
 
- private void ajustarLineasDevolucion(Ticket ticketRequest) {
-         TicketItems ticketItems = ticketRequest.getTicketItems();
-         if (ticketItems == null || ticketItems.getTicketItem() == null) {
-                 return;
-         }
+	private void ajustarLineasDevolucion(Ticket ticketRequest) {
+		TicketItems ticketItems = ticketRequest.getTicketItems();
+		if (ticketItems == null || ticketItems.getTicketItem() == null) {
+			return;
+		}
 
-         for (TicketItem ticketItem : ticketItems.getTicketItem()) {
-                 ticketItem.setPriceWithoutDTO(toNegative(ticketItem.getPriceWithoutDTO()));
-                 ticketItem.setTotalPriceWithoutDTO(toNegative(ticketItem.getTotalPriceWithoutDTO()));
-                 ticketItem.setPrice(toNegative(ticketItem.getPrice()));
-                 ticketItem.setTotalPrice(toNegative(ticketItem.getTotalPrice()));
-                 ticketItem.setAmount(toNegative(ticketItem.getAmount()));
-                 ticketItem.setTotalAmount(toNegative(ticketItem.getTotalAmount()));
-                 ticketItem.setDiscount(toNegative(ticketItem.getDiscount()));
-                 ticketItem.setUnitPrice(toNegative(ticketItem.getUnitPrice()));
-
-					if (ticketItem.getPromotions() != null && ticketItem.getPromotions().getPromotion() != null) {
-						for (Promotion promotion : ticketItem.getPromotions().getPromotion()) {
-							promotion.setDiscountAmount(toNegative(promotion.getDiscountAmount()));
-						}
-					}
-                 
-                 Reason reason = ticketItem.getReason();
-                 if (reason != null) {
-                         reason.setOriginalItemPrice(toNegative(reason.getOriginalItemPrice()));
-                         reason.setItemPriceApplied(toNegative(reason.getItemPriceApplied()));
-                 }
-         }
-         
-			if (request.getPromotionsSummary() != null && request.getPromotionsSummary().getPromotionsApplied() != null
-			        && request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied() != null) {
-				for (PromotionApplied promotionApplied : request.getPromotionsSummary().getPromotionsApplied().getPromotionApplied()) {
-					BigDecimal negativeAmount = toNegative(BigDecimal.valueOf(promotionApplied.getDiscountAmount()));
-					if (negativeAmount != null) {
-						promotionApplied.setDiscountAmount(negativeAmount.doubleValue());
-					}
-				}
-			}
- }
+		for (TicketItem ticketItem : ticketItems.getTicketItem()) {
+			ticketItem.setQuantity(toNegative(ticketItem.getQuantity()));
+			ticketItem.setAmount(toNegative(ticketItem.getAmount()));
+			ticketItem.setTotalAmount(toNegative(ticketItem.getTotalAmount()));
+		}
+	}
 
 	private void ajustarPagosDevolucion() {
 		PaymentsData paymentsData = request.getPaymentsData();
@@ -398,18 +371,18 @@ public class FacturacionService {
 		cajasService.salvarRecuento(sqlSession, cajaAbierta, ticket.getUidActividad());
 	}
 
-        private void inicializarVariables(DatosSesionBean datosSesionBean, FacturacionRequest facturacionRequest) throws FacturacionException {
-                log.debug("inicializarVariables()");
+	private void inicializarVariables(DatosSesionBean datosSesionBean, FacturacionRequest facturacionRequest) throws FacturacionException {
+		log.debug("inicializarVariables()");
 
-                request = facturacionRequest;
-                datosSesion = datosSesionBean;
-                tienda = obtenerTienda();
-                cliente = obtenerCliente(datosSesionBean);
-                empresa = obtenerEmpresa(datosSesionBean);
+		request = facturacionRequest;
+		datosSesion = datosSesionBean;
+		tienda = obtenerTienda();
+		cliente = obtenerCliente(datosSesionBean);
+		empresa = obtenerEmpresa(datosSesionBean);
 
-                /* Consultamos el usuario predeterminado para apertura de caja y para la cabecera del ticket */
-                usuario = usuariosService.obtenerUsuarioPredeterminado(datosSesion);
-        }
+		/* Consultamos el usuario predeterminado para apertura de caja y para la cabecera del ticket */
+		usuario = usuariosService.obtenerUsuarioPredeterminado(datosSesion);
+	}
 
 	private Tienda obtenerTienda() throws FacturacionException {
 		String storeId = request.getStore().getStoreId();
@@ -567,6 +540,7 @@ public class FacturacionService {
 
 			/* XML */
 			ticket = new TicketVentaAbono();
+			ticket.setSoftwareVersion("4.8.1");
 
 			rellenarCabecera(ticket, ticketBean);
 			
@@ -579,7 +553,7 @@ public class FacturacionService {
 			rellenarCuponesAplicados(ticket);
 			setContadoresTicket(ticketBean, ticket);
 			setLocatorID(ticketBean, ticket);
-                        if (ticket.getCabecera().getCliente().getCodpais().equals(COD_PAIS_PT)) {
+			if (ticket.getCabecera().getCliente().getCodpais().equals(COD_PAIS_PT)) {
 				FiscalData atcudGenerado = fiscalDataService.setATCUD(ticket, ticketBean, datosSesion, sqlSession, atcudAlmacen);
 				request.setNewFiscalData(atcudGenerado);
 			}
@@ -622,7 +596,7 @@ public class FacturacionService {
 	
 	private AtcudMagento comprobarATCUD(TicketBean ticketBean, SqlSession sqlSession) throws AtcudException {
 		AtcudMagento atcudAlmacen = null;
-                if (ticket.getCabecera().getCliente().getCodpais().equals(COD_PAIS_PT)) {
+		if (ticket.getCabecera().getCliente().getCodpais().equals(COD_PAIS_PT)) {
 			atcudAlmacen = BricodepotServicioAtcud.get().consultarAtcudPorAlmacenYTipoDoc(sqlSession, ticketBean.getCodAlmacen(), empresa.getCodEmpresa(), tipoDocumento.getCodTipoDocumento(),
 			        ticketBean.getUidActividad());
 
@@ -673,7 +647,7 @@ public class FacturacionService {
 		return null;
 	}
 
-        private void rellenarCabecera(TicketVentaAbono ticketVentaAbono, TicketBean ticketBean) throws Exception {
+	private void rellenarCabecera(TicketVentaAbono ticketVentaAbono, TicketBean ticketBean) throws Exception {
 
 		log.debug("rellenarCabecera()");
 
@@ -724,18 +698,18 @@ public class FacturacionService {
 		ClienteBean datosEnvio = obtenerDatosEnvio();
 		cabecera.setDatosEnvio(datosEnvio);
 
-                DatosDocumentoOrigenTicket datosTicketOrigen = obtenerDatosTicketOrigen(cliente.getIdTratImpuestos());
-                cabecera.setDatosDocOrigen(datosTicketOrigen);
+		DatosDocumentoOrigenTicket datosTicketOrigen = obtenerDatosTicketOrigen(cliente.getIdTratImpuestos());
+		cabecera.setDatosDocOrigen(datosTicketOrigen);
 
-                TicketIssueData ticketIssueData = request.getTicket() != null ? request.getTicket().getTicketIssueData() : null;
-                if (ticketIssueData != null && StringUtils.isNotBlank(ticketIssueData.getFechaTicketOrigen())) {
-                        cabecera.setFechaTicketOrigen(ticketIssueData.getFechaTicketOrigen());
-                }
+		TicketIssueData ticketIssueData = request.getTicket() != null ? request.getTicket().getTicketIssueData() : null;
+		if (ticketIssueData != null && StringUtils.isNotBlank(ticketIssueData.getFechaTicketOrigen())) {
+			cabecera.setFechaTicketOrigen(ticketIssueData.getFechaTicketOrigen());
+		}
 
-                rellenarTotalesCabecera(cabecera);
-                rellenarImpuestosCabecera(cabecera);
+		rellenarTotalesCabecera(cabecera);
+		rellenarImpuestosCabecera(cabecera);
 
-                ticketVentaAbono.setCabecera(cabecera);
+		ticketVentaAbono.setCabecera(cabecera);
 	}
 
 	private void setearAuditEvents(BricodepotCabeceraTicket cabecera) throws FacturacionException {
@@ -824,29 +798,29 @@ public class FacturacionService {
 		return fidelizacionBean;
 	}
 
-        private void rellenarTotalesCabecera(CabeceraTicket cabecera) throws Exception {
-                log.debug("rellenarTotalesCabecera()");
+	private void rellenarTotalesCabecera(CabeceraTicket cabecera) throws Exception {
+		log.debug("rellenarTotalesCabecera()");
 
-                TicketIssueData ticketIssueData = request.getTicket().getTicketIssueData();
-                TotalesTicket totales = new TotalesTicket();
+		TicketIssueData ticketIssueData = request.getTicket().getTicketIssueData();
+		TotalesTicket totales = new TotalesTicket();
 
-                BigDecimal base = ticketIssueData.getTotalBaseAmount();
-                BigDecimal totalTaxAmount = ticketIssueData.getTotalTaxAmount();
-                BigDecimal total = ticketIssueData.getTotalGrossAmount();
-                totales.setBase(base);
-                totales.setImpuestos(totalTaxAmount);
-                totales.setTotal(total);
-                totales.setTotalAPagar(total);
-
-                PagoTicket cambio = tiendasService.selectMedioPagoDefecto(datosSesion.getUidActividad(), tienda.getCodAlmacen());
-                cambio.setImporte(BigDecimal.ZERO);
-                cambio.setEliminable(Boolean.FALSE);
-                cambio.setIntroducidoPorCajero(Boolean.FALSE);
-                cambio.setMovimientoCajaInsertado(Boolean.FALSE);
-                totales.setCambio(cambio);
-
-                cabecera.setTotales(totales);
-        }
+		BigDecimal base = ticketIssueData.getTotalBaseAmount();
+		BigDecimal totalTaxAmount = ticketIssueData.getTotalTaxAmount();
+		BigDecimal total = ticketIssueData.getTotalGrossAmount();
+		totales.setBase(base);
+		totales.setImpuestos(totalTaxAmount);
+		totales.setTotal(total);
+		totales.setTotalAPagar(total);
+		
+		PagoTicket cambio = tiendasService.selectMedioPagoDefecto(datosSesion.getUidActividad(), tienda.getCodAlmacen());
+		cambio.setImporte(BigDecimal.ZERO);
+		cambio.setEliminable(Boolean.FALSE);
+		cambio.setIntroducidoPorCajero(Boolean.FALSE);
+		cambio.setMovimientoCajaInsertado(Boolean.FALSE);
+		totales.setCambio(cambio);
+		
+		cabecera.setTotales(totales);
+	}
 
 	private void rellenarImpuestosCabecera(CabeceraTicket cabecera) {
 		log.debug("rellenarImpuestosCabecera() - Rellenamos los subtotales");
@@ -869,104 +843,104 @@ public class FacturacionService {
 		cabecera.setSubtotalesIva(subtotales);
 	}
 
-        private ClienteBean obtenerCliente(DatosSesionBean datosSesionBean) throws FacturacionException {
-                log.debug("obtenerCliente()");
+	private ClienteBean obtenerCliente(DatosSesionBean datosSesionBean) throws FacturacionException {
+		log.debug("obtenerCliente()");
 
-                cliente = null;
-                InvoiceData invoiceData = request.getInvoiceData();
-                try {
-                        String codAlm = tienda.getCodAlmacen();
-                        cliente = clientesService.consultarPorCod(datosSesion.getUidActividad(), codAlm);
-                        cliente.setDatosFactura(null);
+		cliente = null;
+		InvoiceData invoiceData = request.getInvoiceData();
+		try {
+			String codAlm = tienda.getCodAlmacen();
+			cliente = clientesService.consultarPorCod(datosSesion.getUidActividad(), codAlm);
+			cliente.setDatosFactura(null);
+			
+			tipoDocumento = obtenerTipoDocumento(datosSesionBean);
+			
+			/* Añadimos la información de la request */
+			if ("FT".equals(tipoDocumento.getCodTipoDocumento())) {
+				if(invoiceData == null) {
+					throw new FacturacionException("Es una factura completa (FT) pero no vienen relleno los datos de invoiceData");
+				}
 
-                        tipoDocumento = obtenerTipoDocumento(datosSesionBean);
+				/* Rellenamos los datosFactura */
+				DatosFactura datosFactura = new DatosFactura();
+				datosFactura.setDomicilio(invoiceData.getAddress());
+				datosFactura.setCif(invoiceData.getTaxIdentificationNumber());
+				datosFactura.setTipoIdentificacion(invoiceData.getIdentificationType());
+				datosFactura.setTelefono(invoiceData.getPhone());
+				datosFactura.setCp(invoiceData.getPostalCode());
+				datosFactura.setProvincia(invoiceData.getProvince());
+				datosFactura.setPoblacion(invoiceData.getTown());
+				datosFactura.setNombre(invoiceData.getName());
+				datosFactura.setPais(invoiceData.getCountry());
+				cliente.setDatosFactura(datosFactura);
+			}
 
-                        /* Añadimos la información de la request */
-                        if ("FT".equals(tipoDocumento.getCodTipoDocumento())) {
-                                if(invoiceData == null) {
-                                        throw new FacturacionException("Es una factura completa (FT) pero no vienen relleno los datos de invoiceData");
-                                }
+			/* Si no tenemos información del cliente, añadimos el genérico de la tienda */
+			if (invoiceData == null) {
+				
+				request.setInvoiceData(new InvoiceData());
+				/* Añadimos el código del cliente a la request para añadirlo al generar el response */
+				request.getInvoiceData().setCode(cliente.getCodCliente());
+				request.getInvoiceData().setAddress(cliente.getDomicilio());
+				request.getInvoiceData().setCountry(cliente.getCodpais());
+				request.getInvoiceData().setIdentificationType(cliente.getTipoIdentificacion());
+				request.getInvoiceData().setName(cliente.getDesCliente());
+				request.getInvoiceData().setPhone(cliente.getTelefono1());
+				request.getInvoiceData().setPostalCode(cliente.getCp());
+				request.getInvoiceData().setProvince(cliente.getProvincia());
+				request.getInvoiceData().setTaxesTreatmentId(cliente.getIdTratImpuestos().toString());
+				request.getInvoiceData().setTaxIdentificationNumber(cliente.getCodCliente());
+				request.getInvoiceData().setTown(cliente.getPoblacion());
+			}
 
-                                /* Rellenamos los datosFactura */
-                                DatosFactura datosFactura = new DatosFactura();
-                                datosFactura.setDomicilio(invoiceData.getAddress());
-                                datosFactura.setCif(invoiceData.getTaxIdentificationNumber());
-                                datosFactura.setTipoIdentificacion(invoiceData.getIdentificationType());
-                                datosFactura.setTelefono(invoiceData.getPhone());
-                                datosFactura.setCp(invoiceData.getPostalCode());
-                                datosFactura.setProvincia(invoiceData.getProvince());
-                                datosFactura.setPoblacion(invoiceData.getTown());
-                                datosFactura.setNombre(invoiceData.getName());
-                                datosFactura.setPais(invoiceData.getCountry());
-                                cliente.setDatosFactura(datosFactura);
-                        }
+			/* Añadimos el codPais a la Store, ya que cuando lo rellenamos no teníamos el cliente */
+			request.getStore().setCountry(cliente.getCodpais());
+		}
+		catch (Exception e) {
+			log.error("obtenerCliente() - " + e.getMessage());
+			throw new FacturacionException(e.getMessage(), e);
+		}
 
-                        /* Si no tenemos información del cliente, añadimos el genérico de la tienda */
-                        if (invoiceData == null) {
+		return cliente;
+	}
 
-                                request.setInvoiceData(new InvoiceData());
-                                /* Añadimos el código del cliente a la request para añadirlo al generar el response */
-                                request.getInvoiceData().setCode(cliente.getCodCliente());
-                                request.getInvoiceData().setAddress(cliente.getDomicilio());
-                                request.getInvoiceData().setCountry(cliente.getCodpais());
-                                request.getInvoiceData().setIdentificationType(cliente.getTipoIdentificacion());
-                                request.getInvoiceData().setName(cliente.getDesCliente());
-                                request.getInvoiceData().setPhone(cliente.getTelefono1());
-                                request.getInvoiceData().setPostalCode(cliente.getCp());
-                                request.getInvoiceData().setProvince(cliente.getProvincia());
-                                request.getInvoiceData().setTaxesTreatmentId(cliente.getIdTratImpuestos().toString());
-                                request.getInvoiceData().setTaxIdentificationNumber(cliente.getCodCliente());
-                                request.getInvoiceData().setTown(cliente.getPoblacion());
-                        }
+	private ClienteBean obtenerDatosEnvio() throws FacturacionException {
+		log.debug("obtenerDatosEnvio()");
 
-                        /* Añadimos el codPais a la Store, ya que cuando lo rellenamos no teníamos el cliente */
-                        request.getStore().setCountry(cliente.getCodpais());
-                }
-                catch (Exception e) {
-                        log.error("obtenerCliente() - " + e.getMessage());
-                        throw new FacturacionException(e.getMessage(), e);
-                }
+		ClienteBean cliente = null;
+		DeliveryData deliveryData = request.getDeliveryData();
+		try {
+			/* Si tenemos información, buscamos el cliente */
+			if (deliveryData != null && StringUtils.isNotBlank(deliveryData.getTaxIdentificationNumber())) {
+				String taxIdentificationNumber = deliveryData.getTaxIdentificationNumber();
+				log.debug("obtenerDatosEnvio() - Cliente en la request: " + taxIdentificationNumber);
+				cliente = clientesService.consultarPorCif(datosSesion.getUidActividad(), taxIdentificationNumber);
+				cliente.setNombreComercial(cliente.getDesCliente());
+			}
 
-                return cliente;
-        }
+			/* Si no se ha encontrado un cliente, añadimos la información de la request */
+			if (cliente == null && deliveryData != null) {
+				cliente = new ClienteBean();
+				cliente.setDomicilio(deliveryData.getAddress());
+				cliente.setCodpais(deliveryData.getCountry());
+				cliente.setCodCliente(deliveryData.getTaxIdentificationNumber());
+				cliente.setCif(deliveryData.getTaxIdentificationNumber());
+				cliente.setTipoIdentificacion(deliveryData.getIdentificationType());
+				cliente.setDesCliente(deliveryData.getName());
+				cliente.setNombreComercial(cliente.getDesCliente());
+				cliente.setTelefono1(deliveryData.getPhone());
+				cliente.setCp(deliveryData.getPostalCode());
+				cliente.setProvincia(deliveryData.getProvince());
+				cliente.setPoblacion(deliveryData.getTown());
+			}
+		}
+		catch (Exception e) {
+			log.error("obtenerDatosEnvio() - " + e.getMessage());
+			throw new FacturacionException(e.getMessage(), e);
+		}
 
-        private ClienteBean obtenerDatosEnvio() throws FacturacionException {
-                log.debug("obtenerDatosEnvio()");
-
-                ClienteBean cliente = null;
-                DeliveryData deliveryData = request.getDeliveryData();
-                try {
-                        /* Si tenemos información, buscamos el cliente */
-                        if (deliveryData != null && StringUtils.isNotBlank(deliveryData.getTaxIdentificationNumber())) {
-                                String taxIdentificationNumber = deliveryData.getTaxIdentificationNumber();
-                                log.debug("obtenerDatosEnvio() - Cliente en la request: " + taxIdentificationNumber);
-                                cliente = clientesService.consultarPorCif(datosSesion.getUidActividad(), taxIdentificationNumber);
-                                cliente.setNombreComercial(cliente.getDesCliente());
-                        }
-
-                        /* Si no se ha encontrado un cliente, añadimos la información de la request */
-                        if (cliente == null && deliveryData != null) {
-                                cliente = new ClienteBean();
-                                cliente.setDomicilio(deliveryData.getAddress());
-                                cliente.setCodpais(deliveryData.getCountry());
-                                cliente.setCodCliente(deliveryData.getTaxIdentificationNumber());
-                                cliente.setCif(deliveryData.getTaxIdentificationNumber());
-                                cliente.setTipoIdentificacion(deliveryData.getIdentificationType());
-                                cliente.setDesCliente(deliveryData.getName());
-                                cliente.setNombreComercial(cliente.getDesCliente());
-                                cliente.setTelefono1(deliveryData.getPhone());
-                                cliente.setCp(deliveryData.getPostalCode());
-                                cliente.setProvincia(deliveryData.getProvince());
-                                cliente.setPoblacion(deliveryData.getTown());
-                        }
-                }
-                catch (Exception e) {
-                        log.error("obtenerDatosEnvio() - " + e.getMessage());
-                        throw new FacturacionException(e.getMessage(), e);
-                }
-
-                return cliente;
-        }
+		return cliente;
+	}
 
 	private DatosDocumentoOrigenTicket obtenerDatosTicketOrigen(Long idTratImpuestos) throws FacturacionException {
 		DatosDocumentoOrigenTicket datosTicketOrigen = null;
@@ -993,17 +967,17 @@ public class FacturacionService {
 				datosTicketOrigen.setFecha(fechaOrigen);
 
 				/* Añadimos a la request la fecha origen para que al generar el response más tarde tenga este dato */
-                                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                                String fechaFormateada = dateFormat.format(fechaOrigen);
-                                request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+				String fechaFormateada = dateFormat.format(fechaOrigen);
+				request.getTicket().getTicketIssueData().setOrigenIssueDate(fechaFormateada);
 
                                 if (StringUtils.isBlank(request.getTicket().getTicketIssueData().getFechaTicketOrigen())) {
                                         SimpleDateFormat fechaTicketOrigenFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
                                         request.getTicket().getTicketIssueData()
                                                         .setFechaTicketOrigen(fechaTicketOrigenFormat.format(fechaOrigen));
                                 }
-                        }
-                }
+			}
+		}
 		catch (Exception e) {
 			String msg = "Error consultando ticket origen " + e.getMessage();
 			log.error("obtenerDatosTicketOrigen() - " + msg);
